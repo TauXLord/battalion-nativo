@@ -19,4 +19,4 @@ if [ ! -x "$runtime" ]; then
 fi
 unset NODE_OPTIONS
 cd -- "$folder"
-exec "$runtime" "$folder/nativo/servidor.js" --lan "$@"
+exec "$runtime" "$folder/nativo/servidor.js" --lan --open "$@"

@@ -536,5 +536,9 @@
  "Nas missões com pelo menos duas Warmachines, \"Jogar em dupla pela rede\" divide as unidades entre você e um amigo; o turno passa quando os dois encerram.": "On missions with at least two Warmachines, \"Co-op over the network\" splits the units between you and a friend; the turn passes when both end it.",
  "Em Configurações → Perfil, escolha seu nome e uma foto (PNG, JPG ou GIF até 20 MB). Eles aparecem nas partidas, também para os outros jogadores, junto com suas estatísticas.": "In Settings → Profile, choose your name and a photo (PNG, JPG or GIF up to 20 MB). They appear in matches, also for other players, along with your statistics.",
  "Replay, neblina e modos de teste": "Replay, fog and test modes",
- "No fim de uma partida avulsa, \"Salvar replay\" guarda a partida para assistir depois. A partida avulsa tem neblina de guerra opcional, e o gerador de mapas tem modos de vitória de teste. O modo desenvolvedor (prévia de dano) fica nas Configurações e não conta progresso.": "At the end of a skirmish, \"Save replay\" stores the match to watch later. Skirmishes have optional fog of war, and the map generator has test victory modes. Developer mode (damage preview) is in Settings and does not count toward progress."
+ "No fim de uma partida avulsa, \"Salvar replay\" guarda a partida para assistir depois. A partida avulsa tem neblina de guerra opcional, e o gerador de mapas tem modos de vitória de teste. O modo desenvolvedor (prévia de dano) fica nas Configurações e não conta progresso.": "At the end of a skirmish, \"Save replay\" stores the match to watch later. Skirmishes have optional fog of war, and the map generator has test victory modes. Developer mode (damage preview) is in Settings and does not count toward progress.",
+ "{name} · versão {v}": "{name} · version {v}",
+ "Nova versão {v} disponível": "New version {v} available",
+ "salva na versão {v}": "saved in version {v}",
+ "Replay gravado na versão {v}; numa versão diferente ele pode não se repetir igual.": "Replay recorded in version {v}; in a different version it may not play back the same."
 }

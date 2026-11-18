@@ -1,0 +1,7 @@
+{
+ "versao": "1.0.0",
+ "data": "2026-11-17",
+ "edicao": "Battalion Nativo",
+ "verificar": "",
+ "notas": "Primeira edição com versão marcada. Para uma atualização, aumente o número (1.0.1 correção, 1.1.0 novidades, 2.0.0 mudanças grandes) e a data. Em 'verificar', coloque o endereço de um versao.json publicado (ex.: no GitHub) para o jogo avisar quando houver versão mais nova."
+}

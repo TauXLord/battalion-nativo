@@ -7,6 +7,9 @@ import { deleteProfileStorage, loadProfile, maxNameLength, profilePhoto, savePro
 import { clearSavedMatch, deleteSavesStorage, loadSavedMatch, saveMatch } from './salvamento.js'
 import { loadStats, recordMatch, statsSummary } from './estatisticas.js'
 import { replayTransport, validReplay } from './replay.js'
+import { compareVersions, loadEdition } from './versao.js'
+// Versão desta edição (nativo/versao.json), carregada ao abrir a página.
+let edition = {versao:'?'}
 import { matchAudio } from './audio.js'
 import { scenarioMatch, scenarioSlots } from './partida.js'
 import { defaultAiTime, validAiTime } from './ia.js'
@@ -77,6 +80,8 @@ function setupSettings(data,{inGame = false} = {}) {
   quick.onchange = () => store('battalion-nativo-ia-rapida',quick.checked ? '1' : '0')
   limit.value = String(aiTurnLimit())
   limit.onchange = () => { store('battalion-nativo-ia-limite',String(Math.max(0,Math.min(600,Number(limit.value) || 0)))); limit.value = String(aiTurnLimit()) }
+  $('settings-version').textContent = t('{name} · versão {v}',{name:edition.edicao ?? 'Battalion Nativo',v:edition.versao}) +
+    (edition.data ? ' (' + edition.data + ')' : '')
   setupProfile(dialog).catch(()=>{})
   setupSystem(dialog)
   for (const button of document.querySelectorAll('[data-settings]')) button.onclick = () => {
@@ -297,6 +302,17 @@ async function openHome(data) {
   setupSettings(data)
   menuAudio(data)
   setupTutorial(true)
+  // Versão da edição e aviso de atualização (só quando há endereço de verificação em versao.json).
+  $('home-version').textContent = t('{name} · versão {v}',{name:edition.edicao ?? 'Battalion Nativo',v:edition.versao})
+  if (location.hostname === '127.0.0.1') {
+    void fetch('/atualizacao',{cache:'no-store'}).then(response=>response.ok ? response.json() : null).then(info => {
+      if (!info?.nova) return
+      const link = $('home-update')
+      link.textContent = t('Nova versão {v} disponível',{v:info.publicada})
+      if (info.link) link.href = info.link
+      link.hidden = false
+    }).catch(()=>{})
+  }
   // Cartão "Continuar partida" com a última partida salva automaticamente.
   void loadSavedMatch().then(save => {
     if (!save) return
@@ -304,8 +320,10 @@ async function openHome(data) {
     card.href = '/?continuar' + (save.ghosts ? '=ghosts' : '')
     const when = new Date(save.savedAt).toLocaleString(language() === 'en' ? 'en-US' : 'pt-BR',
       {dateStyle:'short',timeStyle:'short'})
+    const older = save.edition && compareVersions(save.edition,edition.versao) !== 0
     $('home-continue-info').textContent = t(save.title || 'Partida') + ' · ' +
-      t('Rodada {n}',{n:save.engine?.state?.round ?? 1}) + ' · ' + when
+      t('Rodada {n}',{n:save.engine?.state?.round ?? 1}) + ' · ' + when +
+      (older ? ' · ' + t('salva na versão {v}',{v:save.edition}) : '')
     card.hidden = false
   })
   const generation = data.aiProfile?.generation
@@ -452,7 +470,8 @@ async function playMission(data,{mission,ghosts,list,difficulty,seconds,resume})
   const teams = profile ? mission.teams.map((team,index)=>index ? team :
     {...team,name:profile.name || team.name,photo:profile.avatar || undefined}) : mission.teams
   const onSave = engine => engine ?
-    saveMatch({kind:'campaign',title:mission.title,ghosts,list,chapter:mission.number,difficulty,seconds,engine}) :
+    saveMatch({kind:'campaign',title:mission.title,ghosts,list,chapter:mission.number,difficulty,seconds,engine,
+      edition:edition.versao}) :
     clearSavedMatch()
   const practice = developerMode()
   const onFinish = practice ? undefined : result => recordMatch('campanha',result)
@@ -608,7 +627,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   // Salvamento automático a cada turno do jogador (não vale para o modo assistir nem para o teste do editor).
   const onSave = mode === 'spectator' || back.startsWith('/?editor') ? undefined : engine => engine ?
     saveMatch({kind:'local',title:board.title,board,mode,difficulty,colors,back,humans,coalitions,seconds,
-      sideDifficulty,mapId,fog,engine}) : clearSavedMatch()
+      sideDifficulty,mapId,fog,engine,edition:edition.versao}) : clearSavedMatch()
   const setup = scenarioMatch(board,colors,humans,coalitions)
   const profile = humans > 0 ? await loadProfile() : null
   const teams = setup.colors.map((color,index)=>({name:data.aiSides?.[index+1]?.label ?? t('Equipe {n}',{n:index+1}),color,
@@ -774,12 +793,14 @@ async function openQuickMatch(data) {
 }
 
 async function open() {
+  edition = await loadEdition()
   await loadLanguage()
   translatePage()
   const ghosts = query.get('campanha') === 'ghosts' || query.get('editor') === 'ghosts' || query.get('continuar') === 'ghosts'
   const resource = await fetch(ghosts ? '/dados-ghosts.json' : '/dados.json')
   if (!resource.ok) throw Error('Os recursos do Battalion estão indisponíveis.')
   const data = await resource.json()
+  data.edition = edition.versao
   // Convite curto (?sala=CÓDIGO): o servidor devolve a sala; o endereço fica só com o código.
   const code = query.get('sala')
   let guestRoom = query.get('guest')
@@ -1044,6 +1065,9 @@ async function openSkirmish(data) {
       if (file.size > 60_000_000) throw Error('Arquivo grande demais para um replay.')
       const replay = JSON.parse(await file.text())
       if (!validReplay(replay)) throw Error('Este arquivo não é um replay do Battalion.')
+      if (replay.edition && compareVersions(replay.edition,edition.versao) !== 0) {
+        $('import-status').textContent = t('Replay gravado na versão {v}; numa versão diferente ele pode não se repetir igual.',{v:replay.edition})
+      }
       $('scenario-view').hidden = true
       $('player-view').querySelector('header a').href = '/?partida=ias'
       $('player-view').querySelector('header a').textContent = t('← Partida avulsa')

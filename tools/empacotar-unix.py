@@ -2,6 +2,7 @@
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
+import json
 from io import BytesIO
 from pathlib import Path
 import re
@@ -17,13 +18,14 @@ PACKAGES = {
     "macOS": ("Jogar-Battalion.command", ("darwin-arm64", "darwin-x64")),
 }
 
-HELP = """Battalion Nativo
+HELP = """Battalion Nativo · versão {edition}
 
 {requirements}
 
 1. Extraia o arquivo .tar.gz inteiro.
 2. {launch}
-3. Abra http://127.0.0.1:8770/ no navegador e mantenha o Terminal aberto.
+3. O jogo abre sozinho no navegador. Se não abrir, use http://127.0.0.1:8770/.
+   Mantenha o Terminal aberto enquanto joga.
 
 Os convidados usam o mesmo link no navegador, seja no Windows, Linux ou Mac.
 Para quatro pessoas, abra Multiplayer LAN em Dois Continentes e selecione quatro
@@ -55,10 +57,11 @@ def add_file(package, name, stream, size, mode=0o644):
     package.addfile(entry, stream)
 
 
-def build_package(target, launcher, runtimes, windows, temporary, version):
+def build_package(target, launcher, runtimes, windows, temporary, version, edition):
     root = f"Battalion-Nativo-{target}"
     draft = temporary / f"{root}.tar.gz"
     instructions = HELP.format(
+        edition=edition,
         requirements=("Linux x64 (Intel/AMD), kernel 4.18+, glibc 2.28+ e libstdc++ 6.0.25+."
                       if target == "Linux-x64" else "macOS 13.5 ou posterior, Apple Silicon ou Intel."),
         launch=("Abra o terminal na pasta extraída e rode ./Jogar-Battalion."
@@ -69,6 +72,8 @@ def build_package(target, launcher, runtimes, windows, temporary, version):
     with tarfile.open(draft, "w:gz", compresslevel=6) as package:
         add_file(package, f"{root}/{launcher}", BytesIO(script), len(script), 0o755)
         add_file(package, f"{root}/LEIA-ME.txt", BytesIO(instructions), len(instructions))
+        stamp = f"{edition}\n".encode()
+        add_file(package, f"{root}/VERSAO.txt", BytesIO(stamp), len(stamp))
         for info in windows.infolist():
             if not (info.filename.startswith("nativo/") or
                     info.filename in {"camera.js", "lan.js", "launcher.css"}):
@@ -101,6 +106,7 @@ def main():
     base = f"https://nodejs.org/dist/{version}/"
     with urlopen(base + "SHASUMS256.txt", timeout=60) as response:
         checksums = {name: digest for digest, name in map(str.split, response.read().decode().splitlines())}
+    edition = json.loads((ROOT / "nativo/versao.json").read_text(encoding="utf-8"))["versao"]
     with TemporaryDirectory(prefix="battalion-unix-", dir=ROOT) as folder, ZipFile(args.windows_exe) as windows:
         temporary = Path(folder)
         platforms = [platform for _, group in PACKAGES.values() for platform in group]
@@ -109,7 +115,7 @@ def main():
                        for platform in platforms}
             for target, (launcher, group) in PACKAGES.items():
                 build_package(target,launcher,[(platform,pending[platform].result()) for platform in group],
-                              windows,temporary,version)
+                              windows,temporary,version,edition)
 
 
 if __name__ == "__main__":

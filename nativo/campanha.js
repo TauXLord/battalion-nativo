@@ -272,7 +272,7 @@ export function campaignTransport(data, mission, difficulty, {
     // Arquivo de replay da partida (null na campanha).
     replay:() => replayStart && {format:'battalion-replay',version:1,title:map.title,board:map,
       teams:mission.teams.map(({name,color,avatar,allies})=>({name,color,avatar,allies})),
-      initial:replayStart,actions:replayLog.slice(),savedAt:Date.now()},
+      initial:replayStart,actions:replayLog.slice(),savedAt:Date.now(),edition:data.edition},
     listen(onState) {
       receive = onState
       if (resume) {

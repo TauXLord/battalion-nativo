@@ -294,3 +294,6 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
   .match-chat { margin:.4rem 8px; }
   dialog.settings { width:calc(100vw - 16px); max-width:none; margin:8px auto; }
 }
+
+.home-version { opacity:.75; font-size:.85rem; }
+.home-version a { margin-left:.6rem; color:#9fd3a0; font-weight:bold; }

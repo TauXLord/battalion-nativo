@@ -34,6 +34,13 @@ function executable(kind) {
 }
 
 export function openAppWindow(url) {
+  // Linux e macOS: abre no navegador padrão do sistema.
+  if (process.platform === 'darwin' || process.platform === 'linux') {
+    const child = spawn(process.platform === 'darwin' ? 'open' : 'xdg-open',[url],{detached:true,stdio:'ignore'})
+    child.on('error',()=>console.log('Abra ' + url + ' no navegador.'))
+    child.unref()
+    return false
+  }
   if (process.platform !== 'win32') return false
   const kind = defaultBrowser()
   const browser = kind && executable(kind)

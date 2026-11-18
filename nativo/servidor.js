@@ -20,6 +20,8 @@ import { openAppWindow } from './janela.js'
 
 const read = path => readFile(new URL(path,import.meta.url))
 const data = JSON.parse(await read('./dados.json'))
+// Versão da edição (nativo/versao.json), para saber se uma cópia precisa de atualização.
+const edition = JSON.parse(await read('./versao.json'))
 const ghosts = JSON.parse(await read('./dados-ghosts.json'))
 const maps = Object.keys(data.maps)
 const colors = Object.keys(data.palettes).filter(color => color !== 'building')
@@ -45,6 +47,7 @@ const files = new Map([
   ['/movimento.js','./movimento.js'], ['/audio.js','./audio.js'],
   ['/visao.js','./visao.js'],
   ['/campanha.js','./campanha.js'], ['/ia.js','./ia.js'], ['/editor.js','./editor.js'], ['/cooperativo.js','./cooperativo.js'],
+  ['/versao.json','./versao.json'], ['/versao.js','./versao.js'],
   ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'],
   ['/estatisticas.js','./estatisticas.js'], ['/replay.js','./replay.js'], ['/graficos.js','./graficos.js'],
   ['/chat.js','./chat.js'], ['/atalhos.js','./atalhos.js'],
@@ -584,6 +587,30 @@ setInterval(() => {
   }
 },10000).unref()
 
+// Atualização: compara com o versao.json publicado no endereço de 'verificar' (se houver), no máximo 1 vez por hora.
+let updateCache = null
+async function updateInfo() {
+  const atual = edition.versao
+  if (!/^https:\/\//.test(edition.verificar ?? '')) return {atual,configurado:false}
+  if (updateCache && Date.now() - updateCache.time < 3600000) return updateCache.info
+  let info
+  try {
+    const response = await fetch(edition.verificar,{signal:AbortSignal.timeout(5000),headers:{'User-Agent':'Battalion-Nativo'}})
+    const published = await response.json()
+    const versao = String(published.versao ?? '')
+    info = {atual,configurado:true,publicada:versao,data:published.data,nova:newer(versao,atual),
+      link:/^https:\/\//.test(published.link ?? '') ? published.link : undefined}
+  } catch { info = {atual,configurado:true,erro:true} }
+  updateCache = {time:Date.now(),info}
+  return info
+}
+const newer = (a,b) => {
+  const parts = value => String(value).split('.').map(part=>Number.parseInt(part,10) || 0)
+  const [x,y] = [parts(a),parts(b)]
+  for (let index=0; index<Math.max(x.length,y.length); index++) if ((x[index] ?? 0) !== (y[index] ?? 0)) return (x[index] ?? 0) > (y[index] ?? 0)
+  return false
+}
+
 const shutdown = () => setTimeout(()=>process.exit(0),400)
 async function systemAction(req,res,action) {
   if (action === 'fechar') {
@@ -635,6 +662,7 @@ function handler(address,throughInternet = false) {
         const latest = [...rooms].sort(([,a],[,b])=>b.updated-a.updated)[0]?.[0]
         return reply(res,200,`Battalion-Nativo/2\n${internetEnabled ? 'internet' : 'lan'}\n${latest ? '/?host='+latest : '/'}\n${process.env.BATTALION_NATIVE_BUILD ?? 'workspace'}`)
       }
+      if (local && req.method === 'GET' && path === '/atualizacao') return json(res,await updateInfo())
       if (path.startsWith('/sistema/')) {
         // Fechar, excluir dados e desinstalar: só neste computador e só a partir da própria página do jogo.
         if (!local || req.method !== 'POST' || req.headers['x-battalion-acao'] !== '1') return fail(res,403,'Acesso indisponível.')
@@ -676,7 +704,7 @@ function handler(address,throughInternet = false) {
 }
 
 function openLocalBrowser() {
-  if (process.platform !== 'win32' || !process.argv.includes('--open')) return
+  if (!process.argv.includes('--open')) return
   const start = process.env.BATTALION_OPEN_PATH ?? '/'
   // Janela de aplicativo, sem barra de endereço (quando o navegador padrão permite).
   openAppWindow('http://'+hostAddress+':'+port+(start.startsWith('/') ? start : '/'))
@@ -690,7 +718,7 @@ for (const address of [hostAddress,...networks.keys()]) {
   })
   server.listen(port,address,() => {
     const url = `http://${address}:${port}/`
-    console.log('Battalion nativo · ' + url)
+    console.log('Battalion nativo v' + edition.versao + ' · ' + url)
     if (address === hostAddress && !internetEnabled) openLocalBrowser()
   })
 }
