@@ -8,8 +8,11 @@ import { matchAudio } from './audio.js'
 import { classicBoard, reconHeight, viewport } from './visao.js'
 import { t } from './idioma.js'
 import { downloadReplay } from './replay.js'
+import { TILE, canvasBuffer, colorize, drawTooltip, frame, loadImages, terrainArt, terrainVariant } from './graficos.js'
+export { colorize, frame, loadImages, terrainArt, terrainVariant }
+import { createMatchChat } from './chat.js'
+import { bindShortcuts } from './atalhos.js'
 
-const TILE = 56
 const angles = {right:0,down:90,left:180,up:270}
 const deployment = {
   up:[0,-1,'wm_build_up'], right:[1,0,'wm_build_side'], down:[0,1,'wm_build_down'],
@@ -28,65 +31,6 @@ const actions = {
   'Leviathan Barge':['unitLeviathan',36,29], 'Albatross Transport':['unitAlbatross',36,29],
 }
 const $ = id => document.getElementById(id)
-const canvasBuffer = (width,height) => Object.assign(document.createElement('canvas'),{width,height})
-
-export async function loadImages(files) {
-  const assets = Object.entries(files).filter(([,file])=>file.endsWith('.png'))
-  const entries = []
-  const batch = location.protocol === 'https:' ? 16 : Math.max(1,assets.length)
-  for (let index=0; index<assets.length; index+=batch) {
-    const images = await Promise.all(assets.slice(index,index+batch).map(async ([name,file])=>{
-      const image = new Image()
-      image.src = '/recursos/' + file
-      await image.decode()
-      return [name,image]
-    }))
-    entries.push(...images)
-  }
-  return Object.fromEntries(entries)
-}
-
-export function colorize(image, source, target) {
-  const canvas = canvasBuffer(image.width,image.height)
-  const ctx = canvas.getContext('2d',{willReadFrequently:true})
-  ctx.drawImage(image,0,0)
-  const data = ctx.getImageData(0,0,image.width,image.height)
-  const pixels = new Uint32Array(data.data.buffer)
-  const convert = color => ((color & 0xff00ff00) | (color & 255) << 16 | (color >> 16 & 255)) >>> 0
-  const substitutions = new Map(source.map((value,i) => [convert(value),convert(target[i])]))
-  for (let i = 0; i < pixels.length; i++) {
-    const next = substitutions.get(pixels[i])
-    if (next !== undefined) pixels[i] = next
-  }
-  ctx.putImageData(data,0,0)
-  return canvas
-}
-
-export function frame(ctx, image, index, x, y, w, h, width = w, height = h) {
-  const columns = Math.floor(image.width / w)
-  const rows = Math.floor(image.height / h)
-  if (!columns || !rows) return
-  const id = index % (columns * rows)
-  ctx.drawImage(image,id % columns * w,Math.floor(id / columns) * h,w,h,x,y,width,height)
-}
-
-export function terrainArt(ctx, images, visual, frameIndex, x, y, width = TILE, height = TILE) {
-  const [mode,names] = visual
-  if (mode === 'join') {
-    for (const [i,name] of names.entries()) {
-      const image = images[name]
-      frame(ctx,image,frameIndex,x + i % 2 * width / 2,y + (i >> 1) * height / 2,28,image.height,width / 2,height / 2)
-    }
-    return
-  }
-  const image = images[names[0]]
-  frame(ctx,image,frameIndex,x,y - (image.height - TILE) * height / TILE,TILE,image.height,width,image.height * height / TILE)
-}
-
-export function terrainVariant([mode,names],cell) {
-  return mode === 'random' ? ['single',[names[((cell+1)*2654435761 >>> 0) % names.length]]] : [mode,names]
-}
-
 export async function play(data, base, side, transport) {
   const { rules, palettes } = data
   const tiles = base.tiles.map(([name,art],cell) => [name,terrainVariant(art,cell)])
@@ -939,34 +883,7 @@ export async function play(data, base, side, transport) {
     ctx.restore()
   }
 
-  // Dica no estilo do Flash: título em negrito e texto quebrado em linhas.
-  function tooltipBox(title,body,centerX,top) {
-    const width = 210
-    ctx.font = '10px Tahoma'
-    const lines = []
-    let line = ''
-    for (const word of String(body).split(' ')) {
-      if (line && ctx.measureText(line+word).width > width-12) { lines.push(line); line = '' }
-      line += word+' '
-    }
-    if (line) lines.push(line)
-    const height = 22 + lines.length*12
-    const x = Math.max(2,Math.min(view.width-width-2,centerX-width/2))
-    const y = top + height > view.height ? Math.max(2,top - height - 40) : top
-    ctx.fillStyle = 'rgba(28,26,19,.94)'
-    ctx.strokeStyle = '#e7d5a4'
-    ctx.lineWidth = 1
-    ctx.fillRect(x,y,width,height)
-    ctx.strokeRect(x+.5,y+.5,width-1,height-1)
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'alphabetic'
-    ctx.fillStyle = '#fff1c8'
-    ctx.font = 'bold 11px Tahoma'
-    ctx.fillText(title,x+6,y+14)
-    ctx.font = '10px Tahoma'
-    ctx.fillStyle = '#f4ebcd'
-    lines.forEach((text,index)=>ctx.fillText(text,x+6,y+28+index*12))
-  }
+  const tooltipBox = (title,body,centerX,top) => drawTooltip(ctx,view,title,body,centerX,top)
 
   function drawSidebar(extraHeight) {
     const image = images.mainframe
@@ -1576,47 +1493,31 @@ export async function play(data, base, side, transport) {
     error = ''
     void send({type:'end'})
   }
-  document.addEventListener('keydown',event => {
-    if (player.hidden || !state || document.querySelector('dialog[open]')) return
-    if (event.target.closest?.('input,select,textarea,[contenteditable]')) return
-    if (event.altKey || event.metaKey) return
-    const key = event.key
-    const direction = {ArrowLeft:[-64,0],ArrowRight:[64,0],ArrowUp:[0,-64],ArrowDown:[0,64]}[key]
-    if (direction) {
-      event.preventDefault()
-      if (motion?.camera) return
-      panX += direction[0]/zoom
-      panY += direction[1]/zoom
-      normalize()
-      schedule()
-      return
-    }
-    if (key === 'Escape') { cancelAction(); selected = null; pinnedTerrain = -1; schedule(); return }
-    if (state.dialog || state.result) return
-    const lower = key.toLowerCase()
-    let handled = true
-    if (event.ctrlKey) {
-      if (lower === 'z' && !cssButton('undo').disabled) void send({type:'undo'})
-      else handled = false
-    }
-    else if (key === ' ' || key === 'Enter') endTurnKey()
-    else if (key === 'Tab') nextUnit(event.shiftKey ? -1 : 1)
-    else if (lower === 'r') shortcutCommand(['repair'])
-    else if (lower === 'b') shortcutCommand(['build'])
-    else if (lower === 'e') shortcutCommand(['extract'])
-    else if (lower === 'c') shortcutCommand(['capture'])
-    else if (lower === 't') shortcutCommand(['unload','Leviathan Barge','Albatross Transport'])
-    else if (lower === 'u' && !cssButton('undo').disabled) void send({type:'undo'})
-    else if (key === '+' || key === '=' || key === '-' || key === '_') {
-      // Usa os botões da barra de zoom para a porcentagem mostrada acompanhar.
-      const label = key === '+' || key === '=' ? '+' : '−'
-      const button = [...$('player-camera').querySelectorAll('button')].find(item=>item.textContent.trim() === label)
-      if (button) button.click(); else setZoom(label === '+' ? 1 : -1)
-    }
-    else if (lower === 'f') $('fullscreen')?.click()
-    else if (key === '?' || lower === 'h') { $('options').showModal(); $('settings-shortcuts')?.scrollIntoView({block:'start'}) }
-    else handled = false
-    if (handled) event.preventDefault()
+  bindShortcuts({
+    ready:() => !player.hidden && Boolean(state),
+    busy:() => Boolean(state.dialog || state.result),
+    on:{
+      pan:(dx,dy) => {
+        if (motion?.camera) return
+        panX += dx/zoom
+        panY += dy/zoom
+        normalize()
+        schedule()
+      },
+      cancel:() => { cancelAction(); selected = null; pinnedTerrain = -1; schedule() },
+      endTurn:endTurnKey,
+      next:nextUnit,
+      command:shortcutCommand,
+      undo:() => { if (!cssButton('undo').disabled) void send({type:'undo'}) },
+      zoom:step => {
+        // Usa os botões da barra de zoom para a porcentagem mostrada acompanhar.
+        const label = step > 0 ? '+' : '−'
+        const button = [...$('player-camera').querySelectorAll('button')].find(item=>item.textContent.trim() === label)
+        if (button) button.click(); else setZoom(step)
+      },
+      fullscreen:() => $('fullscreen')?.click(),
+      help:() => { $('options').showModal(); $('settings-shortcuts')?.scrollIntoView({block:'start'}) },
+    },
   })
   music.bind($('audio'),$('music'),$('game-volume'),$('game-volume-value'))
   $('game-settings').onclick = () => $('options').showModal()
@@ -1651,39 +1552,10 @@ export async function play(data, base, side, transport) {
     if (action.jammed) makeSound('Jammed')
   }
 
-  // Chat da partida (só em rede): painel abaixo do mapa com as últimas mensagens.
-  let chatPanel, chatKey = ''
-  function updateMatchChat(messages) {
-    if (!transport.chat || !messages) return
-    if (!chatPanel) {
-      chatPanel = $('match-chat-template').content.firstElementChild.cloneNode(true)
-      chatPanel.setAttribute('aria-label',t('Chat da partida'))
-      const input = chatPanel.querySelector('input')
-      input.placeholder = t('Escreva uma mensagem…')
-      input.setAttribute('aria-label',t('Mensagem do chat'))
-      chatPanel.querySelector('button').textContent = t('Enviar')
-      chatPanel.querySelector('form').onsubmit = async event => {
-        event.preventDefault()
-        const text = input.value.trim()
-        if (!text) return
-        input.value = ''
-        try { await transport.chat(text) } catch (failure) { error = failure.message; updateStatus() }
-      }
-      player.append(chatPanel)
-    }
-    const key = JSON.stringify(messages.map(message=>message.time))
-    if (key === chatKey) return
-    const fresh = messages.length && chatKey !== '' && messages.at(-1).side !== side
-    chatKey = key
-    const log = chatPanel.querySelector('.chat-log')
-    log.replaceChildren(...messages.slice(-8).map(message=>{
-      const item = document.createElement('li')
-      item.append(Object.assign(document.createElement('b'),{textContent:message.name + ': '}),document.createTextNode(message.text))
-      return item
-    }))
-    log.scrollTop = log.scrollHeight
-    if (fresh) makeSound('Capture')
-  }
+  // Chat da partida (só em rede): painel abaixo do mapa (chat.js).
+  const chatUpdate = transport.chat && createMatchChat({template:$('match-chat-template'),parent:player,t,
+    send:text => transport.chat(text),onError:message => { error = message; updateStatus() },onMessage:() => makeSound('Capture')})
+  const updateMatchChat = messages => chatUpdate?.(messages,side)
 
   function receive(next) {
     connected = true
