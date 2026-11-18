@@ -37,3 +37,16 @@ export async function deleteSavesStorage() {
     request.onsuccess = request.onerror = request.onblocked = () => resolve()
   })
 }
+
+// Partida em rede: cada computador guarda a última visão recebida ({estado, mapa}), no mesmo formato do arquivo
+// que "Continuar partida de arquivo" abre. Serve para retomar se quem hospedava a sala cair.
+const networkKey = 'rede'
+export async function loadNetworkMatch() {
+  try { return await run('readonly',objects=>objects.get(networkKey)) ?? null } catch { return null }
+}
+export async function saveNetworkMatch(match) {
+  try { await run('readwrite',objects=>objects.put({...match,salvoEm:Date.now()},networkKey)) } catch {}
+}
+export async function clearNetworkMatch() {
+  try { await run('readwrite',objects=>objects.delete(networkKey)) } catch {}
+}

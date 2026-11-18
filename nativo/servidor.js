@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
-import { readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { networkInterfaces, tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
@@ -12,7 +12,7 @@ import { activeSides, canTakeTurn, createGame, order, scenarioMatch, scenarioSlo
 import { defaultAiTime, validAiTime } from './ia.js'
 import { aiPlanner } from './planejador.js'
 import { profileDirectory, readAiProfile } from './perfil-ia.js'
-import { generateMap, mapRecipe } from './procedural.js'
+import { generateMap, mapRecipe, reorderSides } from './procedural.js'
 import { combatTimeline } from './combate.js'
 import { movementDuration } from './movimento.js'
 import { coopCampaign, coopEligible } from './cooperativo.js'
@@ -95,7 +95,7 @@ function preferences(room,you) {
     sent:(room.requests ?? []).filter(request=>request.from === you).map(request=>request.to)}
   return {host:seats[0],guest:seats[1],seats,you,slots:room.slots,choices:room.choices,coalitions:room.coalitions,
     started:Boolean(room.game),map:room.seats[0].vote,generated:room.generated,coop,teams,code:room.code,
-    resumed:room.resumed ? room.resumed.board.title : undefined,
+    resumed:room.resumed ? room.resumed.board.title : undefined,sideOrder:room.sideOrder,
     chat:(room.chat ?? []).slice(-30),spectators:room.spectators?.size ?? 0}
 }
 const unready = room => { for (const member of room.seats) if (member) member.ready = false }
@@ -158,7 +158,56 @@ function seatTeams(room,viewer,base = [],viewerKey) {
   return teams
 }
 
+// Salvamento automático da partida em rede (no computador do anfitrião): o estado completo, com o dinheiro
+// das máquinas, a cada jogada. "Partidas em rede salvas" na tela Multiplayer retoma numa sala nova.
+const savesDirectory = process.env.BATTALION_SAVES_DIR ?? join(profileDirectory,'partidas-rede')
+const savePattern = /^[a-f0-9]{24}$/
+const maxSaves = 12
+function scheduleSave(room) {
+  if (room.coop || !room.game || !room.map) return
+  room.saveId ??= room.id
+  clearTimeout(room.saveTimer)
+  room.saveTimer = setTimeout(() => void saveRoom(room).catch(error=>console.error('Salvamento da partida:',error.message)),1200)
+  room.saveTimer.unref?.()
+}
+async function saveRoom(room) {
+  const file = join(savesDirectory,room.saveId + '.json')
+  if (room.game.winner) return rm(file,{force:true})
+  const names = seatTeams(room,1).map((team,index)=>({name:team.name ?? (index < room.seats.length ? 'Equipe ' + (index+1) : 'IA')}))
+  const contents = {formato:'battalion-partida-rede',versao:edition.versao,salvoEm:Date.now(),
+    estado:{...room.game,last:null,undo:null,teams:names},mapa:room.map}
+  await mkdir(savesDirectory,{recursive:true})
+  // Grava num arquivo temporário e troca: um desligamento no meio da gravação não estraga o salvamento anterior.
+  await writeFile(file + '.tmp',JSON.stringify(contents))
+  await rename(file + '.tmp',file)
+  const files = (await readdir(savesDirectory)).filter(name=>savePattern.test(name.replace(/.json$/,'')) && name.endsWith('.json'))
+  if (files.length > maxSaves) {
+    const dated = await Promise.all(files.map(async name=>[name,(await stat(join(savesDirectory,name))).mtimeMs]))
+    for (const [name] of dated.sort((a,b)=>a[1]-b[1]).slice(0,files.length-maxSaves)) await rm(join(savesDirectory,name),{force:true})
+  }
+}
+async function listSaves() {
+  let files = []
+  try { files = (await readdir(savesDirectory)).filter(name=>name.endsWith('.json') && savePattern.test(name.slice(0,-5))) }
+  catch { return [] }
+  const list = []
+  for (const name of files) {
+    try {
+      const saved = JSON.parse(await readFile(join(savesDirectory,name),'utf8'))
+      list.push({id:name.slice(0,-5),salvoEm:saved.salvoEm,versao:saved.versao,title:saved.mapa?.title || '',
+        round:saved.estado?.round,turn:saved.estado?.turn,teams:(saved.estado?.teams ?? []).map(team=>team?.name ?? '')})
+    } catch {}
+  }
+  return list.sort((a,b)=>b.salvoEm-a.salvoEm)
+}
+async function readSave(id) {
+  if (!savePattern.test(id ?? '')) throw Error('Salvamento inexistente.')
+  try { return JSON.parse(await readFile(join(savesDirectory,id + '.json'),'utf8')) }
+  catch { throw Error('Salvamento inexistente.') }
+}
+
 function pushMatch(room) {
+  scheduleSave(room)
   for (const [response,side] of room.viewers) {
     if (!response.writableNeedDrain) pushMatchTo(response,room,side)
   }
@@ -183,7 +232,7 @@ async function playComputer(room) {
     while (room.game === game && !room.closed && (side = computerSide(room))) {
       const version = game.version
       room.planner ??= aiPlanner(data.rules,map,Worker,room.profile)
-      const action = await room.planner.choose(game,{side,difficulty:room.difficulty,seconds:room.aiTime})
+      const action = await room.planner.choose(game,{side,difficulty:room.sideLevels?.[side-1] ?? room.difficulty,seconds:room.aiTime})
       if (room.closed || !canTakeTurn(game,side)) continue
       try {
         order(data.rules,map,game,side,{...action,version})
@@ -229,7 +278,9 @@ async function api(req,res,parts,local,throughInternet) {
       // Partida retomada de um arquivo salvo: o estado e o mapa vêm do arquivo, sem escolha de mapa na sala.
       const {humans,difficulty = 1,aiTime = defaultAiTime} = settings
       let restored
-      try { restored = restoreMatch(data.rules,settings.resume.file,settings.resume) }
+      // saved: salvamento automático deste computador (continua gravando no mesmo arquivo); file: arquivo aberto.
+      const saved = typeof settings.resume.saved === 'string' ? settings.resume.saved : null
+      try { restored = restoreMatch(data.rules,saved ? await readSave(saved) : settings.resume.file,settings.resume) }
       catch (error) { return fail(res,400,error.message) }
       const slots = restored.state.colors.length
       if (!Number.isInteger(humans) || humans < 2 || humans > slots || !validAiTime(aiTime)) {
@@ -242,7 +293,7 @@ async function api(req,res,parts,local,throughInternet) {
       seats[0] = host
       const room = {id,code:roomCode(),seats,slots,choices:[maps.length],difficulty,aiTime,
         resumed:{state:restored.state,board:{...restored.board,title:restored.board.title || 'Partida retomada'}},
-        coalitions:false,internet:Boolean(publicOrigin),viewers:new Map(),updated:Date.now()}
+        coalitions:false,internet:Boolean(publicOrigin),viewers:new Map(),updated:Date.now(),saveId:saved ?? undefined}
       rooms.set(id,room)
       return json(res,{room:id,slot:host.token,invites:inviteList(id,room)})
     }
@@ -268,8 +319,21 @@ async function api(req,res,parts,local,throughInternet) {
     }
     const {map:vote,humans,difficulty,aiTime = defaultAiTime} = settings
     const generated = vote === maps.length && settings.generated && mapRecipe(settings.generated)
-    const board = generated ? generateMap(data,generated) : Number.isInteger(vote) && data.maps[maps[vote]]
+    let board = generated ? generateMap(data,generated) : Number.isInteger(vote) && data.maps[maps[vote]]
     if (!board) return fail(res,400,'Escolha um mapa.')
+    // Equipes definidas no gerador: humanos primeiro (sideOrder), nível da IA de cada equipe e times (alianças).
+    let sideOrder, sideLevels, groups
+    if (generated && settings.sideOrder) {
+      try { board = reorderSides(board,settings.sideOrder) } catch (error) { return fail(res,400,error.message) }
+      sideOrder = settings.sideOrder
+      sideLevels = Array.isArray(settings.sideLevels) && settings.sideLevels.length === board.slots &&
+        settings.sideLevels.every(level=>[0,1,2].includes(level)) ? settings.sideLevels : undefined
+      if (Array.isArray(settings.groups) && settings.groups.length === board.slots && settings.groups.every(Number.isInteger)) {
+        // Renumera os times como 1, 2, 3… na ordem em que aparecem.
+        const seen = [...new Set(settings.groups)]
+        groups = settings.groups.map(group=>seen.indexOf(group)+1)
+      }
+    }
     const slots = scenarioSlots(board)
     if (!Number.isInteger(humans) || humans < 2 || humans > slots || ![0,1,2].includes(difficulty) || !validAiTime(aiTime)) {
       return fail(res,400,'Escolha a quantidade de jogadores e a dificuldade.')
@@ -282,11 +346,22 @@ async function api(req,res,parts,local,throughInternet) {
     const choices = generated ? [vote] : maps.flatMap((key,index)=>
       scenarioSlots(data.maps[key]) === slots && Boolean(data.maps[key].coalitions) === Boolean(board.coalitions) ? [index] : [])
     const room = {id,code:roomCode(),seats,slots,choices,difficulty,aiTime,generated,generatedBoard:generated ? board : undefined,
+      sideOrder,sideLevels,
       coalitions:Boolean(settings.coalitions && board.coalitions),
-      teams:Array.from({length:slots},(_,index)=>index+1),allowRequests:false,requests:[],fog:settings.fog === true,
+      teams:groups ?? Array.from({length:slots},(_,index)=>index+1),allowRequests:false,requests:[],fog:settings.fog === true,
       internet:Boolean(publicOrigin),viewers:new Map(),updated:Date.now()}
     rooms.set(id,room)
     return json(res,{room:id,slot:host.token,invites:inviteList(id,room)})
+  }
+  // Partidas em rede salvas neste computador (só o próprio anfitrião vê, baixa ou apaga).
+  if (local && !post && action === 'salvas') return json(res,await listSaves())
+  if (local && !post && action === 'salva') {
+    try { return json(res,await readSave(id)) } catch (error) { return fail(res,404,error.message) }
+  }
+  if (local && post && action === 'apagar-salva') {
+    if (!savePattern.test(id ?? '')) return fail(res,400,'Salvamento inexistente.')
+    await rm(join(savesDirectory,id + '.json'),{force:true})
+    return reply(res,204)
   }
   const room = rooms.get(id)
   if (!room) return fail(res,404,'Sala indisponível.')
@@ -447,9 +522,11 @@ async function api(req,res,parts,local,throughInternet) {
       room.profile = profile
       room.game = createGame(data.rules,room.map,setup.colors,{
         alliances,simultaneous:room.coalitions,fog:Boolean(room.fog),victory:room.map.victory,
-        attackScale:teamAttackScale(setup.colors.length,room.seats.length,room.difficulty),
+        attackScale:room.sideLevels ? room.sideLevels.map((level,index)=>index < room.seats.length ? 1 : [.7,1,1.4][level]) :
+          teamAttackScale(setup.colors.length,room.seats.length,room.difficulty),
       })
     }
+    scheduleSave(room)
     void playComputer(room).catch(error=>console.error('Turno da IA:',error.message))
     return json(res,preferences(room))
   }

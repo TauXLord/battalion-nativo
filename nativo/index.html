@@ -125,6 +125,11 @@
           <a class="button-like" href="/?editor">Abrir o editor</a>
         </div>
         <p id="import-status" class="muted" role="status"></p>
+        <section id="network-saves-section" class="network-saves" hidden>
+          <h2>Partidas em rede salvas</h2>
+          <p class="muted">Salvas sozinhas a cada jogada. As do anfitrião ficam completas, com o dinheiro das máquinas.</p>
+          <div id="network-saves"></div>
+        </section>
       </section>
       <aside class="tools match-setup">
         <figure class="map-preview">
@@ -139,6 +144,7 @@
         <label id="local-coalitions" class="check" hidden><input type="checkbox" id="scenario-coalitions" checked> Alianças por continente</label>
         <p id="coalition-teams" class="muted" hidden>Equipes 1 e 2 no oeste. Equipes 3 e 4 no leste.</p>
         <label class="toggle" id="scenario-fog-row"><input type="checkbox" id="scenario-fog"><span>Neblina de guerra (cada equipe só vê o que suas unidades enxergam)</span></label>
+        <p id="generator-setup-summary" class="generator-setup-summary" hidden></p>
         <label id="local-difficulty" hidden>Dificuldade da IA <select id="scenario-difficulty">
           <option value="0">Fácil · IA clássica</option><option value="1" selected>Normal · IA treinada</option>
           <option value="2">Difícil · IA treinada com dano extra</option>
@@ -163,12 +169,11 @@
               <label>Largura <input id="generator-width" type="number" min="16" max="100" step="1" value="32"></label>
               <label>Altura <input id="generator-height" type="number" min="16" max="100" step="1" value="32"></label>
               <p id="generator-chaos" class="generator-chaos" hidden>Modo caos: mapa pequeno para tantas equipes, as bases ficam coladas.</p>
-              <label>Equipes <select id="generator-teams">
+              <label>Quantidade de equipes <select id="generator-teams">
                 <option value="2">2</option><option value="3">3</option><option value="4">4</option>
                 <option value="5">5</option><option value="6">6</option><option value="7">7</option>
                 <option value="8">8</option><option value="9">9</option>
               </select></label>
-              <label>Equipes da IA <select id="generator-ai"></select></label>
               <label>Veios de minério <select id="generator-veins">
                 <option value="0">Nenhum</option><option value="1" selected>Poucos</option>
                 <option value="2">Médios</option><option value="3">Muitos</option>
@@ -180,6 +185,15 @@
                 <option value="pontos">Mais pontos em 20 rodadas</option>
               </select></label>
             </div>
+            <fieldset id="generator-sides" class="generator-sides"><legend>Quem comanda cada equipe</legend>
+              <p class="muted">Escolha “Jogador” para você e seus amigos, ou um nível de IA. No time, “Sozinha” é todos contra todos; equipes com o mesmo time (A, B, C…) são aliadas.</p>
+              <div class="generator-presets">
+                <button type="button" data-side-preset="ffa">Todos contra todos</button>
+                <button type="button" data-side-preset="humans">Jogadores juntos contra as IAs</button>
+              </div>
+              <div id="generator-side-rows"></div>
+              <p id="generator-sides-summary" class="muted" role="status"></p>
+            </fieldset>
             <fieldset id="generator-weights"><legend>Pesos do terreno</legend></fieldset>
           </section>
           <figure>
@@ -473,6 +487,8 @@
   </dialog>
   <template id="match-chat-template">
     <section class="match-chat" aria-label="Chat da partida">
+      <header class="chat-handle" title="Arraste para mover"><span class="chat-title">Chat</span><span class="chat-unread" hidden></span>
+        <button type="button" class="chat-toggle" aria-label="Minimizar o chat">–</button></header>
       <ol class="chat-log"></ol>
       <form><input type="text" maxlength="200" placeholder="Escreva uma mensagem…" aria-label="Mensagem do chat">
         <button type="submit">Enviar</button></form>

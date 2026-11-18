@@ -501,3 +501,28 @@ export function generateMap(data,input) {
     victory:victory === 'rei' ? {mode:'rei',cell:center,rounds:5} : victory === 'pontos' ? {mode:'pontos',limit:20} : undefined,
     width,height,slots:teams,islands,tiles,units,structures }
 }
+
+// Troca a numeração das equipes de um mapa gerado: order[i] é a equipe atual que passa a ser a i+1.
+// Usado para pôr os jogadores humanos primeiro (o motor trata as primeiras equipes como humanas).
+export function reorderSides(board,order) {
+  const count = board.slots
+  if (!Array.isArray(order) || order.length !== count || new Set(order).size !== count ||
+      !order.every(side=>Number.isInteger(side) && side >= 1 && side <= count)) throw Error('Ordem de equipes inválida.')
+  const sideOf = side => side ? order.indexOf(side)+1 : 0
+  return {...board,units:board.units.map(unit=>({...unit,side:sideOf(unit.side)})),
+    structures:board.structures.map(tile=>({...tile,side:sideOf(tile.side ?? 0)}))}
+}
+
+// Equipes escolhidas no gerador: controle (humano ou nível da IA) e time de cada equipe (0 = sozinha).
+// Devolve a ordem com os humanos primeiro e, nessa nova numeração, os níveis da IA e as alianças.
+export function teamPlan(setup) {
+  const humans = setup.filter(team=>team.control === 'human').length
+  const order = [...setup.keys()].sort((a,b)=>(setup[a].control === 'human' ? 0 : 1) - (setup[b].control === 'human' ? 0 : 1) || a-b)
+    .map(index=>index+1)
+  const teams = order.map(side=>setup[side-1])
+  const levels = teams.map(team=>team.control === 'human' ? 1 : Math.min(2,Math.max(0,Number(team.control) || 0)))
+  const alliances = teams.map((team,index)=>team.group ? teams.flatMap((other,j)=>j !== index && other.group === team.group ? [j+1] : []) : [])
+  // Número do time de cada equipe (para a sala): sozinha ganha um número só dela.
+  const groups = teams.map((team,index)=>team.group ? team.group : 100+index)
+  return {humans,order,levels,alliances,groups}
+}

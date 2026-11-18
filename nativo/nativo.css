@@ -269,7 +269,18 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
 .chat-log b { color:#f3d994; }
 .lobby-chat form, .match-chat form { display:flex; gap:.5rem; }
 .lobby-chat input, .match-chat input { flex:1; min-width:0; }
-.match-chat { max-width:700px; margin:.6rem auto; }
+/* Chat da partida: janela flutuante meio transparente por cima do jogo, arrastável pelo título (sem rolar a página). */
+.match-chat { position:fixed; z-index:30; left:16px; bottom:16px; width:min(320px,calc(100vw - 32px)); margin:0; gap:.3rem;
+  padding:.35rem .5rem .5rem; background:rgba(16,22,18,.62); border:1px solid rgba(120,140,120,.45); border-radius:8px;
+  box-shadow:0 4px 18px rgba(0,0,0,.45); backdrop-filter:blur(2px); opacity:.82; transition:opacity .15s; }
+.match-chat:hover, .match-chat:focus-within { opacity:1; background:rgba(16,22,18,.86); }
+.match-chat .chat-handle { display:flex; align-items:center; gap:.4rem; cursor:move; user-select:none; touch-action:none; font-size:.85rem; color:#cfd8cc; }
+.match-chat .chat-title { flex:1; font-weight:bold; }
+.match-chat .chat-unread { background:#c9472f; color:#fff; border-radius:9px; padding:0 .45rem; font-size:.75rem; }
+.match-chat .chat-toggle { padding:0 .55rem; min-height:0; line-height:1.4; }
+.match-chat .chat-log { max-height:8.5rem; background:rgba(10,14,11,.55); }
+.match-chat.collapsed { width:auto; min-width:150px; }
+.match-chat.collapsed .chat-log, .match-chat.collapsed form { display:none; }
 .chat-log:empty::before { content:'—'; color:#6f7c71; }
 
 .profile-stats { display:grid; grid-template-columns:max-content 1fr; gap:.2rem .9rem; margin:.6rem 0 0; font-size:.92rem; }
@@ -291,7 +302,6 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
   .lobby-team-row span { min-width:0; flex:1 1 100%; }
   .shortcut-list, .profile-stats { grid-template-columns:1fr; }
   .shortcut-list dd, .profile-stats dd { margin-bottom:.35rem; }
-  .match-chat { margin:.4rem 8px; }
   dialog.settings { width:calc(100vw - 16px); max-width:none; margin:8px auto; }
 }
 
@@ -303,3 +313,13 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
 .resume-credits .field { display:flex; justify-content:space-between; gap:12px; align-items:center; margin:6px 0; }
 .resume-credits input { width:110px; }
 #resume-file .settings-actions { flex-wrap:wrap; }
+
+/* Partidas em rede salvas */
+.network-saves .network-save { display:flex; align-items:center; gap:.4rem; margin:.35rem 0; padding:.35rem .5rem; background:#18211b; border:1px solid #3c4a3a; border-radius:6px; }
+.network-saves .network-save span { flex:1; min-width:0; font-size:.9rem; }
+
+/* Gerador: quem comanda cada equipe */
+.generator-sides .generator-side { display:grid; grid-template-columns:auto 1fr 1fr; gap:.4rem; align-items:center; margin:.3rem 0; }
+.generator-sides .generator-side .swatch { display:inline-block; width:.9rem; height:.9rem; border-radius:50%; margin-right:.35rem; vertical-align:middle; border:1px solid #101812; }
+.generator-presets { display:flex; flex-wrap:wrap; gap:.4rem; margin:.3rem 0 .5rem; }
+.generator-setup-summary { background:#18211b; border:1px solid #3c4a3a; border-radius:6px; padding:.4rem .6rem; font-size:.9rem; }

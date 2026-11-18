@@ -4,7 +4,8 @@ import { colorize, frame, loadImages, play, terrainArt, terrainVariant } from '.
 import { campaignProgress, campaignTransport, saveVictory } from './campanha.js'
 import { coopEligible } from './cooperativo.js'
 import { deleteProfileStorage, loadProfile, maxNameLength, profilePhoto, saveProfile } from './perfil-jogador.js'
-import { clearSavedMatch, deleteSavesStorage, loadSavedMatch, saveMatch } from './salvamento.js'
+import { clearNetworkMatch, clearSavedMatch, deleteSavesStorage, loadNetworkMatch, loadSavedMatch, saveMatch,
+  saveNetworkMatch } from './salvamento.js'
 import { loadStats, recordMatch, statsSummary } from './estatisticas.js'
 import { replayTransport, validReplay } from './replay.js'
 import { describeSaved, restoreMatch } from './retomar.js'
@@ -14,7 +15,7 @@ let edition = {versao:'?'}
 import { matchAudio } from './audio.js'
 import { scenarioMatch, scenarioSlots } from './partida.js'
 import { defaultAiTime, validAiTime } from './ia.js'
-import { generateMap, generatedTitle, mapRecipe, maxSide, minSide, minimumSize, terrainWeights } from './procedural.js'
+import { generateMap, generatedTitle, mapRecipe, maxSide, minSide, minimumSize, reorderSides, teamPlan, terrainWeights } from './procedural.js'
 import { language, loadLanguage, setLanguage, t, translatePage } from './idioma.js'
 
 const $ = id => document.getElementById(id)
@@ -388,7 +389,7 @@ function matchUpdates(room,slot,receive,disconnect) {
 async function start(data,room,slot,side,invites = []) {
   $('scenario-view').hidden = true
   $('campaign-view').hidden = true
-  const {generated,coop,resumed} = await (await request('lobby/' + room + '/' + slot)).json()
+  const {generated,coop,resumed,sideOrder} = await (await request('lobby/' + room + '/' + slot)).json()
   // Nome e foto do perfil para os outros jogadores verem na sala e na partida.
   const profile = await loadProfile()
   await request('profile/' + room + '/' + slot,{method:'POST',
@@ -423,11 +424,21 @@ async function start(data,room,slot,side,invites = []) {
     })
   }
   const board = resumed ? await (await request('tabuleiro/' + room + '/' + slot)).json() :
-    generated ? generateMap(data,generated) : data.maps[maps[map][0]]
+    generated ? (sideOrder ? reorderSides(generateMap(data,generated),sideOrder) : generateMap(data,generated)) : data.maps[maps[map][0]]
   const mine = you ?? side
+  // Salvamento automático deste lado: a última visão recebida fica no navegador (retomável se o anfitrião cair).
+  let savedVersion = -1
+  const keepNetworkMatch = state => {
+    if (state.winner) { if (savedVersion !== -2) { savedVersion = -2; void clearNetworkMatch() } return }
+    if (state.version === savedVersion) return
+    savedVersion = state.version
+    const {notices,chat,...estado} = state
+    void saveNetworkMatch({estado,mapa:board,sala:room,equipe:mine})
+  }
   return showMatch(data,board,mine,{
     listen:(receive,disconnect) => matchUpdates(room,slot,state => {
       if (state.winner && mine > 0) count(state.winner === mine || Boolean(state.alliances?.[mine-1]?.includes(state.winner)))
+      keepNetworkMatch(state)
       receive(state)
     },disconnect),
     fastAI,
@@ -617,7 +628,7 @@ function recordVictory(id,difficulty) {
 
 async function playLocal(data,board,mode,difficulty,colors,back,
   humans = mode === 'spectator' ? 0 : mode === 'hotseat' ? colors.length : 1, coalitions = Boolean(board.coalitions),
-  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume, fog = false} = {}) {
+  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume, fog = false, alliances} = {}) {
   // Vitória contra a IA num mapa do jogo libera o multiplayer e o modo assistir nesse mapa.
   const practice = developerMode() && mode !== 'spectator'
   const unlock = mapId && mode === 'ai' && !practice ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
@@ -635,7 +646,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   const setup = scenarioMatch(board,colors,humans,coalitions)
   const profile = humans > 0 ? await loadProfile() : null
   const teams = setup.colors.map((color,index)=>({name:data.aiSides?.[index+1]?.label ?? t('Equipe {n}',{n:index+1}),color,
-    allies:setup.alliances[index]?.map(side=>side-1).join(','),
+    allies:(alliances ?? setup.alliances)[index]?.map(side=>side-1).join(','),
     avatar:avatarsFor(index),
     // A equipe 1 (o jogador deste computador) aparece com o nome e a foto do perfil.
     ...(index === 0 && profile ? {name:profile.name || t('Equipe {n}',{n:1}),photo:profile.avatar || undefined} : {})}))
@@ -652,7 +663,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
 }
 
 function setupGenerator(data,choose) {
-  const dialog = $('map-generator'), teamCount = $('generator-teams'), computerCount = $('generator-ai')
+  const dialog = $('map-generator'), teamCount = $('generator-teams')
   const use = $('generator-use'), reroll = $('generator-reroll'), preview = $('generator-preview')
   const islands = $('generator-islands'), veins = $('generator-veins')
   const widthInput = $('generator-width'), heightInput = $('generator-height')
@@ -666,23 +677,69 @@ function setupGenerator(data,choose) {
     input.value = output.value = value
     input.oninput = () => {
       output.value = input.value
-      use.disabled = true
+      use.disabled = stale = true
       $('generator-status').textContent = t('Gere outra prévia para aplicar os pesos.')
     }
     label.append(t(title),input,output)
     $('generator-weights').append(label)
     return [name,input]
   })
+  // Quem comanda cada equipe: Jogador (humano) ou IA Fácil/Normal/Difícil, e o time (0 = sozinha, 1… = Time A…).
+  let stale = true
+  const sides = Array.from({length:9},(_,index)=>({control:index ? '1' : 'human',group:0}))
+  const controls = [['human','Jogador'],['0','IA Fácil'],['1','IA Normal'],['2','IA Difícil']]
+  const groupName = group => group ? t('Time {x}',{x:'ABCDEFGHI'[group-1]}) : t('Sozinha')
+  function summary() {
+    const count = Number(teamCount.value), list = sides.slice(0,count)
+    const humans = list.filter(team=>team.control === 'human').length
+    const groups = new Set(list.map((team,index)=>team.group || 'solo'+index))
+    $('generator-sides-summary').textContent = groups.size < 2 ? t('Todas as equipes estão no mesmo time: ponha pelo menos uma em outro time.') :
+      [humans === 0 ? t('Só IAs: a partida fica para assistir.') : humans === 1 ? t('1 jogador contra a IA.') :
+        t('{n} jogadores (mesmo dispositivo ou sala multiplayer).',{n:humans}),
+      groups.size === count ? t('Todos contra todos.') : t('{n} lados na disputa.',{n:groups.size})].join(' ')
+    use.disabled = stale || groups.size < 2
+    return groups.size >= 2
+  }
   function updateTeams() {
-    const previous = Number(computerCount.value || 1)
-    computerCount.replaceChildren(...Array.from({length:Number(teamCount.value)+1},(_,i)=>new Option(i,i)))
-    computerCount.value = Math.min(previous,Number(teamCount.value))
+    const count = Number(teamCount.value)
+    $('generator-side-rows').replaceChildren(...sides.slice(0,count).map((team,index)=>{
+      const row = document.createElement('div')
+      row.className = 'generator-side'
+      const name = document.createElement('span')
+      const swatch = document.createElement('span')
+      swatch.className = 'swatch'
+      swatch.style.background = '#'+palette[index][1].slice(2)
+      name.append(swatch,t('Equipe {n}',{n:index+1}))
+      const control = document.createElement('select')
+      control.setAttribute('aria-label',t('Quem comanda a equipe {n}',{n:index+1}))
+      control.replaceChildren(...controls.map(([value,label])=>new Option(t(label),value)))
+      control.value = team.control
+      control.onchange = () => { team.control = control.value; summary() }
+      const group = document.createElement('select')
+      group.setAttribute('aria-label',t('Time da equipe {n}',{n:index+1}))
+      group.replaceChildren(...Array.from({length:count},(_,value)=>new Option(groupName(value),String(value))))
+      group.value = String(Math.min(team.group,count-1))
+      team.group = Number(group.value)
+      group.onchange = () => { team.group = Number(group.value); summary() }
+      row.append(name,control,group)
+      return row
+    }))
+    summary()
+  }
+  for (const button of document.querySelectorAll('[data-side-preset]')) button.onclick = () => {
+    const count = Number(teamCount.value)
+    sides.slice(0,count).forEach((team,index)=>{
+      if (button.dataset.sidePreset === 'ffa') team.group = 0
+      // Jogadores no Time A, IAs no Time B.
+      else team.group = team.control === 'human' ? 1 : 2
+    })
+    updateTeams()
   }
   let board, recipe, generation = 0
   const images = {}
   async function regenerate() {
     const job = ++generation
-    reroll.disabled = use.disabled = true
+    reroll.disabled = use.disabled = stale = true
     const status = $('generator-status')
     status.textContent = t('Gerando prévia…')
     try {
@@ -714,10 +771,11 @@ function setupGenerator(data,choose) {
       board = next
       recipe = settings
       status.textContent = t('{w} × {h} · {n} bases',{w:board.width,h:board.height,n:board.slots})
-      use.disabled = Number(teamCount.value) !== recipe.teams ||
+      stale = Number(teamCount.value) !== recipe.teams ||
         widthInput.valueAsNumber !== recipe.width || heightInput.valueAsNumber !== recipe.height ||
         islands.checked !== recipe.islands || Number(veins.value) !== recipe.veins || $('generator-victory').value !== recipe.victory ||
         weights.some(([name,input])=>input.valueAsNumber !== recipe.weights[name])
+      summary()
     } catch (error) { if (job === generation) status.textContent = t(error.message) }
     finally { if (job === generation) reroll.disabled = false }
   }
@@ -756,7 +814,8 @@ function setupGenerator(data,choose) {
     if (!board) void regenerate()
   }
   use.onclick = () => {
-    choose(board,recipe,board.slots-Number(computerCount.value))
+    if (!summary()) return
+    choose(board,recipe,sides.slice(0,board.slots).map(team=>({...team})))
     dialog.close()
   }
 }
@@ -1057,6 +1116,17 @@ async function openSkirmish(data) {
       }
       return label
     }))
+    // Mapa procedural com as equipes definidas no gerador: quem comanda cada uma e os times já estão escolhidos.
+    const setup = picked.setup
+    $('generator-setup-summary').hidden = !setup
+    if (setup) {
+      const names = {human:'Jogador',0:'IA Fácil',1:'IA Normal',2:'IA Difícil'}
+      $('generator-setup-summary').textContent = t('Equipes do gerador:') + ' ' + setup.map((team,index)=>
+        t('Equipe {n}',{n:index+1}) + ' ' + t(names[team.control]) +
+        (team.group ? ' (' + t('Time {x}',{x:'ABCDEFGHI'[team.group-1]}) + ')' : '')).join(' · ')
+      $('local-humans').hidden = $('local-difficulty').hidden = true
+      colors.hidden = true
+    }
     drawPreview()
   }
 
@@ -1081,6 +1151,65 @@ async function openSkirmish(data) {
       await showMatch(data,replay.board,0,replayTransport(data,replay,{speed:() => fastAI() ? 3 : 1}))
     } catch (error) { $('import-status').textContent = t(error.message) }
   }
+  // Partidas em rede salvas automaticamente: as do anfitrião (neste computador, completas) e a última visão
+  // recebida por este navegador (útil quando quem hospedava a sala caiu).
+  async function listNetworkSaves() {
+    const box = $('network-saves'), rows = []
+    const when = time => new Date(time).toLocaleString(language() === 'en' ? 'en-US' : 'pt-BR',{dateStyle:'short',timeStyle:'short'})
+    const row = (text,open,remove) => {
+      const item = document.createElement('div')
+      item.className = 'network-save'
+      const label = Object.assign(document.createElement('span'),{textContent:text})
+      const go = Object.assign(document.createElement('button'),{type:'button',textContent:t('Continuar')})
+      go.onclick = () => open().catch(error => { $('import-status').textContent = t(error.message) })
+      const download = Object.assign(document.createElement('button'),{type:'button',textContent:t('Baixar'),
+        title:t('Baixar o arquivo da partida (.json)')})
+      download.onclick = () => open(true).catch(error => { $('import-status').textContent = t(error.message) })
+      const erase = Object.assign(document.createElement('button'),{type:'button',textContent:'✕',title:t('Apagar este salvamento')})
+      erase.setAttribute('aria-label',t('Apagar este salvamento'))
+      erase.onclick = async () => { if (confirm(t('Apagar este salvamento?'))) { await remove(); void listNetworkSaves() } }
+      item.append(label,go,download,erase)
+      return item
+    }
+    const fileName = info => 'partida-' + (info.title || 'rede').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-rodada-' + info.round + '.json'
+    const giveFile = (saved,info) => {
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(saved)],{type:'application/json'}))
+      link.download = fileName(info)
+      link.click()
+      setTimeout(()=>URL.revokeObjectURL(link.href),5000)
+    }
+    if (location.hostname === '127.0.0.1') {
+      try {
+        const saves = await (await request('salvas')).json()
+        for (const entry of saves) {
+          // Nomes dos jogadores (as equipes da IA aparecem só como "+ IA").
+          const people = entry.teams.filter(name=>name && name !== 'IA')
+          const names = people.join(' & ') + (entry.teams.includes('IA') ? ' + ' + t('IA') : '')
+          rows.push(row([t(entry.title || 'Partida em rede'),t('Rodada {n}',{n:entry.round ?? 1}),names,when(entry.salvoEm)].filter(Boolean).join(' · '),
+            async download => {
+              const saved = await (await request('salva/' + entry.id)).json()
+              const info = describeSaved(data.rules,saved)
+              return download ? giveFile(saved,info) : openResumeDialog(saved,info,entry.id)
+            },
+            () => request('apagar-salva/' + entry.id,{method:'POST'})))
+        }
+      } catch {}
+    }
+    const mine = await loadNetworkMatch()
+    if (mine?.estado && mine?.mapa) {
+      try {
+        const info = describeSaved(data.rules,mine)
+        rows.push(row([t('Última partida em rede deste navegador'),t(info.title || ''),t('Rodada {n}',{n:info.round}),
+          when(mine.salvoEm)].filter(Boolean).join(' · '),
+          async download => download ? giveFile({estado:mine.estado,mapa:mine.mapa},info) : openResumeDialog(mine,info),
+          () => clearNetworkMatch()))
+      } catch {}
+    }
+    box.replaceChildren(...rows)
+    $('network-saves-section').hidden = !rows.length
+  }
+  void listNetworkSaves()
   // Continuar uma partida salva em arquivo (ex.: guardada da visão de espectador quando a conexão caiu).
   $('open-saved-file').onchange = async event => {
     const file = event.target.files[0]
@@ -1092,13 +1221,14 @@ async function openSkirmish(data) {
       openResumeDialog(saved,describeSaved(data.rules,saved))
     } catch (error) { $('import-status').textContent = t(error instanceof SyntaxError ? 'Este arquivo não é uma partida salva do Battalion.' : error.message) }
   }
-  function openResumeDialog(saved,info) {
+  function openResumeDialog(saved,info,savedId) {
     const dialog = $('resume-file'), side = $('resume-file-side'), humansSelect = $('resume-file-humans')
     const colorName = color => t(palette.find(([,value])=>value === color)?.[0] ?? '')
     const label = team => [t('Equipe {n}',{n:team.side}),team.name,colorName(team.color)].filter(Boolean).join(' · ')
     $('resume-file-info').textContent = [t(info.title || 'Mapa sem nome'),`${info.width} × ${info.height}`,
       t('Rodada {n}',{n:info.round}),t('vez da equipe {n}',{n:info.turn})].join(' · ')
     side.replaceChildren(...info.teams.map(team=>new Option(label(team) + ' · ' + t('{n} unidades',{n:team.units}),String(team.side))))
+    if (Number.isInteger(saved.equipe) && saved.equipe >= 1 && saved.equipe <= info.teams.length) side.value = String(saved.equipe)
     const credits = info.teams.map(team => {
       const row = document.createElement('label')
       row.className = 'field'
@@ -1112,8 +1242,12 @@ async function openSkirmish(data) {
       return {row,input}
     })
     $('resume-file-credits').replaceChildren(...credits.map(item=>item.row))
+    // Salvamento completo (do anfitrião) já traz o dinheiro de cada máquina.
+    dialog.querySelector('.resume-credits').hidden = info.credited
     humansSelect.replaceChildren(...info.teams.slice(1).map((_,index)=>new Option(String(index+2),String(index+2))))
-    humansSelect.value = String(info.teams.length)
+    // Quantos humanos: as equipes que não eram da IA no salvamento (no mínimo 2).
+    const people = info.teams.filter(team=>team.name && team.name !== 'IA').length
+    humansSelect.value = String(Math.min(info.teams.length,Math.max(2,people)))
     $('resume-file-humans-row').hidden = info.teams.length <= 2
     $('resume-file-status').textContent = ''
     for (const button of dialog.querySelectorAll('[data-resume-mode]')) button.onclick = async () => {
@@ -1121,7 +1255,7 @@ async function openSkirmish(data) {
       const how = button.dataset.resumeMode
       try {
         if (how === 'lan') {
-          const settings = {resume:{file:saved,...options},humans:Number(humansSelect.value),
+          const settings = {resume:savedId ? {saved:savedId,...options} : {file:saved,...options},humans:Number(humansSelect.value),
             difficulty:Number(difficulty.value),aiTime:storedAiTime()}
           const {room,slot,invites} = await (await request('create',{method:'POST',body:JSON.stringify(settings)})).json()
           dialog.close()
@@ -1159,27 +1293,46 @@ async function openSkirmish(data) {
       render()
     } catch (error) { $('import-status').textContent = t(error.message) }
   }
-  setupGenerator(data,(board,recipe,count)=>{
+  setupGenerator(data,(board,recipe,setup)=>{
     generated = recipe
     customMaps = customMaps.filter(entry=>entry.kind !== 'procedural')
-    picked = {id:'procedural',board,kind:'procedural'}
+    picked = {id:'procedural',board,kind:'procedural',setup}
     customMaps.unshift(picked)
+    const count = setup.filter(team=>team.control === 'human').length
     mode.value = count === 0 ? 'spectator' : count === 1 ? 'ai' : mode.value === 'lan' ? 'lan' : 'hotseat'
     render()
-    if (count >= 2) humans.value = String(count)
-    showDifficulty()
   })
   $('scenario-view').hidden = false
   render()
   if (query.has('gerar')) $('open-generator').click()
   if (query.get('mapas') === 'personalizados') $('custom-heading').scrollIntoView({block:'start'})
 
+  // Mapa procedural com equipes do gerador: humanos primeiro, IA com o nível de cada equipe e os times como alianças.
+  async function playGeneratorSetup(entry,seconds,back) {
+    const plan = teamPlan(entry.setup)
+    const board = reorderSides(entry.board,plan.order)
+    const colorsOf = plan.order.map(side=>palette[side-1][1])
+    const fog = mode.value !== 'spectator' && $('scenario-fog').checked
+    if (mode.value === 'lan') {
+      if (plan.humans < 2) throw Error('Para a sala multiplayer, marque pelo menos 2 equipes como Jogador no gerador.')
+      const settings = {map:Object.keys(data.maps).length,humans:plan.humans,difficulty:1,aiTime:seconds,fog,
+        generated,sideOrder:plan.order,sideLevels:plan.levels,groups:plan.groups}
+      const {room,slot,invites} = await (await request('create',{method:'POST',body:JSON.stringify(settings)})).json()
+      sessionStorage.setItem('battalion-nativo-host-' + room,JSON.stringify({slot,invites}))
+      history.replaceState(null,'','/?host=' + room)
+      return start(data,room,slot,1,invites)
+    }
+    const how = plan.humans === 0 ? 'spectator' : plan.humans === 1 ? 'ai' : 'hotseat'
+    return playLocal(data,board,how,1,colorsOf,'/?partida='+modeNames[how],plan.humans,false,seconds,
+      {sideDifficulty:plan.levels,alliances:plan.alliances,fog})
+  }
   $('scenario-play').onclick = async () => {
     $('scenario-play').disabled = true
     try {
       const entry = picked, board = entry.board
       const seconds = storedAiTime()
       const back = '/?partida='+modeNames[mode.value]
+      if (entry.setup) return await playGeneratorSetup(entry,seconds,back)
       if (mode.value !== 'lan') {
         const teams = selectedColors.slice(0,slotsOf(entry))
         if (new Set(teams).size !== teams.length) throw Error('Escolha cores diferentes para as equipes.')

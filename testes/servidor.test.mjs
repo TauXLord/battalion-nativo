@@ -4,10 +4,14 @@ import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const port = 8799
 const origin = `http://127.0.0.1:${port}`
 let server
+const savesDir = mkdtempSync(join(tmpdir(),'battalion-salvas-'))
 const call = async (path,options = {}) => {
   const response = await fetch(origin + path,{cache:'no-store',...options})
   const text = await response.text()
@@ -17,14 +21,14 @@ const post = (path,body = '') => call(path,{method:'POST',body})
 
 before(async () => {
   server = spawn(process.execPath,['nativo/servidor.js'],{cwd:fileURLToPath(new URL('..',import.meta.url)),
-    env:{...process.env,BATTALION_NATIVE_PORT:String(port),BATTALION_RECONNECT_MS:'1000'},stdio:'ignore'})
+    env:{...process.env,BATTALION_NATIVE_PORT:String(port),BATTALION_RECONNECT_MS:'1000',BATTALION_SAVES_DIR:savesDir},stdio:'ignore'})
   for (let i=0; i<50; i++) {
     try { if ((await fetch(origin + '/launcher-status')).ok) return } catch {}
     await new Promise(resolve=>setTimeout(resolve,100))
   }
   throw Error('servidor não subiu')
 })
-after(() => server?.kill())
+after(() => { server?.kill(); rmSync(savesDir,{recursive:true,force:true}) })
 
 const newRoom = async (humans = 2,teams = 2) => (await post('/lan/create',JSON.stringify({map:7,humans,difficulty:0,aiTime:1,
   generated:{seed:3,width:24,height:24,teams}}))).json()
@@ -115,4 +119,32 @@ test('ações de sistema exigem o cabeçalho e a desinstalação só roda pelo e
   assert.equal((await call('/sistema/fechar')).status,403)
   const refused = await call('/sistema/desinstalar',{method:'POST',headers:{'X-Battalion-Acao':'1'}})
   assert.equal(refused.status,409)
+})
+
+test('equipes do gerador na sala e salvamento automático retomável',{timeout:30000},async () => {
+  // 3 equipes: a 2 e a 3 são jogadores (vêm primeiro), a 1 é IA difícil; jogadores no mesmo time.
+  const settings = {map:7,humans:2,difficulty:1,aiTime:1,generated:{seed:5,width:24,height:24,teams:3},
+    sideOrder:[2,3,1],sideLevels:[1,1,2],groups:[1,1,102]}
+  const {room,slot:host} = (await post('/lan/create',JSON.stringify(settings))).json()
+  const lobby = (await call('/lan/lobby/' + room)).json()
+  assert.deepEqual(lobby.sideOrder,[2,3,1])
+  assert.deepEqual(lobby.teams.list,[1,1,2])
+  const guest = (await post('/lan/join/' + room)).text
+  await post(`/lan/prefs/${room}/${host}`,'ff00ff00,7,1')
+  await post(`/lan/prefs/${room}/${guest}`,'ff0000ff,7,1')
+  assert.equal((await post(`/lan/start/${room}/${host}`)).status,200)
+  const state = (await call(`/lan/update/${room}/${host}/-1`)).json()
+  assert.deepEqual(state.alliances,[[2],[1],[]])
+  let saves = []
+  for (let i=0; i<30 && !saves.length; i++) {
+    await new Promise(resolve=>setTimeout(resolve,200))
+    saves = (await call('/lan/salvas')).json()
+  }
+  assert.equal(saves.length,1,'a partida foi salva sozinha')
+  const saved = (await call('/lan/salva/' + saves[0].id)).json()
+  assert.ok(saved.estado.units.some(unit=>unit.credits >= 0),'o salvamento guarda o dinheiro das máquinas')
+  const resumed = await post('/lan/create',JSON.stringify({resume:{saved:saves[0].id,mine:1},humans:2,difficulty:1,aiTime:1}))
+  assert.equal(resumed.status,200)
+  assert.equal((await post('/lan/apagar-salva/' + saves[0].id)).status,204)
+  assert.equal((await call('/lan/salvas')).json().length,0)
 })

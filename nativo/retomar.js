@@ -37,7 +37,9 @@ export function describeSaved(rules,file) {
     units:state.units.filter(unit=>unit.side === index+1).length,
     machines:state.units.filter(unit=>unit.side === index+1 && has(rules.units[unit.name],'Constructor')).length,
   }))
-  return {teams,title:typeof map.title === 'string' ? map.title : '',round:state.round ?? 1,turn:state.turn,
+  // Salvamento completo (do anfitrião) já tem o dinheiro das máquinas; o da visão de espectador não.
+  const credited = state.units.every(unit=>!has(rules.units[unit.name],'Constructor') || Number.isFinite(unit.credits))
+  return {teams,credited,title:typeof map.title === 'string' ? map.title : '',round:state.round ?? 1,turn:state.turn,
     width:map.width,height:map.height}
 }
 
@@ -84,6 +86,8 @@ export function restoreMatch(rules,file,{mine = 1,credits = []} = {}) {
   if (saved.victory?.mode === 'rei' && integer(saved.victory.cell,0,map.width*map.height-1)) {
     state.victory = {...saved.victory,holder:sideOf(saved.victory.holder ?? 0)}
   } else if (saved.victory?.mode === 'pontos') state.victory = {mode:'pontos',limit:saved.victory.limit ?? 20}
+  // Neblina de guerra: só o salvamento completo traz a configuração (a visão de espectador traz só as casas vistas).
+  if (saved.fog && !Array.isArray(saved.fog) && Number.isInteger(saved.fog.width)) state.fog = saved.fog
   const board = {...map,slots:count,coalitions:undefined,
     units:(map.units ?? []).filter(unit=>integer(unit.side,1,count)).map(unit=>({...unit,side:sideOf(unit.side)})),
     structures:(map.structures ?? []).map(tile=>({...tile,side:sideOf(tile.side ?? 0)}))}

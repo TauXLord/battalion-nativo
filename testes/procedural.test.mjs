@@ -2,7 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { generateMap, mapRecipe } from '../nativo/procedural.js'
+import { generateMap, mapRecipe, reorderSides, teamPlan } from '../nativo/procedural.js'
 
 const data = JSON.parse(readFileSync(new URL('../nativo/dados.json',import.meta.url)))
 const wet = name => ['Sea','Reef','Shore','Archipelago','Rock Formation','High Bridge'].includes(name)
@@ -45,4 +45,22 @@ test('falésias: toda água encostada na terra é mar (com borda) ou praia',() =
 test('mesma semente gera o mesmo mapa',() => {
   const recipe = mapRecipe({seed:42,width:32,height:32,teams:3})
   assert.deepEqual(generateMap(data,recipe),generateMap(data,recipe))
+})
+
+test('equipes do gerador: humanos primeiro, níveis da IA e times viram alianças',() => {
+  const plan = teamPlan([{control:'2',group:0},{control:'human',group:1},{control:'0',group:2},{control:'human',group:1}])
+  assert.equal(plan.humans,2)
+  assert.deepEqual(plan.order,[2,4,1,3])
+  assert.deepEqual(plan.levels,[1,1,2,0])
+  assert.deepEqual(plan.alliances,[[2],[1],[],[]])
+  const free = teamPlan([{control:'human',group:0},{control:'1',group:0},{control:'1',group:0}])
+  assert.deepEqual(free.alliances,[[],[],[]],'sozinhas: todos contra todos')
+})
+
+test('reorderSides troca a numeração das equipes do mapa',() => {
+  const board = {slots:3,units:[{side:1,cell:0},{side:3,cell:5}],structures:[{side:0,cell:2},{side:2,cell:4}]}
+  const moved = reorderSides(board,[3,1,2])
+  assert.deepEqual(moved.units.map(unit=>unit.side),[2,1])
+  assert.deepEqual(moved.structures.map(tile=>tile.side),[0,3])
+  assert.throws(() => reorderSides(board,[1,1,2]))
 })
