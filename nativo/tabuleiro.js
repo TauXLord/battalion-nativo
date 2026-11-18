@@ -765,11 +765,15 @@ export async function play(data, base, side, transport) {
     return !coop || (coop.owners[unit.id] ?? coop.you) === coop.you
   }
 
+  // Telas de toque: menu da unidade e botão "!" 50% maiores, para o dedo acertar.
+  const touchScale = globalThis.matchMedia?.('(pointer: coarse)').matches ? 1.5 : 1
+
   // Botão "!" que o Flash põe sobre a unidade selecionada; clicar nele abre o menu da unidade.
   function optionsButton(unit) {
     if (!unit || !mine(unit) || !canAct() || unit.fired || unit.disabled || openActions || building ||
         motion || strike || pending) return null
-    return {x:cellX(unit.cell)+(TILE-24)/2,y:cellY(unit.cell)-5,size:24}
+    const size = 24*touchScale
+    return {x:cellX(unit.cell)+(TILE-size)/2,y:cellY(unit.cell)-5*touchScale,size}
   }
 
   function overOptions(button,[x,y]) {
@@ -834,13 +838,13 @@ export async function play(data, base, side, transport) {
         state.structures.some(tile=>tile.cell === unit.cell && !allied(state,side,tile.side))) {
       add('capture',true,'Capturar',t('Começa a capturar esta propriedade.'))
     }
-    const buttons = result.length
-    const width = buttons * 36
+    const buttons = result.length, s = touchScale
+    const width = buttons * 36 * s
     const x = Math.max(4,Math.min(view.width - width - 14,(cellX(unit.cell) - panX + TILE / 2) * zoom - width / 2))
-    const y = Math.max(10,Math.min(view.height - 33,(cellY(unit.cell) - panY) * zoom - 14))
-    const placed = result.map((item,index) => ({...item,x:x+index*36,y,w:36,h:29}))
+    const y = Math.max(10*s,Math.min(view.height - 33*s,(cellY(unit.cell) - panY) * zoom - 14*s))
+    const placed = result.map((item,index) => ({...item,x:x+index*36*s,y,w:36*s,h:29*s}))
     placed.push({type:'cancel',enabled:true,title:t('Cancelar'),text:t('Cancela a seleção da unidade.'),
-      x:x+width-9,y:y-7,w:18,h:15,width,menuX:x})
+      x:x+width-9*s,y:y-7*s,w:18*s,h:15*s,width,menuX:x})
     return placed
   }
 
@@ -854,7 +858,7 @@ export async function play(data, base, side, transport) {
       ctx.strokeStyle = '#000'
       ctx.lineWidth = 2
       ctx.beginPath()
-      ctx.roundRect(close.menuX-3,close.y+7-3,close.width+6,35,6)
+      ctx.roundRect(close.menuX-3*touchScale,close.y+4*touchScale,close.width+6*touchScale,35*touchScale,6)
       ctx.fill()
       ctx.stroke()
     }
@@ -869,11 +873,34 @@ export async function play(data, base, side, transport) {
       if (type === 'capture') {
         frame(ctx,images[asset],0,x+4,y+1,width,height,28,27)
         if (over) {ctx.strokeStyle = '#4fd34a'; ctx.strokeRect(x+3,y+1,30,27)}
-      } else frame(ctx,images[asset],index,x,y,width,height)
+      } else frame(ctx,images[asset],index,x,y,width,height,w,h)
     }
     ctx.globalAlpha = 1
     if (hovered) tooltipBox(hovered.title,hovered.text,hovered.x+hovered.w/2,hovered.y+hovered.h+6)
     ctx.restore()
+  }
+
+  // Neblina de guerra: escurece as casas fora da visão da sua equipe (o estado já vem sem os inimigos de lá).
+  let fogCache = {version:-1,cells:null}
+  function paintFog(right,bottom) {
+    if (!state.fog) return
+    if (fogCache.version !== state.version) fogCache = {version:state.version,cells:new Set(state.fog)}
+    const left = Math.max(0,Math.floor(panX/TILE)), top = Math.max(0,Math.floor(panY/TILE))
+    const last = Math.min(map.width-1,Math.ceil(right/TILE)), lowest = Math.min(map.height-1,Math.ceil(bottom/TILE))
+    ctx.fillStyle = 'rgba(8,12,10,.5)'
+    for (let row=top; row<=lowest; row++) for (let col=left; col<=last; col++) {
+      if (!fogCache.cells.has(row*map.width+col)) ctx.fillRect(col*TILE,row*TILE,TILE,TILE)
+    }
+  }
+  // Modos de vitória de teste: progresso na linha de status.
+  function victoryProgress() {
+    const victory = state?.victory
+    if (!victory || state.winner) return ''
+    const name = team => t(state.teams?.[team-1]?.name) ?? t('Equipe {n}',{n:team})
+    if (victory.mode === 'rei') return victory.holder ?
+      t('Refinaria central: {name} há {n} de {total} rodadas',{name:name(victory.holder),n:victory.count,total:victory.rounds}) :
+      t('Segure a refinaria central por {total} rodadas para vencer',{total:victory.rounds})
+    return t('Rodada {n} de {total}: vence quem tiver mais pontos',{n:state.round,total:victory.limit})
   }
 
   // Modo desenvolvedor (só partidas locais): aviso fixo e, ao mirar um inimigo, o dano previsto e o revide.
@@ -1152,12 +1179,13 @@ export async function play(data, base, side, transport) {
       const facing = movementDirection(map.width,builder.cell,cell)
       unitFrame(preview,cellX(cell),cellY(cell),now,facing+'_idle',.5)
     }
+    paintFog(right,bottom)
     if (warmachine) paintDeployment(builder,moves)
     else directionBar.hidden = true
     const options = optionsButton(unit)
     if (options && images.unitOptionsButton) {
       const over = cursorPosition && overOptions(options,cursorPosition)
-      frame(ctx,images.unitOptionsButton,over ? (pointer?.buttons ? 3 : 2) : 1,options.x,options.y,24,24)
+      frame(ctx,images.unitOptionsButton,over ? (pointer?.buttons ? 3 : 2) : 1,options.x,options.y,24,24,options.size,options.size)
     }
     firing(now)
     const showResources = !state.dialog && !state.result && paintResourceGains(now,right,bottom)
@@ -1312,6 +1340,8 @@ export async function play(data, base, side, transport) {
   function updateStatus() {
     const notices = connectionNotices()
     statusText()
+    const progress = victoryProgress()
+    if (progress) status.textContent += ' · ' + progress
     if (notices) status.textContent = notices + ' · ' + status.textContent
   }
   function statusText() {
@@ -1357,7 +1387,14 @@ export async function play(data, base, side, transport) {
   }
   // Executa um botão do menu da unidade (clique ou atalho de teclado).
   function performCommand(unit,menu) {
-    if (!menu.enabled) cancelAction()
+    if (!menu.enabled) {
+      // Sem mouse (toque), a dica não aparece: o motivo vai para a linha de status.
+      error = menu.text
+      updateStatus()
+      setTimeout(()=>{ if (error === menu.text) { error = ''; updateStatus() } },2500)
+      cancelAction()
+      return
+    }
     else if (menu.type === 'build') chooseConstruction(unit)
     else if (transportOptions(rules,map,state,unit).includes(menu.type)) {
       void send({type:'transport',unit:unit.id,name:menu.type})

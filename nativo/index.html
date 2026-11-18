@@ -92,6 +92,7 @@
           <span>Pinte o terreno, posicione unidades e teste contra a IA.</span></a>
       </div>
     </section>
+    <p class="home-footer"><button type="button" id="open-tutorial">❓ Como jogar e novidades</button></p>
     <p class="home-footer" id="home-ai"></p>
   </main>
 
@@ -135,6 +136,7 @@
         <label id="local-humans" hidden>Jogadores humanos <select id="scenario-humans"></select></label>
         <label id="local-coalitions" class="check" hidden><input type="checkbox" id="scenario-coalitions" checked> Alianças por continente</label>
         <p id="coalition-teams" class="muted" hidden>Equipes 1 e 2 no oeste. Equipes 3 e 4 no leste.</p>
+        <label class="toggle" id="scenario-fog-row"><input type="checkbox" id="scenario-fog"><span>Neblina de guerra (cada equipe só vê o que suas unidades enxergam)</span></label>
         <label id="local-difficulty" hidden>Dificuldade da IA <select id="scenario-difficulty">
           <option value="0">Fácil · IA clássica</option><option value="1" selected>Normal · IA treinada</option>
           <option value="2">Difícil · IA treinada com dano extra</option>
@@ -170,6 +172,11 @@
                 <option value="2">Médios</option><option value="3">Muitos</option>
               </select></label>
               <label><span>Ilhas sem pontes</span><input id="generator-islands" type="checkbox"></label>
+              <label>Modo de vitória (teste) <select id="generator-victory">
+                <option value="padrao" selected>Padrão · destruir os inimigos</option>
+                <option value="rei">Segurar a refinaria central por 5 rodadas</option>
+                <option value="pontos">Mais pontos em 20 rodadas</option>
+              </select></label>
             </div>
             <fieldset id="generator-weights"><legend>Pesos do terreno</legend></fieldset>
           </section>
@@ -422,6 +429,21 @@
       <footer class="settings-actions">
         <button value="cancel">Cancelar</button>
         <button type="button" id="system-confirm-go" class="danger"></button>
+      </footer>
+    </form>
+  </dialog>
+  <dialog id="tutorial" class="settings tutorial" aria-labelledby="tutorial-title">
+    <form method="dialog">
+      <header class="settings-head">
+        <h2 id="tutorial-title">Como jogar</h2>
+        <button value="close" class="close-button" aria-label="Fechar">✕</button>
+      </header>
+      <p id="tutorial-step" class="muted"></p>
+      <h3 id="tutorial-heading"></h3>
+      <p id="tutorial-text"></p>
+      <footer class="settings-actions">
+        <button type="button" id="tutorial-prev">← Anterior</button>
+        <button type="button" id="tutorial-next" class="primary">Próximo →</button>
       </footer>
     </form>
   </dialog>

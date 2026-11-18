@@ -323,7 +323,7 @@ export function unitFor(rules, info, id) {
 export const scenarioStructure = name => name === 'Factory' ? 'Oil Refinery' : name
 
 export function createGame(rules, map, colors, {attackScale, incomeScale, campaign = false, credits = 0,
-  alliances = [], simultaneous = false} = {}) {
+  alliances = [], simultaneous = false, fog = false, victory = null} = {}) {
   const result = {
     version:0, turn:1, round:1, colors, winner:0, ore:{}, nextId:map.units.length + 1,
     structures:map.structures.map(tile => ({
@@ -336,6 +336,14 @@ export function createGame(rules, map, colors, {attackScale, incomeScale, campai
     teamCredits:campaign ? colors.map(()=>credits) : undefined,
     buildable:campaign ? colors.map(()=>null) : undefined,
   }
+  // Neblina de guerra (opcional): cada equipe só vê o que está no alcance de visão das suas unidades e prédios.
+  if (fog) result.fog = {width:map.width,
+    air:Object.keys(rules.units).filter(name=>rules.units[name].unitType === 'air'),
+    radar:Object.keys(rules.units).filter(name=>has(rules.units[name],'Radar'))}
+  // Modo de vitória de teste (mapas procedurais): segurar a refinaria central ou pontos ao fim de N rodadas.
+  if (victory?.mode === 'rei' && Number.isInteger(victory.cell)) {
+    result.victory = {mode:'rei',cell:victory.cell,rounds:victory.rounds ?? 5,holder:0,count:0}
+  } else if (victory?.mode === 'pontos') result.victory = {mode:'pontos',limit:victory.limit ?? 20}
   if (simultaneous && alliances.some(team=>team.length)) {
     result.activeSides = colors.flatMap((_,index)=>allied(result,1,index+1) ? [index+1] : [])
     result.turnEnded = []
@@ -348,8 +356,27 @@ export function createGame(rules, map, colors, {attackScale, incomeScale, campai
 
 export const visibleTo = (unit, side) => side === 0 || unit.side === side || !unit.cloaked
 
+// Alcance de visão na neblina: terrestres e navios 3 casas, aeronaves 4, Radar +2; prédios da equipe 2.
+const visionRange = (fog,unit) => (fog.air.includes(unit.name) ? 4 : 3) + (fog.radar.includes(unit.name) ? 2 : 0)
+export function fogVision(state,side) {
+  if (!state.fog || side === 0) return null
+  const {width} = state.fog
+  const seen = new Set()
+  const reveal = (cell,range) => {
+    const x = cell%width, y = Math.floor(cell/width)
+    for (let dy=-range; dy<=range; dy++) for (let dx=-range+Math.abs(dy); dx<=range-Math.abs(dy); dx++) {
+      if (x+dx >= 0 && x+dx < width && y+dy >= 0) seen.add((y+dy)*width+x+dx)
+    }
+  }
+  for (const unit of state.units) if (allied(state,unit.side,side)) reveal(unit.cell,visionRange(state.fog,unit))
+  for (const tile of state.structures) if (tile.side && allied(state,tile.side,side)) reveal(tile.cell,2)
+  return seen
+}
+
 export function snapshot(state, side) {
-  const units = state.units.filter(unit => allied(state,unit.side,side) || visibleTo(unit,side)).map(unit => {
+  const vision = fogVision(state,side)
+  const units = state.units.filter(unit => allied(state,unit.side,side) ||
+    visibleTo(unit,side) && (!vision || vision.has(unit.cell))).map(unit => {
     if (unit.side === side) return {...unit}
     const {credits: balance, ...publicUnit} = unit
     return publicUnit
@@ -367,8 +394,11 @@ export function snapshot(state, side) {
     if (hidden) event = {...event,combatants:event.combatants.filter(unit=>unit.id !== hidden.id),
       hits:event.hits.filter(hit=>hit.target !== hidden.id)}
   }
+  // Neblina: jogada inimiga cuja unidade terminou fora da visão não é mostrada (nem a animação).
+  if (vision && event && !allied(state,event.side,side) && event.unit !== undefined &&
+      !units.some(unit=>unit.id === event.unit)) event = null
   return {version,turn,round,colors,winner,ore,structures,units,last:event,attackScale,alliances,buildable,campaign,
-    activeSides,turnEnded,defeated,
+    activeSides,turnEnded,defeated,victory:state.victory,fog:vision ? [...vision] : undefined,
     teamCredits:state.teamCredits?.map((credits,index)=>index+1 === side ? credits : null),
     canUndo:canTakeTurn(state,side) && undo?.side === side}
 }
@@ -490,6 +520,34 @@ export function checkWinner(rules,map,state) {
   else if (alive.every(side=>allied(state,side,alive[0]))) state.winner = alive[0]
 }
 
+// Modos de vitória de teste, avaliados a cada rodada completa:
+// "rei": quem segurar a refinaria central por N rodadas seguidas vence;
+// "pontos": ao fim do limite de rodadas vence quem tiver mais pontos (valor das unidades + 500 por prédio).
+function roundVictory(rules,state) {
+  const victory = state.victory
+  if (!victory) return
+  if (victory.mode === 'rei') {
+    const holder = state.structures.find(tile=>tile.cell === victory.cell)?.side ?? 0
+    victory.count = holder && holder === victory.holder ? victory.count + 1 : holder ? 1 : 0
+    victory.holder = holder
+    if (holder && victory.count >= victory.rounds) state.winner = holder
+  } else if (victory.mode === 'pontos' && state.round > victory.limit) {
+    const scores = teamScores(rules,state)
+    victory.scores = scores
+    const best = Math.max(...scores)
+    state.winner = scores.indexOf(best) + 1
+  }
+}
+export function teamScores(rules,state) {
+  return state.colors.map((_,index)=>{
+    const side = index+1
+    if (state.defeated.includes(side)) return 0
+    const units = state.units.filter(unit=>unit.side === side)
+      .reduce((sum,unit)=>sum + rules.units[unit.name].cost * unit.hp / rules.units[unit.name].health,0)
+    return Math.round(units + 500*state.structures.filter(tile=>tile.side === side).length)
+  })
+}
+
 function advanceTurn(rules,map,state) {
   const previous = activeSides(state)
   const sides = state.colors.map((_,index)=>index+1)
@@ -500,7 +558,11 @@ function advanceTurn(rules,map,state) {
     const group = sides.filter(side=>(state.activeSides ? allied(state,next,side) : side === next) &&
       remaining(rules,map,state,side))
     if (!group.length) continue
-    if (next <= state.turn) state.round++
+    if (next <= state.turn) {
+      state.round++
+      roundVictory(rules,state)
+      if (state.winner) return []
+    }
     state.turn = next
     if (state.activeSides) {
       state.activeSides = group

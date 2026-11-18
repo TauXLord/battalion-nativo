@@ -258,10 +258,45 @@ function drawSprites(canvas,sprites) {
   })
 }
 
+// Tutorial curto: aparece na primeira visita à tela inicial e pelo botão "Como jogar e novidades".
+const tutorialSteps = [
+  ['Selecionar e mover','Clique numa unidade sua para ver para onde ela anda e quem ela alcança. Clique de novo nela, ou no botão "!" que aparece em cima, para abrir o menu da unidade (construir, extrair, reparar, transporte). Ícones apagados mostram, ao passar o mouse, por que não estão disponíveis.'],
+  ['Pontos fortes e fracos','Na tela de construção (Warmachine ou fábrica), passe o mouse sobre os ícones de blindagem e arma: aparece contra quem a unidade é forte e fraca. Soldados e o Spider Tank atravessam floresta e montanha sem perder movimento.'],
+  ['Atalhos de teclado','Espaço ou Enter encerra o turno, Tab passa para a próxima unidade, R repara, B constrói, E extrai, T chama transporte e U desfaz. Aperte H durante a partida para ver todos.'],
+  ['Continuar partida','O jogo salva sozinho a cada turno seu nas partidas contra a IA, no mesmo dispositivo e na campanha. Use "Continuar partida" no topo do menu para voltar de onde parou.'],
+  ['Multiplayer','Abra uma sala e passe o código (ex.: K7M-2QP) ou o convite. O líder monta os times e pode deixar os jogadores pedirem para formar time. Há chat, espectadores e, se alguém cair, ele tem 2 minutos para voltar antes de a IA assumir.'],
+  ['Campanha em dupla','Nas missões com pelo menos duas Warmachines, "Jogar em dupla pela rede" divide as unidades entre você e um amigo; o turno passa quando os dois encerram.'],
+  ['Perfil','Em Configurações → Perfil, escolha seu nome e uma foto (PNG, JPG ou GIF até 20 MB). Eles aparecem nas partidas, também para os outros jogadores, junto com suas estatísticas.'],
+  ['Replay, neblina e modos de teste','No fim de uma partida avulsa, "Salvar replay" guarda a partida para assistir depois. A partida avulsa tem neblina de guerra opcional, e o gerador de mapas tem modos de vitória de teste. O modo desenvolvedor (prévia de dano) fica nas Configurações e não conta progresso.'],
+]
+function setupTutorial(automatic) {
+  const dialog = $('tutorial')
+  let step = 0
+  const show = () => {
+    const [title,text] = tutorialSteps[step]
+    $('tutorial-step').textContent = t('Passo {n} de {total}',{n:step+1,total:tutorialSteps.length})
+    $('tutorial-heading').textContent = t(title)
+    $('tutorial-text').textContent = t(text)
+    $('tutorial-prev').disabled = step === 0
+    $('tutorial-next').textContent = t(step === tutorialSteps.length-1 ? 'Começar a jogar' : 'Próximo →')
+  }
+  $('tutorial-prev').onclick = () => { step = Math.max(0,step-1); show() }
+  $('tutorial-next').onclick = () => {
+    if (step === tutorialSteps.length-1) return dialog.close()
+    step++
+    show()
+  }
+  dialog.onclose = () => store('battalion-nativo-tutorial','visto')
+  const open = () => { step = 0; show(); dialog.showModal() }
+  $('open-tutorial').onclick = open
+  if (automatic && stored('battalion-nativo-tutorial') !== 'visto') open()
+}
+
 async function openHome(data) {
   $('home-view').hidden = false
   setupSettings(data)
   menuAudio(data)
+  setupTutorial(true)
   // Cartão "Continuar partida" com a última partida salva automaticamente.
   void loadSavedMatch().then(save => {
     if (!save) return
@@ -437,7 +472,7 @@ async function openSaved(data) {
     return playMission(data,{...save,mission,resume:save.engine})
   }
   return playLocal(data,save.board,save.mode,save.difficulty,save.colors,save.back,save.humans,save.coalitions,
-    save.seconds,{sideDifficulty:save.sideDifficulty,mapId:save.mapId,resume:save.engine})
+    save.seconds,{sideDifficulty:save.sideDifficulty,mapId:save.mapId,resume:save.engine,fog:save.fog})
 }
 
 async function openCampaign(data) {
@@ -559,7 +594,7 @@ function recordVictory(id,difficulty) {
 
 async function playLocal(data,board,mode,difficulty,colors,back,
   humans = mode === 'spectator' ? 0 : mode === 'hotseat' ? colors.length : 1, coalitions = Boolean(board.coalitions),
-  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume} = {}) {
+  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume, fog = false} = {}) {
   // Vitória contra a IA num mapa do jogo libera o multiplayer e o modo assistir nesse mapa.
   const practice = developerMode() && mode !== 'spectator'
   const unlock = mapId && mode === 'ai' && !practice ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
@@ -573,7 +608,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   // Salvamento automático a cada turno do jogador (não vale para o modo assistir nem para o teste do editor).
   const onSave = mode === 'spectator' || back.startsWith('/?editor') ? undefined : engine => engine ?
     saveMatch({kind:'local',title:board.title,board,mode,difficulty,colors,back,humans,coalitions,seconds,
-      sideDifficulty,mapId,engine}) : clearSavedMatch()
+      sideDifficulty,mapId,fog,engine}) : clearSavedMatch()
   const setup = scenarioMatch(board,colors,humans,coalitions)
   const profile = humans > 0 ? await loadProfile() : null
   const teams = setup.colors.map((color,index)=>({name:data.aiSides?.[index+1]?.label ?? t('Equipe {n}',{n:index+1}),color,
@@ -589,7 +624,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   link.textContent = t(back.startsWith('/?editor') ? '← Editor de mapas' :
     back.startsWith('/?partida') ? '← Partida avulsa' : '← Menu')
   const transport = campaignTransport(data,mission,difficulty,
-    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume,practice,fastAI,turnLimit:aiTurnLimit()})
+    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume,practice,fastAI,turnLimit:aiTurnLimit(),fog})
   await showMatch(data,setup.board,mode === 'spectator' ? 0 : 1,transport)
 }
 
@@ -630,7 +665,7 @@ function setupGenerator(data,choose) {
     try {
       const settings = mapRecipe({seed:crypto.getRandomValues(new Uint32Array(1))[0],
         width:widthInput.valueAsNumber,height:heightInput.valueAsNumber,teams:Number(teamCount.value),islands:islands.checked,
-        veins:Number(veins.value),weights:Object.fromEntries(weights.map(([name,input])=>[name,input.valueAsNumber]))})
+        veins:Number(veins.value),victory:$('generator-victory').value,weights:Object.fromEntries(weights.map(([name,input])=>[name,input.valueAsNumber]))})
       const next = generateMap(data,settings)
       const missing = new Set(next.tiles.flatMap(([,art])=>art[1]).filter(asset=>!images[asset]))
       Object.assign(images,await loadImages(Object.fromEntries([...missing].map(name=>[name,data.assets[name]]))))
@@ -658,7 +693,7 @@ function setupGenerator(data,choose) {
       status.textContent = t('{w} × {h} · {n} bases',{w:board.width,h:board.height,n:board.slots})
       use.disabled = Number(teamCount.value) !== recipe.teams ||
         widthInput.valueAsNumber !== recipe.width || heightInput.valueAsNumber !== recipe.height ||
-        islands.checked !== recipe.islands || Number(veins.value) !== recipe.veins ||
+        islands.checked !== recipe.islands || Number(veins.value) !== recipe.veins || $('generator-victory').value !== recipe.victory ||
         weights.some(([name,input])=>input.valueAsNumber !== recipe.weights[name])
     } catch (error) { if (job === generation) status.textContent = t(error.message) }
     finally { if (job === generation) reroll.disabled = false }
@@ -692,7 +727,7 @@ function setupGenerator(data,choose) {
     showChaos()
     void regenerate()
   }
-  islands.onchange = veins.onchange = regenerate
+  islands.onchange = veins.onchange = $('generator-victory').onchange = regenerate
   $('open-generator').onclick = () => {
     dialog.showModal()
     if (!board) void regenerate()
@@ -971,6 +1006,7 @@ async function openSkirmish(data) {
     $('local-coalitions').hidden = !board.coalitions || picked.kind !== 'game'
     $('coalition-teams').hidden = $('local-coalitions').hidden || !coalitions.checked
     showDifficulty()
+    $('scenario-fog-row').hidden = mode.value === 'spectator'
     colors.hidden = mode.value === 'lan'
     colors.replaceChildren(...selectedColors.slice(0,slots).map((color,index)=>{
       const label = document.createElement('label')
@@ -1061,6 +1097,7 @@ async function openSkirmish(data) {
         const extra = {
           sideDifficulty:mode.value === 'spectator' ? teamLevels.slice(0,teams.length) : undefined,
           mapId:entry.kind === 'game' ? entry.id : undefined,
+          fog:mode.value !== 'spectator' && $('scenario-fog').checked,
         }
         if (entry.kind === 'game' || entry.kind === 'arena') {
           if (!localMaps[entry.id]) throw Error('Abra o cenário pelo endereço local do anfitrião.')
@@ -1071,6 +1108,7 @@ async function openSkirmish(data) {
       const procedural = entry.kind === 'procedural'
       const settings = {map:procedural ? Object.keys(data.maps).length : Object.keys(data.maps).indexOf(entry.id),
         humans:humanCount(),coalitions:coalitions.checked,difficulty:Number(difficulty.value),aiTime:seconds,
+        fog:$('scenario-fog').checked,
         generated:procedural ? generated : undefined}
       const {room,slot,invites} = await (await request('create',{method:'POST',body:JSON.stringify(settings)})).json()
       sessionStorage.setItem('battalion-nativo-host-' + room,JSON.stringify({slot,invites}))

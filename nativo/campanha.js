@@ -28,6 +28,8 @@ export function campaignTransport(data, mission, difficulty, {
   practice = false,
   // fastAI(): pula as pausas de animação das jogadas da IA; turnLimit: segundos máximos por turno de cada IA (0 = sem limite).
   fastAI = () => false, turnLimit = 0,
+  // fog: neblina de guerra (partidas avulsas).
+  fog = false,
 } = {}) {
   // sideDifficulty: dificuldade de cada equipe da IA (ex.: assistir IA x IA com níveis diferentes).
   const levelOf = side => sideDifficulty?.[side-1] ?? difficulty
@@ -43,7 +45,7 @@ export function campaignTransport(data, mission, difficulty, {
       teamAttackScale(mission.teams.length,humans,spectator ? 1 : difficulty),
     incomeScale:campaign ? mission.teams.map((_,i)=>i === 0 ? 1 : [.7,1,1.4][difficulty]) : undefined,
     alliances:mission.teams.map(team=>team.allies ? team.allies.split(',').map(index=>Number(index)+1) : []),
-    simultaneous:mode === 'ai',
+    simultaneous:mode === 'ai',fog,victory:map.victory,
   })
   let receive, cancelled = false, disabled = false, morale = true, dialog = null, nextLine, result, focus
   let killed = 0, lost = 0, dialogId = 0, focusId = 0, playing = false

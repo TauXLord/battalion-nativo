@@ -26,6 +26,8 @@ export function mapRecipe(input = {}) {
     islands:input.islands === true,
     // Veios de minério extras por equipe (0 = só as jazidas básicas de cada base).
     veins:clamp(input.veins,0,3,0),
+    // Modo de vitória de teste: 'padrao' (destruir), 'rei' (segurar a refinaria central) ou 'pontos'.
+    victory:['rei','pontos'].includes(input.victory) ? input.victory : 'padrao',
     weights:Object.fromEntries(terrainWeights.map(([name,,weight])=>[name,clamp(input.weights?.[name],0,100,weight)])),
   }
 }
@@ -102,7 +104,7 @@ function spriteCatalog(data) {
 }
 
 export function generateMap(data,input) {
-  const {seed,width,height,teams,weights,islands,veins} = mapRecipe(input)
+  const {seed,width,height,teams,weights,islands,veins,victory} = mapRecipe(input)
   // Em mapas grandes, as manchas de terreno crescem junto para não virar um mosaico miúdo.
   const scale = Math.max(1,Math.sqrt(width*height)/40)
   const cells = Array.from({length:width*height},(_,index)=>index)
@@ -495,5 +497,7 @@ export function generateMap(data,input) {
     if (q[3] === 'shore_5_v1' && beach(down?.[1])) q[3] = 'shore_16_v1'
     tiles[cell] = [name,['join',q]]
   }
-  return { title:generatedTitle,width,height,slots:teams,islands,tiles,units,structures }
+  return { title:generatedTitle,center,
+    victory:victory === 'rei' ? {mode:'rei',cell:center,rounds:5} : victory === 'pontos' ? {mode:'pontos',limit:20} : undefined,
+    width,height,slots:teams,islands,tiles,units,structures }
 }

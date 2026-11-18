@@ -275,3 +275,22 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
 .profile-stats { display:grid; grid-template-columns:max-content 1fr; gap:.2rem .9rem; margin:.6rem 0 0; font-size:.92rem; }
 .profile-stats dt { color:#cfd8c4; }
 .profile-stats dd { margin:0; color:#f3d994; font-weight:bold; }
+
+/* Celular e tablet (toque): alvos de pelo menos 44 px e layout em uma coluna. */
+@media (pointer: coarse) {
+  button, .button-like, select, input[type=text], input[type=number] { min-height:44px; }
+  .mode-tabs button { min-height:48px; }
+  .map-choice { min-height:56px; }
+  .toggle input[type=checkbox] { width:1.4rem; height:1.4rem; }
+  .player-tools button { min-width:44px; }
+  .chat-log { font-size:1rem; }
+}
+@media (max-width: 640px) {
+  .home-hero { gap:10px; }
+  .skirmish-layout, .generator-layout { grid-template-columns:1fr !important; }
+  .lobby-team-row span { min-width:0; flex:1 1 100%; }
+  .shortcut-list, .profile-stats { grid-template-columns:1fr; }
+  .shortcut-list dd, .profile-stats dd { margin-bottom:.35rem; }
+  .match-chat { margin:.4rem 8px; }
+  dialog.settings { width:calc(100vw - 16px); max-width:none; margin:8px auto; }
+}

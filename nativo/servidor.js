@@ -255,7 +255,7 @@ async function api(req,res,parts,local,throughInternet) {
       scenarioSlots(data.maps[key]) === slots && Boolean(data.maps[key].coalitions) === Boolean(board.coalitions) ? [index] : [])
     const room = {id,code:roomCode(),seats,slots,choices,difficulty,aiTime,generated,generatedBoard:generated ? board : undefined,
       coalitions:Boolean(settings.coalitions && board.coalitions),
-      teams:Array.from({length:slots},(_,index)=>index+1),allowRequests:false,requests:[],
+      teams:Array.from({length:slots},(_,index)=>index+1),allowRequests:false,requests:[],fog:settings.fog === true,
       internet:Boolean(publicOrigin),viewers:new Map(),updated:Date.now()}
     rooms.set(id,room)
     return json(res,{room:id,slot:host.token,invites:inviteList(id,room)})
@@ -410,7 +410,7 @@ async function api(req,res,parts,local,throughInternet) {
       room.map = setup.board
       room.profile = profile
       room.game = createGame(data.rules,room.map,setup.colors,{
-        alliances,simultaneous:room.coalitions,
+        alliances,simultaneous:room.coalitions,fog:Boolean(room.fog),victory:room.map.victory,
         attackScale:teamAttackScale(setup.colors.length,room.seats.length,room.difficulty),
       })
     }
