@@ -872,16 +872,40 @@ export async function play(data, base, side, transport) {
   }
 
   // Neblina de guerra: escurece as casas fora da visão da sua equipe (o estado já vem sem os inimigos de lá).
-  let fogCache = {version:-1,cells:null}
-  function paintFog(right,bottom) {
-    if (!state.fog) return
-    if (fogCache.version !== state.version) fogCache = {version:state.version,cells:new Set(state.fog)}
-    const left = Math.max(0,Math.floor(panX/TILE)), top = Math.max(0,Math.floor(panY/TILE))
-    const last = Math.min(map.width-1,Math.ceil(right/TILE)), lowest = Math.min(map.height-1,Math.ceil(bottom/TILE))
-    ctx.fillStyle = 'rgba(8,12,10,.5)'
-    for (let row=top; row<=lowest; row++) for (let col=left; col<=last; col++) {
-      if (!fogCache.cells.has(row*map.width+col)) ctx.fillRect(col*TILE,row*TILE,TILE,TILE)
+  // A borda é suave: uma máscara pequena (FOG_SCALE pixels por casa) desfocada e esticada sobre o mapa,
+  // refeita só quando a visão muda. A margem de 1 casa repete a borda do mapa para o desfoque não clarear as beiradas.
+  const FOG_SCALE = 8, FOG_BLUR = 4
+  let fogCache = {key:'',image:null}
+  function fogImage() {
+    const key = state.fog.join(',')
+    if (fogCache.key === key) return fogCache.image
+    const seen = new Set(state.fog), w = map.width + 2, h = map.height + 2
+    const mask = document.createElement('canvas')
+    mask.width = w*FOG_SCALE
+    mask.height = h*FOG_SCALE
+    const mctx = mask.getContext('2d')
+    mctx.fillStyle = '#080c0a'
+    for (let row=0; row<h; row++) for (let col=0; col<w; col++) {
+      const x = Math.min(map.width-1,Math.max(0,col-1)), y = Math.min(map.height-1,Math.max(0,row-1))
+      if (!seen.has(y*map.width+x)) mctx.fillRect(col*FOG_SCALE,row*FOG_SCALE,FOG_SCALE,FOG_SCALE)
     }
+    const soft = document.createElement('canvas')
+    soft.width = mask.width
+    soft.height = mask.height
+    const sctx = soft.getContext('2d')
+    sctx.filter = 'blur(' + FOG_BLUR + 'px)'
+    sctx.drawImage(mask,0,0)
+    fogCache = {key,image:soft}
+    return soft
+  }
+  function paintFog() {
+    if (!state.fog) return
+    const image = fogImage()
+    ctx.save()
+    ctx.globalAlpha = .5
+    ctx.imageSmoothingEnabled = true
+    ctx.drawImage(image,FOG_SCALE,FOG_SCALE,map.width*FOG_SCALE,map.height*FOG_SCALE,0,0,map.width*TILE,map.height*TILE)
+    ctx.restore()
   }
   // Modos de vitória de teste: progresso na linha de status.
   function victoryProgress() {
