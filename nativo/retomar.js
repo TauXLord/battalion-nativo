@@ -77,6 +77,8 @@ export function restoreMatch(rules,file,{mine = 1,credits = []} = {}) {
     attackScale:reorder(saved.attackScale)?.map(value=>Number.isFinite(value) ? value : 1) ?? order.map(()=>1),
     incomeScale:reorder(saved.incomeScale), campaign:false, alliances,
     defeated:(saved.defeated ?? []).filter(side=>integer(side,1,count)).map(sideOf),
+    // Tempo de partida já jogado (cronômetro), para continuar contando de onde parou.
+    elapsed:Number.isFinite(saved.elapsed) && saved.elapsed >= 0 ? saved.elapsed : 0,
   }
   if (Array.isArray(saved.activeSides)) {
     state.activeSides = saved.activeSides.filter(side=>integer(side,1,count)).map(sideOf).sort((a,b)=>a-b)

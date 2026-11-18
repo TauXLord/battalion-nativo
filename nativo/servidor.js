@@ -175,7 +175,7 @@ async function saveRoom(room) {
   if (room.game.winner) return rm(file,{force:true})
   const names = seatTeams(room,1).map((team,index)=>({name:team.name ?? (index < room.seats.length ? 'Equipe ' + (index+1) : 'IA')}))
   const contents = {formato:'battalion-partida-rede',versao:edition.versao,salvoEm:Date.now(),
-    estado:{...room.game,last:null,undo:null,teams:names},mapa:room.map}
+    estado:{...room.game,last:null,undo:null,teams:names,elapsed:matchElapsed(room)},mapa:room.map}
   await mkdir(savesDirectory,{recursive:true})
   // Grava num arquivo temporário e troca: um desligamento no meio da gravação não estraga o salvamento anterior.
   await writeFile(file + '.tmp',JSON.stringify(contents))
@@ -521,6 +521,7 @@ async function api(req,res,parts,local,throughInternet) {
       const {mission,ghosts:isGhosts,chapter,group} = room.coop
       room.game = coopCampaign({data:{...(isGhosts ? ghosts : data),aiProfile:profile},mission,
         difficulty:room.difficulty,aiTime:room.aiTime,Worker,group,chapter})
+      room.clockStart = Date.now()
       room.game.start(() => pushMatch(room))
     }
     return json(res,preferences(room))
@@ -537,6 +538,7 @@ async function api(req,res,parts,local,throughInternet) {
       room.map = room.resumed.board
       room.profile = profile
       room.game = structuredClone(room.resumed.state)
+      room.clockBase = Number.isFinite(room.resumed.state.elapsed) ? room.resumed.state.elapsed : 0
     } else if (!room.game) {
       while (palette.length < room.slots) {
         palette.push([...defaultColors,...colors].find(color=>!palette.includes(color)))
@@ -553,6 +555,7 @@ async function api(req,res,parts,local,throughInternet) {
           teamAttackScale(setup.colors.length,room.seats.length,room.difficulty),
       })
     }
+    room.clockStart ??= Date.now()
     scheduleSave(room)
     void playComputer(room).catch(error=>console.error('Turno da IA:',error.message))
     return json(res,preferences(room))
@@ -669,10 +672,16 @@ function seatNotices(room) {
     return [{kind:'waiting',team:index+1,name,seconds:Math.max(0,Math.ceil((seat.seen+reconnectGrace-Date.now())/1000))}]
   })
 }
+// Cronômetro da partida (ms): conta desde o começo (somando o tempo de antes, se for retomada) e para no fim.
+function matchElapsed(room) {
+  if (!room.clockStart) return 0
+  if (!room.coop && room.game?.winner) room.clockStop ??= Date.now()
+  return (room.clockBase ?? 0) + (room.clockStop ?? Date.now()) - room.clockStart
+}
 // Estado da partida para um jogador, com nome e foto dos perfis.
 function matchState(room,side,key) {
   if (!room.coop) return {...snapshot(room.game,side),teams:seatTeams(room,side,[],key),notices:seatNotices(room),
-    chat:(room.chat ?? []).slice(-30)}
+    chat:(room.chat ?? []).slice(-30),elapsed:matchElapsed(room)}
   const state = room.game.stateFor(side)
   if (!state) return null
   // Na dupla, o time 1 mostra os dois nomes e a foto de quem está vendo.
@@ -680,7 +689,7 @@ function matchState(room,side,key) {
   const names = people.slice(0,2).map((team,index)=>team.name ?? (index ? 'Jogador 2' : 'Jogador 1'))
   const teams = state.teams.map((team,index)=>index ? team :
     {...team,name:room.seats.some(seat=>seat?.profile?.name) ? names.join(' & ') : team.name,photo:people[side-1]?.photo})
-  return {...state,teams,chat:(room.chat ?? []).slice(-30)}
+  return {...state,teams,chat:(room.chat ?? []).slice(-30),elapsed:matchElapsed(room)}
 }
 function pushMatchTo(res,room,side,key) {
   const state = matchState(room,side,key)

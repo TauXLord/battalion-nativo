@@ -62,6 +62,10 @@ export async function play(data, base, side, transport) {
   }
   // terrainUnder: casa da unidade clicada duas vezes; a barra de baixo mostra o terreno embaixo dela.
   let terrainUnder = -1
+  // Barra da partida (cronômetro e tropas): declarada no começo porque updateStatus pode rodar cedo.
+  const hud = $('match-hud')
+  const openedAt = performance.now()
+  let clock = null
   let state, selected = null, hover = -1, pinnedTerrain = -1, commands = [], openActions = false, building = null
   let panX = 0, panY = 0, zoom = 1, previous = null, requested = false
   let pending = false, pendingTarget, connected = false, motion, strike, error = ''
@@ -1329,7 +1333,44 @@ export async function play(data, base, side, transport) {
   const connectionNotices = () => (state?.notices ?? []).map(notice => notice.kind === 'ai' ?
     t('{name} saiu da partida; a IA assumiu essa equipe até ele voltar.',{name:t(notice.name)}) :
     t('{name} caiu. Aguardando a volta ({n} s); depois a IA assume.',{name:t(notice.name),n:notice.seconds})).join(' ')
+  // Barra da partida: cronômetro (00:00:00), rodada e quantidade de tropas aliadas e inimigas (as visíveis, na neblina).
+  function clockText(ms) {
+    const seconds = Math.max(0,Math.floor(ms/1000))
+    const two = value => String(value).padStart(2,'0')
+    return two(Math.floor(seconds/3600)) + ':' + two(Math.floor(seconds/60)%60) + ':' + two(seconds%60)
+  }
+  function updateHud() {
+    if (!state || !hud.isConnected) return
+    const now = performance.now()
+    const running = !state.winner && !state.result
+    const ms = clock ? clock.elapsed + (clock.running ? now - clock.at : 0) : now - openedAt
+    const item = (label,value,kind = '') => {
+      const span = document.createElement('span')
+      if (kind) span.className = kind
+      span.append(label + ' ',Object.assign(document.createElement('b'),{textContent:value}))
+      return span
+    }
+    const parts = [item('⏱',clockText(ms)),item(t('Rodada'),String(state.round ?? 1))]
+    if (side === 0) {
+      state.colors.forEach((_,index)=>{
+        const team = index+1
+        if (state.defeated?.includes(team)) return
+        parts.push(item(t(state.teams?.[index]?.name) || t('Equipe {n}',{n:team}),String(state.units.filter(unit=>unit.side === team).length)))
+      })
+    } else {
+      const allies = state.units.filter(unit=>allied(state,unit.side,side)).length
+      const enemies = state.units.length - allies
+      parts.push(item(t('Tropas aliadas'),String(allies),'hud-ally'),
+        item(t(state.fog ? 'Tropas inimigas à vista' : 'Tropas inimigas'),String(enemies),'hud-enemy'))
+    }
+    hud.replaceChildren(...parts)
+    hud.hidden = false
+    if (!running && clock?.running) clock = {...clock,elapsed:ms,running:false,at:now}
+  }
+  const hudTimer = setInterval(updateHud,1000)
+
   function updateStatus() {
+    updateHud()
     const notices = connectionNotices()
     statusText()
     const progress = victoryProgress()
@@ -1451,14 +1492,17 @@ export async function play(data, base, side, transport) {
     }
   }
 
+  // Minimapa: a posição clicada (ou arrastada) vira o centro da câmera.
+  const overMini = (x,y) => { const miniX = miniLeft(); return x >= miniX && y >= miniY && x < miniX+miniWidth && y < miniY+miniHeight }
+  function centerOnMini(x,y) {
+    const miniX = miniLeft()
+    const fx = Math.min(1,Math.max(0,(x-miniX)/miniWidth)), fy = Math.min(1,Math.max(0,(y-miniY)/miniHeight))
+    center(fx * map.width*TILE,fy * map.height*TILE)
+    schedule()
+  }
   function click(x,y) {
     if (!state || state.dialog || state.result) return
-    const miniX = miniLeft()
-    if (x >= miniX && y >= miniY && x < miniX+miniWidth && y < miniY+miniHeight) {
-      center((x-miniX)/miniWidth * map.width*TILE,(y-miniY)/miniHeight * map.height*TILE)
-      schedule()
-      return
-    }
+    if (overMini(x,y)) { centerOnMini(x,y); return }
     const cell = cellAt(x,y)
     if (cell < 0 || motion || strike || pending) return
     const unit = chosen()
@@ -1524,6 +1568,28 @@ export async function play(data, base, side, transport) {
     schedule()
   },true)
   for (const event of ['pointerleave','pointercancel']) canvas.addEventListener(event,() => {pointer = null; schedule()})
+  // Clicar e arrastar no minimapa move a câmera junto (registrado antes da câmera para ter prioridade).
+  let miniDrag = null
+  canvas.addEventListener('pointerdown',event => {
+    if (event.button !== 0 || !state || state.dialog || state.result || motion?.camera) return
+    const [x,y] = point(event)
+    if (!overMini(x,y)) return
+    event.stopImmediatePropagation()
+    event.preventDefault()
+    miniDrag = event.pointerId
+    canvas.setPointerCapture(event.pointerId)
+    centerOnMini(x,y)
+  },true)
+  canvas.addEventListener('pointermove',event => {
+    if (miniDrag !== event.pointerId) return
+    event.stopImmediatePropagation()
+    centerOnMini(...point(event))
+  },true)
+  for (const type of ['pointerup','pointercancel','lostpointercapture']) canvas.addEventListener(type,event => {
+    if (miniDrag !== event.pointerId) return
+    miniDrag = null
+    event.stopImmediatePropagation()
+  },true)
   bindCamera(canvas,$('player-camera'),{
     ready:() => state ? zoom : 0, zoom:setZoom, click,
     canControl:() => !state?.dialog && !state?.result && !motion?.camera,
@@ -1546,7 +1612,9 @@ export async function play(data, base, side, transport) {
   // Atalhos de teclado (lista em Configurações → Atalhos de teclado).
   let endArmed = 0
   const nextUnit = (step = 1) => {
-    const units = state?.units.filter(item => mine(item) && !item.fired && !item.disabled)
+    // Só as tropas que ainda podem andar neste turno (não se moveram, não atiraram e não são fixas).
+    const units = state?.units.filter(item => mine(item) && !item.moved && !item.fired && !item.disabled &&
+      rules.units[item.name].range > 0 && !rules.units[item.name].mods.includes('Fixed'))
     if (!units?.length) return
     const index = units.findIndex(item => item.id === selected)
     const unit = units[((index < 0 ? (step > 0 ? -1 : 0) : index) + step + units.length) % units.length]
@@ -1636,6 +1704,8 @@ export async function play(data, base, side, transport) {
 
   function receive(next) {
     connected = true
+    // Cronômetro: o tempo vem do jogo (local ou anfitrião); sem ele (replay), conta desde que a tela abriu.
+    if (Number.isFinite(next.elapsed)) clock = {elapsed:next.elapsed,at:performance.now(),running:!next.winner && !next.result}
     updateMatchChat(next.chat)
     // Fim de partida avulsa: botão para baixar o replay.
     if (next.result && !next.result.replay && transport.replay && $('match-replay').hidden) {
@@ -1740,6 +1810,7 @@ export async function play(data, base, side, transport) {
     schedule()
   }
   const disconnect = () => {connected = false; updateStatus(); schedule()}
+  window.addEventListener('pagehide',() => clearInterval(hudTimer),{once:true})
   const stop = transport.listen(receive,disconnect)
   const timer = setInterval(schedule,500)
   window.addEventListener('pagehide',() => {

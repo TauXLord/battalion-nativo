@@ -50,6 +50,14 @@ export function campaignTransport(data, mission, difficulty, {
   let receive, cancelled = false, disabled = false, morale = true, dialog = null, nextLine, result, focus
   let killed = 0, lost = 0, dialogId = 0, focusId = 0, playing = false
   let computerRunning = false, finishing = false
+  // Cronômetro da partida: continua do tempo salvo e para quando a partida acaba.
+  const clockBase = Number.isFinite(resume?.elapsed) ? resume.elapsed : Number.isFinite(resume?.state?.elapsed) ? resume.state.elapsed : 0
+  const clockStart = Date.now()
+  let clockStop
+  const elapsed = () => {
+    if ((result || state.winner) && clockStop === undefined) clockStop = Date.now()
+    return clockBase + (clockStop ?? Date.now()) - clockStart
+  }
   const highlights = new Set()
   const completed = new Set()
   const cellAt = node => Number(node.y)*map.width + Number(node.x)
@@ -73,13 +81,13 @@ export function campaignTransport(data, mission, difficulty, {
     if (!onSave || spectator || !playing || dialog || result || computerRunning || cancelled || state.winner) return
     if (!activeSides(state).some(side=>side <= humans && canTakeTurn(state,side))) return
     clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => onSave({state:structuredClone(state),killed,lost,disabled,morale,viewing,
+    saveTimer = setTimeout(() => onSave({state:structuredClone(state),killed,lost,disabled,morale,viewing,elapsed:elapsed(),
       highlights:[...highlights],completed:[...completed].map(event=>mission.events.indexOf(event)),
       replay:replayStart ? {initial:replayStart,actions:replayLog.slice()} : undefined}),250)
   }
   const publish = () => {
     if (!cancelled && receive) receive({...snapshot(state,viewer()),teams:mission.teams,dialog,result,focus,
-      blocked:disabled,morale,objective:mission.objective,highlights:[...highlights],viewer:viewer()})
+      blocked:disabled,morale,objective:mission.objective,highlights:[...highlights],viewer:viewer(),elapsed:elapsed()})
     autosave()
   }
 
