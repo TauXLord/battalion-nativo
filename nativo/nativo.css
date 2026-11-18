@@ -297,3 +297,9 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
 
 .home-version { opacity:.75; font-size:.85rem; }
 .home-version a { margin-left:.6rem; color:#9fd3a0; font-weight:bold; }
+
+/* Continuar partida de arquivo */
+.resume-credits { border:1px solid #3c4a3a; border-radius:6px; padding:8px 12px; margin:10px 0; }
+.resume-credits .field { display:flex; justify-content:space-between; gap:12px; align-items:center; margin:6px 0; }
+.resume-credits input { width:110px; }
+#resume-file .settings-actions { flex-wrap:wrap; }

@@ -121,6 +121,7 @@
           <button type="button" id="open-generator">Gerar mapa procedural</button>
           <label class="button-like">Importar mapa (.json)<input type="file" id="import-map" class="visually-hidden" accept=".json,application/json"></label>
           <label class="button-like">Assistir replay (.json)<input type="file" id="open-replay" class="visually-hidden" accept=".json,application/json"></label>
+          <label class="button-like">Continuar partida de arquivo (.json)<input type="file" id="open-saved-file" class="visually-hidden" accept=".json,application/json"></label>
           <a class="button-like" href="/?editor">Abrir o editor</a>
         </div>
         <p id="import-status" class="muted" role="status"></p>
@@ -431,6 +432,27 @@
       <footer class="settings-actions">
         <button value="cancel">Cancelar</button>
         <button type="button" id="system-confirm-go" class="danger"></button>
+      </footer>
+    </form>
+  </dialog>
+  <dialog id="resume-file" class="settings" aria-labelledby="resume-file-title">
+    <form method="dialog">
+      <h2 id="resume-file-title">Continuar partida salva</h2>
+      <p id="resume-file-info"></p>
+      <label class="field"><span>Sua equipe</span><select id="resume-file-side"></select></label>
+      <fieldset class="resume-credits">
+        <legend>Créditos de cada Warmachine</legend>
+        <p class="muted">O arquivo da visão de espectador não guarda o dinheiro das máquinas. Coloque o valor que cada equipe tinha.</p>
+        <div id="resume-file-credits"></div>
+      </fieldset>
+      <label class="field" id="resume-file-humans-row"><span>Jogadores humanos na sala</span><select id="resume-file-humans"></select></label>
+      <p class="muted">Na sala multiplayer, cada jogador entra na equipe do mesmo número: o anfitrião é a equipe 1, o primeiro convidado a 2 e assim por diante. Equipes sem jogador ficam com a IA.</p>
+      <p id="resume-file-status" role="status"></p>
+      <footer class="settings-actions">
+        <button value="cancel">Cancelar</button>
+        <button type="button" data-resume-mode="ai">Contra a IA</button>
+        <button type="button" data-resume-mode="hotseat">Mesmo dispositivo</button>
+        <button type="button" data-resume-mode="lan">Sala multiplayer</button>
       </footer>
     </form>
   </dialog>

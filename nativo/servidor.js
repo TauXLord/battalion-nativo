@@ -17,6 +17,7 @@ import { combatTimeline } from './combate.js'
 import { movementDuration } from './movimento.js'
 import { coopCampaign, coopEligible } from './cooperativo.js'
 import { openAppWindow } from './janela.js'
+import { restoreMatch } from './retomar.js'
 
 const read = path => readFile(new URL(path,import.meta.url))
 const data = JSON.parse(await read('./dados.json'))
@@ -48,7 +49,7 @@ const files = new Map([
   ['/visao.js','./visao.js'],
   ['/campanha.js','./campanha.js'], ['/ia.js','./ia.js'], ['/editor.js','./editor.js'], ['/cooperativo.js','./cooperativo.js'],
   ['/versao.json','./versao.json'], ['/versao.js','./versao.js'],
-  ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'],
+  ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'], ['/retomar.js','./retomar.js'],
   ['/estatisticas.js','./estatisticas.js'], ['/replay.js','./replay.js'], ['/graficos.js','./graficos.js'],
   ['/chat.js','./chat.js'], ['/atalhos.js','./atalhos.js'],
   ['/ia-worker.js','./ia-worker.js'], ['/planejador.js','./planejador.js'], ['/procedural.js','./procedural.js'],
@@ -75,7 +76,7 @@ if (process.argv.includes('--lan')) {
 }
 
 const rooms = new Map()
-const publicActions = new Set(['join','lobby','prefs','update','command','advance','dados','ask','answer','profile','avatar','chat','watch'])
+const publicActions = new Set(['join','lobby','prefs','update','command','advance','dados','ask','answer','profile','avatar','chat','watch','tabuleiro'])
 const token = length => randomBytes(length).toString('hex')
 const newSeat = (color,vote) => ({token:token(18),color,vote,seen:0,ready:false})
 const connected = seat => Boolean(seat) && Date.now() - seat.seen < 12000
@@ -94,6 +95,7 @@ function preferences(room,you) {
     sent:(room.requests ?? []).filter(request=>request.from === you).map(request=>request.to)}
   return {host:seats[0],guest:seats[1],seats,you,slots:room.slots,choices:room.choices,coalitions:room.coalitions,
     started:Boolean(room.game),map:room.seats[0].vote,generated:room.generated,coop,teams,code:room.code,
+    resumed:room.resumed ? room.resumed.board.title : undefined,
     chat:(room.chat ?? []).slice(-30),spectators:room.spectators?.size ?? 0}
 }
 const unready = room => { for (const member of room.seats) if (member) member.ready = false }
@@ -220,8 +222,30 @@ async function api(req,res,parts,local,throughInternet) {
   }
   if (post && action === 'create' && local) {
     if (rooms.size >= 12) return fail(res,409,'Feche uma sala antes de criar outra.')
-    const payload = (await body(req)).trim()
+    // Pedido local do anfitrião; maior por causa da partida retomada de arquivo (mapa de até 100 × 100).
+    const payload = (await body(req,8_000_000)).trim()
     const settings = payload.startsWith('{') ? JSON.parse(payload) : {map:Number(payload),humans:2,difficulty:1}
+    if (settings.resume) {
+      // Partida retomada de um arquivo salvo: o estado e o mapa vêm do arquivo, sem escolha de mapa na sala.
+      const {humans,difficulty = 1,aiTime = defaultAiTime} = settings
+      let restored
+      try { restored = restoreMatch(data.rules,settings.resume.file,settings.resume) }
+      catch (error) { return fail(res,400,error.message) }
+      const slots = restored.state.colors.length
+      if (!Number.isInteger(humans) || humans < 2 || humans > slots || !validAiTime(aiTime)) {
+        return fail(res,400,'Escolha a quantidade de jogadores.')
+      }
+      const id = token(12)
+      const host = newSeat(defaultColors[0],maps.length)
+      touch(host)
+      const seats = Array(humans).fill(null)
+      seats[0] = host
+      const room = {id,code:roomCode(),seats,slots,choices:[maps.length],difficulty,aiTime,
+        resumed:{state:restored.state,board:{...restored.board,title:restored.board.title || 'Partida retomada'}},
+        coalitions:false,internet:Boolean(publicOrigin),viewers:new Map(),updated:Date.now()}
+      rooms.set(id,room)
+      return json(res,{room:id,slot:host.token,invites:inviteList(id,room)})
+    }
     if (settings.coop) {
       // Campanha em dupla: a missão (com falas e eventos) roda aqui no servidor.
       const {list,ghosts:isGhosts,chapter} = settings.coop
@@ -381,6 +405,9 @@ async function api(req,res,parts,local,throughInternet) {
     }
     return json(res,preferences(room,side))
   }
+  if (!post && action === 'tabuleiro') {
+    return room.resumed ? json(res,room.resumed.board) : fail(res,404,'Esta sala não é de uma partida retomada.')
+  }
   if (!post && action === 'dados') {
     return reply(res,200,room.coop?.ghosts ? visibleGhosts : visibleData,mime.json)
   }
@@ -403,7 +430,12 @@ async function api(req,res,parts,local,throughInternet) {
     if (!room.game && (state.seats.some(player=>!player.ready) || new Set(palette).size !== palette.length)) {
       return fail(res,409,'Todos os jogadores precisam estar conectados, prontos e com cores diferentes.')
     }
-    if (!room.game) {
+    if (!room.game && room.resumed) {
+      // Retomada: cada jogador volta com a equipe do mesmo número, e as cores e alianças são as da partida salva.
+      room.map = room.resumed.board
+      room.profile = profile
+      room.game = structuredClone(room.resumed.state)
+    } else if (!room.game) {
       while (palette.length < room.slots) {
         palette.push([...defaultColors,...colors].find(color=>!palette.includes(color)))
       }
@@ -498,6 +530,7 @@ async function spectatorAction(req,res,room,watcher,action,after) {
     if (room.game) pushMatch(room)
     return json(res,{chat:room.chat.slice(-30)})
   }
+  if (!post && action === 'tabuleiro' && room.resumed) return json(res,room.resumed.board)
   if (post || !['update','state','avatar'].includes(action)) return fail(res,403,'Espectadores só assistem.')
   if (!room.game) return fail(res,404,'A partida ainda não começou.')
   if (!post && action === 'update') {

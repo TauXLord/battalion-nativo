@@ -7,6 +7,7 @@ import { deleteProfileStorage, loadProfile, maxNameLength, profilePhoto, savePro
 import { clearSavedMatch, deleteSavesStorage, loadSavedMatch, saveMatch } from './salvamento.js'
 import { loadStats, recordMatch, statsSummary } from './estatisticas.js'
 import { replayTransport, validReplay } from './replay.js'
+import { describeSaved, restoreMatch } from './retomar.js'
 import { compareVersions, loadEdition } from './versao.js'
 // Versão desta edição (nativo/versao.json), carregada ao abrir a página.
 let edition = {versao:'?'}
@@ -387,7 +388,7 @@ function matchUpdates(room,slot,receive,disconnect) {
 async function start(data,room,slot,side,invites = []) {
   $('scenario-view').hidden = true
   $('campaign-view').hidden = true
-  const {generated,coop} = await (await request('lobby/' + room + '/' + slot)).json()
+  const {generated,coop,resumed} = await (await request('lobby/' + room + '/' + slot)).json()
   // Nome e foto do perfil para os outros jogadores verem na sala e na partida.
   const profile = await loadProfile()
   await request('profile/' + room + '/' + slot,{method:'POST',
@@ -397,6 +398,8 @@ async function start(data,room,slot,side,invites = []) {
   const maps = coop ? [['coop',t('Campanha em dupla')+' · '+t(coop.title)]] :
     Object.entries(data.maps).map(([id,map]) => [id,t(map.title)])
   if (generated) maps.push(['procedural',t(generatedTitle)])
+  // Partida retomada de arquivo: o mapa vem do anfitrião (ocupa a mesma posição de escolha do mapa procedural).
+  if (resumed) maps.push(['resumed',t('Partida retomada') + ' · ' + t(resumed)])
   const {map,you,coop:started} = await lobby({room,slot:side === 1 ? undefined : slot,invites,maps,palette,t})
   // Estatísticas: cada partida em rede conta uma vez, como vitória ou derrota (espectador não conta).
   let counted = false
@@ -419,7 +422,8 @@ async function start(data,room,slot,side,invites = []) {
       back:'/',
     })
   }
-  const board = generated ? generateMap(data,generated) : data.maps[maps[map][0]]
+  const board = resumed ? await (await request('tabuleiro/' + room + '/' + slot)).json() :
+    generated ? generateMap(data,generated) : data.maps[maps[map][0]]
   const mine = you ?? side
   return showMatch(data,board,mine,{
     listen:(receive,disconnect) => matchUpdates(room,slot,state => {
@@ -853,7 +857,10 @@ async function open() {
       await request('lobby/' + hostRoom)
       sessionStorage.setItem('battalion-nativo-host-' + hostRoom,JSON.stringify(session))
       return start(data,hostRoom,slot,1,invites)
-    } catch { sessionStorage.removeItem('battalion-nativo-host-' + hostRoom) }
+    } catch (error) {
+      console.warn('Sala do anfitrião indisponível:',error)
+      sessionStorage.removeItem('battalion-nativo-host-' + hostRoom)
+    }
   }
   if (query.has('partida') || query.has('cenarios')) return openSkirmish(data)
   return openHome(data)
@@ -1073,6 +1080,65 @@ async function openSkirmish(data) {
       $('player-view').querySelector('header a').textContent = t('← Partida avulsa')
       await showMatch(data,replay.board,0,replayTransport(data,replay,{speed:() => fastAI() ? 3 : 1}))
     } catch (error) { $('import-status').textContent = t(error.message) }
+  }
+  // Continuar uma partida salva em arquivo (ex.: guardada da visão de espectador quando a conexão caiu).
+  $('open-saved-file').onchange = async event => {
+    const file = event.target.files[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      if (file.size > 20_000_000) throw Error('Arquivo grande demais para uma partida salva.')
+      const saved = JSON.parse(await file.text())
+      openResumeDialog(saved,describeSaved(data.rules,saved))
+    } catch (error) { $('import-status').textContent = t(error instanceof SyntaxError ? 'Este arquivo não é uma partida salva do Battalion.' : error.message) }
+  }
+  function openResumeDialog(saved,info) {
+    const dialog = $('resume-file'), side = $('resume-file-side'), humansSelect = $('resume-file-humans')
+    const colorName = color => t(palette.find(([,value])=>value === color)?.[0] ?? '')
+    const label = team => [t('Equipe {n}',{n:team.side}),team.name,colorName(team.color)].filter(Boolean).join(' · ')
+    $('resume-file-info').textContent = [t(info.title || 'Mapa sem nome'),`${info.width} × ${info.height}`,
+      t('Rodada {n}',{n:info.round}),t('vez da equipe {n}',{n:info.turn})].join(' · ')
+    side.replaceChildren(...info.teams.map(team=>new Option(label(team) + ' · ' + t('{n} unidades',{n:team.units}),String(team.side))))
+    const credits = info.teams.map(team => {
+      const row = document.createElement('label')
+      row.className = 'field'
+      const input = document.createElement('input')
+      input.type = 'number'
+      input.min = '0'
+      input.step = '50'
+      input.value = '1000'
+      input.disabled = !team.machines
+      row.append(Object.assign(document.createElement('span'),{textContent:label(team)}),input)
+      return {row,input}
+    })
+    $('resume-file-credits').replaceChildren(...credits.map(item=>item.row))
+    humansSelect.replaceChildren(...info.teams.slice(1).map((_,index)=>new Option(String(index+2),String(index+2))))
+    humansSelect.value = String(info.teams.length)
+    $('resume-file-humans-row').hidden = info.teams.length <= 2
+    $('resume-file-status').textContent = ''
+    for (const button of dialog.querySelectorAll('[data-resume-mode]')) button.onclick = async () => {
+      const options = {mine:Number(side.value),credits:credits.map(item=>Number(item.input.value) || 0)}
+      const how = button.dataset.resumeMode
+      try {
+        if (how === 'lan') {
+          const settings = {resume:{file:saved,...options},humans:Number(humansSelect.value),
+            difficulty:Number(difficulty.value),aiTime:storedAiTime()}
+          const {room,slot,invites} = await (await request('create',{method:'POST',body:JSON.stringify(settings)})).json()
+          dialog.close()
+          sessionStorage.setItem('battalion-nativo-host-' + room,JSON.stringify({slot,invites}))
+          history.replaceState(null,'','/?host=' + room)
+          $('scenario-view').hidden = true
+          return await start(data,room,slot,1,invites)
+        }
+        const {state,board} = restoreMatch(data.rules,saved,options)
+        dialog.close()
+        const humansHere = how === 'hotseat' ? state.colors.length : 1
+        await playLocal(data,{...board,title:board.title || 'Partida retomada'},how,Number(difficulty.value),state.colors,
+          '/?partida='+modeNames[how],humansHere,false,storedAiTime(),
+          {resume:{state,killed:0,lost:0,disabled:false,morale:true}})
+      } catch (error) { $('resume-file-status').textContent = t(error.message) }
+    }
+    dialog.showModal()
   }
   $('import-map').onchange = async event => {
     const file = event.target.files[0]
