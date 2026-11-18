@@ -74,10 +74,19 @@ export function lobby({room,slot,invites=[],maps,palette,t = (text,values) => va
       if (next.started) {
         done = true
         panel.hidden = true
+        chatBox.remove()
         resolve(next)
         return
       }
       const players = members(next)
+      if (next.spectator) {
+        // Espectador: só acompanha a sala e o chat até a partida começar.
+        for (const field of [color,vote]) if (field.closest('label')) field.closest('label').hidden = true
+        ready.hidden = start.hidden = true
+        status.textContent = t('Você está assistindo. A partida aparece quando o anfitrião começar.')
+        renderChat(next.chat)
+        return
+      }
       const own = self(next)
       if (next.code && codeBox.dataset.code !== next.code) {
         codeBox.dataset.code = next.code
@@ -110,15 +119,53 @@ export function lobby({room,slot,invites=[],maps,palette,t = (text,values) => va
           : t('Desconectado')
       }
       renderTeams(next)
+      renderChat(next.chat)
       start.disabled = busy || !canStart(next)
       ready.disabled = busy
       ready.textContent = t(own.ready ? 'Cancelar pronto' : 'Marcar como pronto')
       const selection = players.some(seat=>seat.connected && seat.vote !== next.map)
         ? t('Votos diferentes. Em empate vale o voto do anfitrião.')
         : t('Mapa da partida') + ' · ' + maps[next.map][1]
-      $('lobby-map').textContent = selection + (next.coalitions ? ' · ' + t('Alianças por continente') : '')
+      $('lobby-map').textContent = selection + (next.coalitions ? ' · ' + t('Alianças por continente') : '') +
+        (next.spectators ? ' · ' + t(next.spectators === 1 ? '1 espectador' : '{n} espectadores',{n:next.spectators}) : '')
       status.textContent = !colorsDistinct(next) ? t('Cada equipe precisa de uma cor diferente.') : ''
     }
+    // Chat da sala: lista das últimas mensagens e campo para escrever (texto puro, até 200 caracteres).
+    let chatKey = ''
+    const chatBox = document.createElement('section')
+    chatBox.className = 'lobby-chat'
+    const chatLog = document.createElement('ol')
+    chatLog.className = 'chat-log'
+    const chatForm = document.createElement('form')
+    const chatInput = Object.assign(document.createElement('input'),{type:'text',maxLength:200,placeholder:t('Escreva uma mensagem…')})
+    chatInput.setAttribute('aria-label',t('Mensagem do chat'))
+    const chatSend = Object.assign(document.createElement('button'),{type:'submit',textContent:t('Enviar')})
+    chatForm.append(chatInput,chatSend)
+    chatBox.append(Object.assign(document.createElement('strong'),{textContent:t('Chat da sala')}),chatLog,chatForm)
+    status.after(chatBox)
+    const renderChat = messages => {
+      // A versão Flash usa este mesmo arquivo, mas o servidor dela não tem chat.
+      chatBox.hidden = !messages
+      const key = JSON.stringify(messages?.map(message=>message.time) ?? [])
+      if (key === chatKey) return
+      chatKey = key
+      chatLog.replaceChildren(...(messages ?? []).map(message=>{
+        const item = document.createElement('li')
+        const who = Object.assign(document.createElement('b'),{textContent:message.name + ': '})
+        item.append(who,document.createTextNode(message.text))
+        return item
+      }))
+      chatLog.scrollTop = chatLog.scrollHeight
+    }
+    chatForm.onsubmit = async event => {
+      event.preventDefault()
+      const text = chatInput.value.trim()
+      if (!text) return
+      chatInput.value = ''
+      try { renderChat((await (await request('chat/' + suffix,{method:'POST',body:text})).json()).chat) }
+      catch (error) { status.textContent = t(error.message) }
+    }
+
     // Times: o líder escolhe o time de cada equipe e liga/desliga os pedidos de time entre jogadores.
     let teamsKey = ''
     function renderTeams(next) {

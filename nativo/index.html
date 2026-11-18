@@ -361,6 +361,9 @@
         <p class="muted" id="settings-ai-info">Fácil usa a IA clássica do jogo, com dano e renda reduzidos na campanha.</p>
         <label class="field"><span>Tempo de raciocínio da IA clássica (segundos por ação)</span>
           <input id="settings-ai-time" type="number" min="0" max="60" step="1" value="1"></label>
+        <label class="toggle"><input type="checkbox" id="settings-ai-fast"><span>Acelerar turnos da IA (pula as animações das jogadas dela)</span></label>
+        <label class="field"><span>Tempo máximo do turno de cada IA (segundos, 0 = sem limite)</span>
+          <input id="settings-ai-limit" type="number" min="0" max="600" step="5" value="0"></label>
       </fieldset>
       <fieldset>
         <legend>Tela</legend>
@@ -420,6 +423,13 @@
       </footer>
     </form>
   </dialog>
+  <template id="match-chat-template">
+    <section class="match-chat" aria-label="Chat da partida">
+      <ol class="chat-log"></ol>
+      <form><input type="text" maxlength="200" placeholder="Escreva uma mensagem…" aria-label="Mensagem do chat">
+        <button type="submit">Enviar</button></form>
+    </section>
+  </template>
   <p id="game-closed" class="game-closed" hidden>O Battalion foi fechado. Você já pode fechar esta janela.</p>
   <p id="startup" role="status">Carregando o Battalion… Se o menu não aparecer, recarregue a página pela janela do launcher.</p>
   <noscript><p>Ative o JavaScript no navegador para abrir o Battalion.</p></noscript>

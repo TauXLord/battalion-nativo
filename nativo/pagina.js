@@ -27,6 +27,9 @@ const store = (key,value) => { try { localStorage.setItem(key,value) } catch {} 
 // Modo desenvolvedor: prévia de dano nas partidas locais, sem contar progresso.
 const developerKey = 'battalion-nativo-dev'
 const developerMode = () => stored(developerKey) === '1'
+// Ritmo da IA: pular animações das jogadas dela e tempo máximo por turno (útil em mapas gigantes).
+const fastAI = () => stored('battalion-nativo-ia-rapida') === '1'
+const aiTurnLimit = () => { const value = Number(stored('battalion-nativo-ia-limite') ?? 0); return Number.isFinite(value) ? Math.max(0,Math.min(600,value)) : 0 }
 const aiTime = value => validAiTime(Number(value)) ? Number(value) : defaultAiTime
 const storedAiTime = () => aiTime(stored(aiTimeKey) ?? defaultAiTime)
 const storedDifficulty = () => {
@@ -67,6 +70,11 @@ function setupSettings(data,{inGame = false} = {}) {
   const developer = $('settings-dev')
   developer.checked = developerMode()
   developer.onchange = () => store(developerKey,developer.checked ? '1' : '0')
+  const quick = $('settings-ai-fast'), limit = $('settings-ai-limit')
+  quick.checked = fastAI()
+  quick.onchange = () => store('battalion-nativo-ia-rapida',quick.checked ? '1' : '0')
+  limit.value = String(aiTurnLimit())
+  limit.onchange = () => { store('battalion-nativo-ia-limite',String(Math.max(0,Math.min(600,Number(limit.value) || 0)))); limit.value = String(aiTurnLimit()) }
   setupProfile(dialog).catch(()=>{})
   setupSystem(dialog)
   for (const button of document.querySelectorAll('[data-settings]')) button.onclick = () => {
@@ -335,12 +343,16 @@ async function start(data,room,slot,side,invites = []) {
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(command),
       }),
       advance:() => void request('advance/' + room + '/' + slot,{method:'POST'}).catch(()=>{}),
+      fastAI,
+      chat:text => request('chat/' + room + '/' + slot,{method:'POST',body:text}),
       back:'/',
     })
   }
   const board = generated ? generateMap(data,generated) : data.maps[maps[map][0]]
   return showMatch(data,board,you ?? side,{
     listen:(receive,disconnect) => matchUpdates(room,slot,receive,disconnect),
+    fastAI,
+    chat:text => request('chat/' + room + '/' + slot,{method:'POST',body:text}),
     send(command) {
       return request('command/' + room + '/' + slot,{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(command),
@@ -386,7 +398,7 @@ async function playMission(data,{mission,ghosts,list,difficulty,seconds,resume})
     saveMatch({kind:'campaign',title:mission.title,ghosts,list,chapter:mission.number,difficulty,seconds,engine}) :
     clearSavedMatch()
   return showMatch(data,mission.board,1,campaignTransport(data,{...mission,teams},difficulty,
-    {group,back,aiTime:seconds,resume,onSave,practice:developerMode()}))
+    {group,back,aiTime:seconds,resume,onSave,practice:developerMode(),fastAI,turnLimit:aiTurnLimit()}))
 }
 
 // "Continuar partida": reabre a última partida local salva automaticamente.
@@ -546,7 +558,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   link.textContent = t(back.startsWith('/?editor') ? '← Editor de mapas' :
     back.startsWith('/?partida') ? '← Partida avulsa' : '← Menu')
   const transport = campaignTransport(data,mission,difficulty,
-    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume,practice})
+    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume,practice,fastAI,turnLimit:aiTurnLimit()})
   await showMatch(data,setup.board,mode === 'spectator' ? 0 : 1,transport)
 }
 
@@ -718,7 +730,14 @@ async function open() {
       try { await request('lobby/' + guestRoom + '/' + slot) }
       catch { slot = null }
     }
-    if (!slot) slot = await (await request('join/' + guestRoom,{method:'POST'})).text()
+    if (!slot) {
+      // Sala cheia ou partida já começada: entra como espectador (assiste e usa o chat).
+      try { slot = await (await request('join/' + guestRoom,{method:'POST'})).text() }
+      catch (error) {
+        if (!/cheia/.test(error.message)) throw error
+        slot = await (await request('watch/' + guestRoom,{method:'POST'})).text()
+      }
+    }
     store(key,slot)
     return start(data,guestRoom,slot,2)
   }

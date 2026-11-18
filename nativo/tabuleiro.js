@@ -1613,8 +1613,43 @@ export async function play(data, base, side, transport) {
     if (action.jammed) makeSound('Jammed')
   }
 
+  // Chat da partida (só em rede): painel abaixo do mapa com as últimas mensagens.
+  let chatPanel, chatKey = ''
+  function updateMatchChat(messages) {
+    if (!transport.chat || !messages) return
+    if (!chatPanel) {
+      chatPanel = $('match-chat-template').content.firstElementChild.cloneNode(true)
+      chatPanel.setAttribute('aria-label',t('Chat da partida'))
+      const input = chatPanel.querySelector('input')
+      input.placeholder = t('Escreva uma mensagem…')
+      input.setAttribute('aria-label',t('Mensagem do chat'))
+      chatPanel.querySelector('button').textContent = t('Enviar')
+      chatPanel.querySelector('form').onsubmit = async event => {
+        event.preventDefault()
+        const text = input.value.trim()
+        if (!text) return
+        input.value = ''
+        try { await transport.chat(text) } catch (failure) { error = failure.message; updateStatus() }
+      }
+      player.append(chatPanel)
+    }
+    const key = JSON.stringify(messages.map(message=>message.time))
+    if (key === chatKey) return
+    const fresh = messages.length && chatKey !== '' && messages.at(-1).side !== side
+    chatKey = key
+    const log = chatPanel.querySelector('.chat-log')
+    log.replaceChildren(...messages.slice(-8).map(message=>{
+      const item = document.createElement('li')
+      item.append(Object.assign(document.createElement('b'),{textContent:message.name + ': '}),document.createTextNode(message.text))
+      return item
+    }))
+    log.scrollTop = log.scrollHeight
+    if (fresh) makeSound('Capture')
+  }
+
   function receive(next) {
     connected = true
+    updateMatchChat(next.chat)
     if (state && next.version < state.version) return
     if (next.viewer != null && next.viewer !== side) {
       side = next.viewer
@@ -1631,7 +1666,10 @@ export async function play(data, base, side, transport) {
       // Allies can keep using their own map while one of them moves.
       const partnerActs = next.activeSides && action?.side && action.side !== side &&
         allied(next,side,action.side) && canTakeTurn(next,side)
-      if (!partnerActs) {
+      // "Acelerar turnos da IA": jogadas dos outros aparecem direto, sem animação.
+      const quick = action?.side && action.side !== side && transport.fastAI?.()
+      if (quick) { pendingTarget = undefined; motion = strike = null }
+      if (!partnerActs && !quick) {
         pendingTarget = undefined
         motion = strike = null
         if (action?.type === 'move' && action.path.length) startMotion(action,next)

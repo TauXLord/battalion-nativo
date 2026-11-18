@@ -26,6 +26,8 @@ export function campaignTransport(data, mission, difficulty, {
   resume, onSave,
   // practice: modo desenvolvedor (prévia de dano); a vitória não conta progresso nem medalha.
   practice = false,
+  // fastAI(): pula as pausas de animação das jogadas da IA; turnLimit: segundos máximos por turno de cada IA (0 = sem limite).
+  fastAI = () => false, turnLimit = 0,
 } = {}) {
   // sideDifficulty: dificuldade de cada equipe da IA (ex.: assistir IA x IA com níveis diferentes).
   const levelOf = side => sideDifficulty?.[side-1] ?? difficulty
@@ -213,8 +215,16 @@ export function campaignTransport(data, mission, difficulty, {
     try {
       await pause(320)
       let side, retries = 0
+      const turnStart = new Map()
       while (!cancelled && (side = computerSide())) {
         const version = state.version
+        // Tempo máximo do turno desta IA: passado o limite, ela encerra o turno.
+        const key = side + ':' + state.round
+        if (!turnStart.has(key)) turnStart.set(key,Date.now())
+        if (turnLimit > 0 && Date.now() - turnStart.get(key) > turnLimit*1000) {
+          try { apply({type:'end',version},true,side) } catch {}
+          continue
+        }
         // Partida de avaliação: cada equipe pode ter sua própria IA (dificuldade e perfil).
         const custom = data.aiSides?.[side]
         const action = await planner.choose(state,custom ?
@@ -229,7 +239,7 @@ export function campaignTransport(data, mission, difficulty, {
         }
         retries = 0
         const animated = await resolveDeaths(deaths)
-        if (!animated && !state.winner) await pause(animationDuration() + 120)
+        if (!animated && !state.winner) await pause(fastAI() ? 60 : animationDuration() + 120)
       }
       if (!cancelled && state.winner) await finish()
     } finally {
@@ -249,7 +259,7 @@ export function campaignTransport(data, mission, difficulty, {
   }
 
   return {
-    back,hotseat,practice,
+    back,hotseat,practice,fastAI,
     listen(onState) {
       receive = onState
       if (resume) {

@@ -483,5 +483,20 @@
  "destrói": "destroys it",
  "Revide: {n}": "Counter: {n}",
  "sua unidade cai": "your unit falls",
- "Sem revide": "No counterattack"
+ "Sem revide": "No counterattack",
+ "Acelerar turnos da IA (pula as animações das jogadas dela)": "Speed up AI turns (skip the animations of its moves)",
+ "Tempo máximo do turno de cada IA (segundos, 0 = sem limite)": "Maximum turn time for each AI (seconds, 0 = no limit)",
+ "Escreva uma mensagem…": "Write a message…",
+ "Mensagem do chat": "Chat message",
+ "Enviar": "Send",
+ "Chat da sala": "Room chat",
+ "Chat da partida": "Match chat",
+ "Mensagem vazia.": "Empty message.",
+ "Você está assistindo. A partida aparece quando o anfitrião começar.": "You are watching. The match appears when the host starts it.",
+ "1 espectador": "1 spectator",
+ "{n} espectadores": "{n} spectators",
+ "Espectadores só assistem.": "Spectators can only watch.",
+ "A campanha em dupla não aceita espectadores.": "The co-op campaign does not accept spectators.",
+ "A sala já tem espectadores demais.": "The room already has too many spectators.",
+ "A partida ainda não começou.": "The match has not started yet."
 }

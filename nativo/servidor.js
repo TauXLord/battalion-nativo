@@ -70,7 +70,7 @@ if (process.argv.includes('--lan')) {
 }
 
 const rooms = new Map()
-const publicActions = new Set(['join','lobby','prefs','update','command','advance','dados','ask','answer','profile','avatar'])
+const publicActions = new Set(['join','lobby','prefs','update','command','advance','dados','ask','answer','profile','avatar','chat','watch'])
 const token = length => randomBytes(length).toString('hex')
 const newSeat = (color,vote) => ({token:token(18),color,vote,seen:0,ready:false})
 const connected = seat => Boolean(seat) && Date.now() - seat.seen < 12000
@@ -88,7 +88,8 @@ function preferences(room,you) {
     incoming:(room.requests ?? []).filter(request=>request.to === you).map(request=>request.from),
     sent:(room.requests ?? []).filter(request=>request.from === you).map(request=>request.to)}
   return {host:seats[0],guest:seats[1],seats,you,slots:room.slots,choices:room.choices,coalitions:room.coalitions,
-    started:Boolean(room.game),map:room.seats[0].vote,generated:room.generated,coop,teams,code:room.code}
+    started:Boolean(room.game),map:room.seats[0].vote,generated:room.generated,coop,teams,code:room.code,
+    chat:(room.chat ?? []).slice(-30),spectators:room.spectators?.size ?? 0}
 }
 const unready = room => { for (const member of room.seats) if (member) member.ready = false }
 // Aliados de cada equipe a partir dos times: quem tem o mesmo número de time é aliado.
@@ -138,8 +139,8 @@ const body = async (request,limit = 2048) => {
 const photoPattern = /^data:image\/(png|jpeg|gif);base64,([A-Za-z0-9+/=]+)$/
 const profileLimit = 28_000_000
 // Nome e foto de cada equipe para quem está vendo (`viewer`); a foto é servida por /lan/avatar.
-function seatTeams(room,viewer,base = []) {
-  const key = room.seats[viewer-1]?.token
+function seatTeams(room,viewer,base = [],viewerKey) {
+  const key = viewerKey ?? room.seats[viewer-1]?.token
   const teams = Array.from({length:Math.max(room.slots,base.length)},(_,index)=>({...base[index]}))
   room.seats.forEach((seat,index)=>{
     const profile = seat?.profile
@@ -153,6 +154,9 @@ function seatTeams(room,viewer,base = []) {
 function pushMatch(room) {
   for (const [response,side] of room.viewers) {
     if (!response.writableNeedDrain) pushMatchTo(response,room,side)
+  }
+  for (const [response,key] of room.watchers ?? []) {
+    if (!response.writableNeedDrain) pushMatchTo(response,room,0,key)
   }
 }
 
@@ -269,8 +273,19 @@ async function api(req,res,parts,local,throughInternet) {
     touch(guest)
     return reply(res,200,guest.token)
   }
+  if (post && action === 'watch') {
+    // Espectador: entra mesmo com a sala cheia ou a partida em andamento; vê tudo e usa o chat, mas não joga.
+    if (room.coop) return fail(res,409,'A campanha em dupla não aceita espectadores.')
+    room.spectators ??= new Map()
+    if (room.spectators.size >= 20) return fail(res,409,'A sala já tem espectadores demais.')
+    const watcher = {token:token(18),seen:Date.now(),profile:null}
+    room.spectators.set(watcher.token,watcher)
+    return reply(res,200,watcher.token)
+  }
   const index = !key && local ? 0 : room.seats.findIndex((seat,index)=>seat?.token === key && (index>0 || local))
   const seat = room.seats[index]
+  const watcher = !seat && key && room.spectators?.get(key)
+  if (watcher) return spectatorAction(req,res,room,watcher,action,after)
   if (!seat) return fail(res,404,'Sala indisponível.')
   room.updated = Date.now()
   const side = index+1
@@ -290,6 +305,17 @@ async function api(req,res,parts,local,throughInternet) {
     seat.vote = vote
     seat.color = color
     return json(res,preferences(room,side))
+  }
+  if (post && action === 'chat') {
+    // Chat da sala e da partida: texto curto, guardado só na memória (últimas 60 mensagens).
+    const text = (await body(req,1200)).replace(/\s+/g,' ').trim().slice(0,200)
+    if (!text) return fail(res,400,'Mensagem vazia.')
+    touch(seat)
+    room.chat ??= []
+    room.chat.push({side,name:seat.profile?.name || 'Equipe ' + side,text,time:Date.now()})
+    if (room.chat.length > 60) room.chat.splice(0,room.chat.length-60)
+    if (room.game) pushMatch(room)
+    return json(res,{chat:room.chat.slice(-30)})
   }
   if (post && action === 'profile') {
     const profile = JSON.parse(await body(req,profileLimit))
@@ -444,6 +470,50 @@ async function api(req,res,parts,local,throughInternet) {
   return fail(res,404,'Operação indisponível.')
 }
 
+// O que um espectador pode fazer: ver a sala e a partida (como a equipe 0, que enxerga todos) e usar o chat.
+async function spectatorAction(req,res,room,watcher,action,after) {
+  const post = req.method === 'POST'
+  watcher.seen = Date.now()
+  room.updated = Date.now()
+  if (!post && action === 'lobby') return json(res,{...preferences(room,0),spectator:true})
+  if (post && action === 'profile') {
+    const profile = JSON.parse(await body(req,profileLimit))
+    watcher.profile = {name:typeof profile?.name === 'string' ? profile.name.trim().slice(0,24) : ''}
+    return reply(res,204)
+  }
+  if (post && action === 'chat') {
+    const text = (await body(req,1200)).replace(/\s+/g,' ').trim().slice(0,200)
+    if (!text) return fail(res,400,'Mensagem vazia.')
+    room.chat ??= []
+    room.chat.push({side:0,name:(watcher.profile?.name || 'Espectador') + ' 👁',text,time:Date.now()})
+    if (room.chat.length > 60) room.chat.splice(0,room.chat.length-60)
+    if (room.game) pushMatch(room)
+    return json(res,{chat:room.chat.slice(-30)})
+  }
+  if (post || !['update','state','avatar'].includes(action)) return fail(res,403,'Espectadores só assistem.')
+  if (!room.game) return fail(res,404,'A partida ainda não começou.')
+  if (!post && action === 'update') {
+    if (!/^(?:-1|\d+)$/.test(after ?? '')) return fail(res,400,'Versão inválida.')
+    return room.game.version === Number(after) ? reply(res,204) : json(res,matchState(room,0,watcher.token))
+  }
+  if (!post && action === 'state') {
+    res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-store','Connection':'keep-alive'})
+    room.watchers ??= new Map()
+    room.watchers.set(res,watcher.token)
+    pushMatchTo(res,room,0,watcher.token)
+    res.on('drain', () => pushMatchTo(res,room,0,watcher.token))
+    res.on('close',() => room.watchers.delete(res))
+    return
+  }
+  if (!post && action === 'avatar') {
+    const photo = room.seats[Number(after)-1]?.profile?.photo
+    if (!photo) return fail(res,404,'Sem foto.')
+    res.writeHead(200,{'Content-Type':photo.type,'Content-Length':photo.bytes.length,'Cache-Control':'private, max-age=3600'})
+    return res.end(photo.bytes)
+  }
+  return fail(res,403,'Espectadores só assistem.')
+}
+
 // Avisos de conexão: quem caiu, quanto falta para a IA assumir e quem já está com a IA.
 function seatNotices(room) {
   if (!room.game || room.coop) return []
@@ -455,8 +525,9 @@ function seatNotices(room) {
   })
 }
 // Estado da partida para um jogador, com nome e foto dos perfis.
-function matchState(room,side) {
-  if (!room.coop) return {...snapshot(room.game,side),teams:seatTeams(room,side),notices:seatNotices(room)}
+function matchState(room,side,key) {
+  if (!room.coop) return {...snapshot(room.game,side),teams:seatTeams(room,side,[],key),notices:seatNotices(room),
+    chat:(room.chat ?? []).slice(-30)}
   const state = room.game.stateFor(side)
   if (!state) return null
   // Na dupla, o time 1 mostra os dois nomes e a foto de quem está vendo.
@@ -464,10 +535,10 @@ function matchState(room,side) {
   const names = people.slice(0,2).map((team,index)=>team.name ?? (index ? 'Jogador 2' : 'Jogador 1'))
   const teams = state.teams.map((team,index)=>index ? team :
     {...team,name:room.seats.some(seat=>seat?.profile?.name) ? names.join(' & ') : team.name,photo:people[side-1]?.photo})
-  return {...state,teams}
+  return {...state,teams,chat:(room.chat ?? []).slice(-30)}
 }
-function pushMatchTo(res,room,side) {
-  const state = matchState(room,side)
+function pushMatchTo(res,room,side,key) {
+  const state = matchState(room,side,key)
   if (state) res.write('data: ' + JSON.stringify(state) + '\n\n')
 }
 
@@ -497,8 +568,8 @@ setInterval(() => {
 
 setInterval(() => {
   for (const [id,room] of rooms) {
-    if (room.viewers.size) {
-      for (const res of room.viewers.keys()) if (!res.writableNeedDrain) res.write(': keepalive\n\n')
+    if (room.viewers.size || room.watchers?.size) {
+      for (const res of [...room.viewers.keys(),...(room.watchers?.keys() ?? [])]) if (!res.writableNeedDrain) res.write(': keepalive\n\n')
     } else if (Date.now() - room.updated > 20 * 60000) {
       room.closed = true
       room.planner?.close()

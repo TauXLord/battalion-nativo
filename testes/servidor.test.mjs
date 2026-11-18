@@ -89,6 +89,27 @@ test('jogador que cai: aviso de espera e depois a IA assume a equipe dele',{time
   assert.ok(!state.notices.some(notice=>notice.team === 2),'jogador retomou a equipe')
 })
 
+test('chat da sala e espectador entrando com a sala cheia',async () => {
+  const {room,slot:host} = await newRoom(2,2)
+  const guest = (await post('/lan/join/' + room)).text
+  assert.equal((await post('/lan/join/' + room)).status,409,'sala cheia')
+  const watcher = (await post('/lan/watch/' + room)).text
+  const chat = (await post(`/lan/chat/${room}/${guest}`,'  olá   pessoal  ')).json().chat
+  assert.equal(chat.at(-1).text,'olá pessoal')
+  const lobby = (await call(`/lan/lobby/${room}/${watcher}`)).json()
+  assert.equal(lobby.spectator,true)
+  assert.equal(lobby.chat.at(-1).text,'olá pessoal')
+  assert.equal((await post(`/lan/chat/${room}/${watcher}`,'boa sorte')).status,200,'espectador usa o chat')
+  assert.equal((await post(`/lan/prefs/${room}/${watcher}`,'ff00ff00,7,1')).status,403,'espectador não muda a sala')
+  await post(`/lan/prefs/${room}/${host}`,'ff00ff00,7,1')
+  await post(`/lan/prefs/${room}/${guest}`,'ff0000ff,7,1')
+  await post(`/lan/start/${room}/${host}`)
+  const view = (await call(`/lan/update/${room}/${watcher}/-1`)).json()
+  assert.ok(view.units.some(unit=>unit.side === 1) && view.units.some(unit=>unit.side === 2),'espectador vê as duas equipes')
+  const command = await call(`/lan/command/${room}/${watcher}`,{method:'POST',body:JSON.stringify({type:'end',version:view.version})})
+  assert.equal(command.status,403,'espectador não joga')
+})
+
 test('ações de sistema exigem o cabeçalho e a desinstalação só roda pelo executável',async () => {
   assert.equal((await post('/sistema/desinstalar')).status,403)
   assert.equal((await call('/sistema/fechar')).status,403)
