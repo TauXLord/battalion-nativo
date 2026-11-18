@@ -2,7 +2,7 @@ import { activeSides, allied, canTakeTurn, checkWinner, createGame, order, snaps
 import { defaultAiTime } from './ia.js'
 import { aiPlanner } from './planejador.js'
 import { movementDuration } from './movimento.js'
-import { combatTimeline } from './combate.js'
+import { combatTimeline, wipeoutDuration } from './combate.js'
 
 const pause = ms => new Promise(resolve=>setTimeout(resolve,ms))
 const progressKey = group => 'battalion-nativo-' + group
@@ -183,9 +183,10 @@ export function campaignTransport(data, mission, difficulty, {
 
   function animationDuration() {
     const event = state.last
-    if (event?.type === 'attack') return combatTimeline(data,event).duration + movementDuration(event.movement?.path.length ?? 0)
-    if (event?.type === 'move') return movementDuration(event.path.length)
-    return 0
+    const wipeout = wipeoutDuration(event)
+    if (event?.type === 'attack') return combatTimeline(data,event).duration + movementDuration(event.movement?.path.length ?? 0) + wipeout
+    if (event?.type === 'move') return movementDuration(event.path.length) + wipeout
+    return wipeout
   }
 
   async function finish() {

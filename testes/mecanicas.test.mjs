@@ -72,3 +72,18 @@ test('soldado vira Albatross e Leviathan desembarca sem gastar o turno',() => {
   assert.equal(tank.name,'Lancer Tank')
   assert.equal(tank.moved,false,'o tanque desembarcado ainda pode andar')
 })
+
+test('equipe sem Warmachine é derrotada e as unidades restantes vão para a explosão em sequência',() => {
+  const map = board([{name:'Warmachine',side:1,cell:at(1,1)},{name:'Lancer Tank',side:1,cell:at(5,5)},
+    {name:'Warmachine',side:2,cell:at(5,6)},{name:'Lancer Tank',side:2,cell:at(0,9)},{name:'Heavy Commando',side:2,cell:at(2,9)},
+    {name:'Warmachine',side:3,cell:at(9,0)}])
+  map.slots = 3
+  const game = createGame(rules,map,['ff00ff00','ff0000ff','ffff0000'])
+  const tank = game.units[1], target = game.units[2]
+  target.hp = 1
+  order(rules,map,game,1,{type:'attack',unit:tank.id,target:target.id,version:game.version})
+  assert.ok(game.defeated.includes(2),'equipe 2 derrotada')
+  assert.equal(game.units.filter(unit=>unit.side === 2).length,0,'as unidades da equipe 2 saíram do mapa')
+  assert.deepEqual(game.last.eliminated.map(unit=>unit.name).sort(),['Heavy Commando','Lancer Tank'])
+  assert.equal(game.winner,0,'a partida segue com as equipes 1 e 3')
+})

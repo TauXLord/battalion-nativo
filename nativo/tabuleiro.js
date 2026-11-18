@@ -1,8 +1,8 @@
 import { bindCamera } from './camera.js'
-import { activeSides, allied, attackPath, attackRating, attackThreats, buildCells, buildCost, canCounter, canRepair, canTakeTurn, damageAmount, enemyJammers, factoryAt, firingRange,
+import { activeSides, allied, attackPath, attackRating, attackThreats, buildCells, buildCost, canCounter, canRepair, canTakeTurn, damageAmount, distance, enemyJammers, factoryAt, firingRange,
   isRanged, jammingZone, legalMovePath, neighbors, reachable, repairPrice, terrainAt, transportOptions, unitFor } from './partida.js'
 import { movementDirection, movementDuration, movementPose } from './movimento.js'
-import { combatTimeline, destructionFade } from './combate.js'
+import { WIPEOUT_STEP, combatTimeline, destructionFade, wipeoutDuration } from './combate.js'
 import { showWarmachineMenu, unitStatDetails } from './construcao.js'
 import { matchAudio } from './audio.js'
 import { classicBoard, reconHeight, viewport } from './visao.js'
@@ -643,6 +643,51 @@ export async function play(data, base, side, transport) {
     }
   }
 
+  // Equipe derrotada: as unidades que sobraram explodem uma por uma (WIPEOUT_STEP ms entre cada).
+  let wipeout = null
+  const wipeoutBlast = 330, wipeoutGone = 490
+  function startWipeout(action,next,delay) {
+    const origin = action.cell ?? action.eliminated[0].cell
+    const units = action.eliminated.slice().sort((a,b)=>distance(map.width,origin,a.cell) - distance(map.width,origin,b.cell))
+    wipeout = {units,start:performance.now() + delay,sounded:-1}
+  }
+  function advanceWipeout(now) {
+    if (!wipeout) return
+    const elapsed = now - wipeout.start
+    const index = Math.floor(elapsed / WIPEOUT_STEP)
+    if (elapsed >= 0 && index > wipeout.sounded && index < wipeout.units.length) {
+      wipeout.sounded = index
+      makeSound('ExplosionSound')
+    }
+    const effect = data.explosions.Explosion
+    if (elapsed > (wipeout.units.length - 1) * WIPEOUT_STEP + Math.max(wipeoutGone,effect.wait*effect.frames.length)) {
+      wipeout = null
+      updateStatus()
+    }
+  }
+  // Unidades da equipe derrotada que ainda não explodiram (somem com o mesmo esmaecer do combate).
+  function wipeoutUnits(now,units) {
+    if (!wipeout) return units
+    const present = new Set(units.map(unit=>unit.id))
+    const extra = wipeout.units.flatMap((unit,index)=>{
+      const blast = wipeout.start + index * WIPEOUT_STEP
+      if (present.has(unit.id) || now >= blast + wipeoutGone) return []
+      const fade = now < blast + wipeoutBlast ? 1 : Math.min(1,(blast + wipeoutGone - now) / destructionFade)
+      return [{...unit,moved:false,fired:false,repairing:false,fade}]
+    })
+    return extra.length ? [...units,...extra] : units
+  }
+  function paintWipeout(now) {
+    if (!wipeout) return
+    const effect = data.explosions.Explosion
+    wipeout.units.forEach((unit,index)=>{
+      const frameIndex = effect.frames[Math.floor((now - wipeout.start - index * WIPEOUT_STEP) / effect.wait)]
+      if (now >= wipeout.start + index * WIPEOUT_STEP && frameIndex !== undefined) {
+        frame(ctx,images[effect.image],frameIndex,cellX(unit.cell),cellY(unit.cell) + TILE - effect.height,effect.width,effect.height)
+      }
+    })
+  }
+
   function advanceStrike(now) {
     if (!strike) return
     const elapsed = Math.max(0,now - strike.start)
@@ -995,7 +1040,8 @@ export async function play(data, base, side, transport) {
       }
     }
     advanceStrike(now)
-    const visibleUnits = battleUnits(now)
+    advanceWipeout(now)
+    const visibleUnits = wipeoutUnits(now,battleUnits(now))
     const unit = chosen()
     const cursorPosition = pointer && point(pointer)
     const cursorCell = cursorPosition ? cellAt(...cursorPosition) : -1
@@ -1107,6 +1153,7 @@ export async function play(data, base, side, transport) {
       frame(ctx,images.unitOptionsButton,over ? (pointer?.buttons ? 3 : 2) : 1,options.x,options.y,24,24,options.size,options.size)
     }
     firing(now)
+    paintWipeout(now)
     const showResources = !state.dialog && !state.result && paintResourceGains(now,right,bottom)
     ctx.restore()
 
@@ -1243,7 +1290,7 @@ export async function play(data, base, side, transport) {
       const [x,y] = cursorPosition
       frame(ctx,images[image],index,Math.round(x),Math.round(y),width,height)
     }
-    if (motion || strike || showResources) schedule()
+    if (motion || strike || wipeout || showResources) schedule()
     // GIF de perfil: redesenha em ritmo leve para a animação aparecer.
     if (animatedPhoto) { animatedPhoto = false; clearTimeout(photoTimer); photoTimer = setTimeout(schedule,90) }
   }
@@ -1607,6 +1654,14 @@ export async function play(data, base, side, transport) {
         else if (action?.type === 'extract') makeSound('ExtractResources')
         else if (action?.type === 'capture') makeSound('Capture')
       }
+      // Equipe derrotada: depois da jogada, as unidades restantes explodem em sequência.
+      wipeout = null
+      if (action?.eliminated?.length) {
+        const delay = quick || partnerActs ? 0 : action.type === 'attack' ?
+          combatTimeline(data,action).duration + movementDuration(action.movement?.path.length ?? 0) :
+          action.type === 'move' ? movementDuration(action.path.length) : 0
+        startWipeout(action,next,delay)
+      }
     }
     if ((!state || next.turn !== state.turn || next.round !== state.round) && !next.winner && !next.dialog) {
       const teams = activeSides(next)
@@ -1647,8 +1702,8 @@ export async function play(data, base, side, transport) {
     state = next
     if (!transport.advance && state.winner && !state.result && resultTimer === undefined) {
       const event = state.last
-      const duration = event?.type === 'attack' ? combatTimeline(data,event).duration +
-        movementDuration(event.movement?.path.length ?? 0) : 0
+      const duration = (event?.type === 'attack' ? combatTimeline(data,event).duration +
+        movementDuration(event.movement?.path.length ?? 0) : 0) + wipeoutDuration(event)
       resultTimer = setTimeout(() => receive({...state,result:{
         winner:state.winner,victory:side === 0 || allied(state,state.winner,side),campaign:false,
       }}),duration+100)

@@ -20,3 +20,7 @@ export function combatTimeline(data, event) {
   })
   return {participants,hits,duration}
 }
+
+// Equipe derrotada (perdeu todas as Warmachines): as unidades que sobraram explodem uma por uma.
+export const WIPEOUT_STEP = 250
+export const wipeoutDuration = event => event?.eliminated?.length ? (event.eliminated.length - 1) * WIPEOUT_STEP + 700 : 0

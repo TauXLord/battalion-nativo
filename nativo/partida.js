@@ -408,6 +408,12 @@ export function snapshot(state, side) {
   // Neblina: jogada inimiga cuja unidade terminou fora da visão não é mostrada (nem a animação).
   if (vision && event && !allied(state,event.side,side) && event.unit !== undefined &&
       !units.some(unit=>unit.id === event.unit)) event = null
+  // Explosão final de uma equipe derrotada: não revela unidades camufladas nem as que estão fora da visão.
+  if (event?.eliminated && side !== 0) {
+    const shown = event.eliminated.filter(unit=>allied(state,unit.side,side) ||
+      !unit.cloaked && (!vision || vision.has(unit.cell)))
+    event = {...event,eliminated:shown.length ? shown : undefined}
+  }
   return {version,turn,round,colors,winner,ore,structures,units,last:event,attackScale,alliances,buildable,campaign,
     activeSides,turnEnded,defeated,victory:state.victory,fog:vision ? [...vision] : undefined,
     teamCredits:state.teamCredits?.map((credits,index)=>index+1 === side ? credits : null),
@@ -478,8 +484,8 @@ function capture(rules, state, unit, structure) {
   structure.strength -= Math.ceil(4 * unit.hp / rules.units[unit.name].health)
   if (structure.strength <= 0) {
     if (structure.side && has(rules.terrain[structure.name],'Mission Critical')) {
+      // As unidades que sobraram explodem em seguida (eliminateTeams, com animação na tela).
       state.defeated.push(structure.side)
-      state.units = state.units.filter(other=>other.side !== structure.side)
     }
     structure.strength = 8
     structure.side = unit.side
@@ -523,6 +529,24 @@ function remaining(rules,map,state,side) {
   const hadLinchpin = map.units.some(unit => unit.side === side && has(rules.units[unit.name],'Linchpin'))
   return state.units.some(unit => unit.side === side && unit.hp > 0 &&
     (hadLinchpin ? has(rules.units[unit.transported ?? unit.name],'Linchpin') : !has(rules.units[unit.name],'Fixed')))
+}
+
+// Equipe que perdeu todas as Warmachines (ou o prédio principal, nas missões) é derrotada:
+// as unidades que sobraram são removidas e vão para o evento, para a tela explodir uma por uma.
+function eliminateTeams(rules,map,state,event) {
+  const eliminated = []
+  for (const side of state.colors.map((_,index)=>index+1)) {
+    const hadLinchpin = map.units.some(unit => unit.side === side && has(rules.units[unit.name],'Linchpin'))
+    if (!state.defeated.includes(side) && hadLinchpin && !state.units.some(unit => unit.side === side &&
+        unit.hp > 0 && has(rules.units[unit.transported ?? unit.name],'Linchpin'))) state.defeated.push(side)
+    if (!state.defeated.includes(side)) continue
+    const leftovers = state.units.filter(unit => unit.side === side)
+    if (!leftovers.length) continue
+    eliminated.push(...leftovers.map(unit => ({id:unit.id,name:unit.name,side,cell:unit.cell,left:unit.left,
+      facing:unit.facing,hp:unit.hp,cloaked:unit.cloaked})))
+    state.units = state.units.filter(unit => unit.side !== side)
+  }
+  if (eliminated.length) event.eliminated = eliminated
 }
 
 export function checkWinner(rules,map,state) {
@@ -772,6 +796,7 @@ export function order(rules, map, state, side, action) {
     }
     default: requireOrder(false)
   }
+  eliminateTeams(rules,map,state,event)
   checkWinner(rules,map,state)
   if (!state.winner && (state.activeSides
     ? !state.activeSides.some(team=>canTakeTurn(state,team) && remaining(rules,map,state,team))

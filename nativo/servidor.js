@@ -13,7 +13,7 @@ import { defaultAiTime, validAiTime } from './ia.js'
 import { aiPlanner } from './planejador.js'
 import { profileDirectory, readAiProfile } from './perfil-ia.js'
 import { generateMap, mapRecipe, reorderSides } from './procedural.js'
-import { combatTimeline } from './combate.js'
+import { combatTimeline, wipeoutDuration } from './combate.js'
 import { movementDuration } from './movimento.js'
 import { coopCampaign, coopEligible } from './cooperativo.js'
 import { openAppWindow } from './janela.js'
@@ -273,7 +273,7 @@ async function playComputer(room) {
       const event = game.last
       const steps = event.type === 'move' ? event.path.length : event.movement?.path.length ?? 0
       const animation = movementDuration(steps) + (event.type === 'attack' ? combatTimeline(data,event).duration :
-        event.deployment ? 200 : 0)
+        event.deployment ? 200 : 0) + wipeoutDuration(event)
       if (computerSide(room)) await pause(animation+120)
     }
   } finally {
