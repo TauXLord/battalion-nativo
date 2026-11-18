@@ -1,5 +1,15 @@
 # Battalion local
 
+## Instalar a edição nativa (Windows, Linux e macOS)
+
+Baixe a versão mais recente em **[Releases](https://github.com/TauXLord/battalion-nativo/releases/latest)**:
+
+- **Windows:** `Battalion-Nativo.exe` — é só abrir, não precisa instalar nada.
+- **Linux x64:** `Battalion-Nativo-Linux-x64.tar.gz` — extraia e siga o `LEIA-ME.txt`.
+- **macOS (Apple Silicon e Intel):** `Battalion-Nativo-macOS.tar.gz` — extraia e siga o `LEIA-ME.txt`.
+
+Cada versão nova aparece em Releases com a lista de novidades. A versão instalada aparece no rodapé do menu do jogo.
+
 Para compartilhar a versão atual da edição JavaScript no Windows x64, envie [Battalion-Nativo.exe](Battalion-Nativo.exe). O executável já inclui o Node.js. Consulte as [instruções da edição JavaScript](nativo/README.md) para abrir uma sala LAN ou recompilar o pacote.
 
 Os pacotes [Linux x64](Battalion-Nativo-Linux-x64.tar.gz) e [macOS para Apple Silicon e Intel](Battalion-Nativo-macOS.tar.gz) incluem o mesmo jogo e o Node.js. Extraia o pacote e siga o arquivo **LEIA-ME.txt**.
