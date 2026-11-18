@@ -87,3 +87,21 @@ test('equipe sem Warmachine é derrotada e as unidades restantes vão para a exp
   assert.deepEqual(game.last.eliminated.map(unit=>unit.name).sort(),['Heavy Commando','Lancer Tank'])
   assert.equal(game.winner,0,'a partida segue com as equipes 1 e 3')
 })
+
+test('na neblina, unidade dentro da floresta só é vista pelo inimigo 1 casa mais perto',async () => {
+  const {snapshot} = await import('../nativo/partida.js')
+  // Tanque do time 2 na floresta (8,8); tanque do time 1 a 3 casas: no limite da visão normal.
+  const map = board([{name:'Lancer Tank',side:1,cell:at(8,5)},{name:'Warmachine',side:1,cell:at(0,0)},
+    {name:'Lancer Tank',side:2,cell:at(8,8)},{name:'Warmachine',side:2,cell:at(11,0)}])
+  const game = createGame(rules,map,['ff00ff00','ff0000ff'],{fog:true})
+  const enemy = game.units[2]
+  let view = snapshot(game,1)
+  assert.ok(view.fog.includes(at(8,8)),'a casa da floresta aparece')
+  assert.ok(!view.units.some(unit=>unit.id === enemy.id),'mas o tanque escondido nela não')
+  game.units[0].cell = at(8,6)
+  view = snapshot(game,1)
+  assert.ok(view.units.some(unit=>unit.id === enemy.id),'1 casa mais perto ele aparece')
+  enemy.cell = at(8,9)
+  game.units[0].cell = at(8,6)
+  assert.ok(snapshot(game,1).units.some(unit=>unit.id === enemy.id),'fora da floresta, a 3 casas, aparece')
+})

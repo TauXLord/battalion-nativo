@@ -365,7 +365,8 @@ export const visibleTo = (unit, side) => side === 0 || unit.side === side || !un
 
 // Alcance de visão na neblina: terrestres e navios 3 casas, aeronaves 4, Radar +2; prédios da equipe 2.
 // Jammer em cima de uma colina enxerga 1 casa a mais (fog.hills: casas de colina do mapa);
-// quem está numa floresta enxerga 1 casa a menos (fog.forests). Aeronaves voam por cima e não perdem visão.
+// quem está numa floresta enxerga 1 casa a menos (fog.forests), e quem está nela também é visto 1 casa mais perto
+// (spotted). Aeronaves voam por cima: não perdem visão nem se escondem.
 const visionRange = (fog,unit) => (fog.air.includes(unit.name) ? 4 : 3) + (fog.radar.includes(unit.name) ? 2 : 0) +
   (fog.jammers?.includes(unit.name) && fog.hills?.includes(unit.cell) ? 1 : 0) -
   (!fog.air.includes(unit.name) && fog.forests?.includes(unit.cell) ? 1 : 0)
@@ -373,21 +374,35 @@ export function fogVision(state,side) {
   if (!state.fog || side === 0) return null
   const {width} = state.fog
   const seen = new Set()
+  // margin: quantas casas sobram de alcance em cada casa vista (0 = bem no limite da visão).
+  const margin = new Map()
   const reveal = (cell,range) => {
     const x = cell%width, y = Math.floor(cell/width)
     for (let dy=-range; dy<=range; dy++) for (let dx=-range+Math.abs(dy); dx<=range-Math.abs(dy); dx++) {
-      if (x+dx >= 0 && x+dx < width && y+dy >= 0) seen.add((y+dy)*width+x+dx)
+      if (x+dx < 0 || x+dx >= width || y+dy < 0) continue
+      const target = (y+dy)*width+x+dx, left = range-Math.abs(dx)-Math.abs(dy)
+      seen.add(target)
+      if (!(margin.get(target) >= left)) margin.set(target,left)
     }
   }
   for (const unit of state.units) if (allied(state,unit.side,side)) reveal(unit.cell,visionRange(state.fog,unit))
   for (const tile of state.structures) if (tile.side && allied(state,tile.side,side)) reveal(tile.cell,2)
+  seen.margin = margin
   return seen
+}
+// Unidade inimiga vista na neblina? Terrestres e navios dentro de uma floresta só aparecem 1 casa mais perto
+// (o terreno da floresta continua visível no alcance normal); aeronaves voam por cima e não se escondem.
+export function spotted(state,vision,unit) {
+  if (!vision) return true
+  if (!vision.has(unit.cell)) return false
+  const fog = state.fog
+  return fog.air.includes(unit.name) || !fog.forests?.includes(unit.cell) || vision.margin.get(unit.cell) >= 1
 }
 
 export function snapshot(state, side) {
   const vision = fogVision(state,side)
   const units = state.units.filter(unit => allied(state,unit.side,side) ||
-    visibleTo(unit,side) && (!vision || vision.has(unit.cell))).map(unit => {
+    visibleTo(unit,side) && spotted(state,vision,unit)).map(unit => {
     if (unit.side === side) return {...unit}
     const {credits: balance, ...publicUnit} = unit
     return publicUnit
@@ -411,7 +426,7 @@ export function snapshot(state, side) {
   // Explosão final de uma equipe derrotada: não revela unidades camufladas nem as que estão fora da visão.
   if (event?.eliminated && side !== 0) {
     const shown = event.eliminated.filter(unit=>allied(state,unit.side,side) ||
-      !unit.cloaked && (!vision || vision.has(unit.cell)))
+      !unit.cloaked && spotted(state,vision,unit))
     event = {...event,eliminated:shown.length ? shown : undefined}
   }
   return {version,turn,round,colors,winner,ore,structures,units,last:event,attackScale,alliances,buildable,campaign,
