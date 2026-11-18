@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="utf-8"?>
+<map xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <description />
+  <name>Unnamed Map</name>
+  <author>Unknown Author</author>
+  <mode>Battalion Map Editor</mode>
+  <rows>10</rows>
+  <cols>10</cols>
+  <layers>3</layers>
+  <palette>
+    <entry reference="0">
+      <name>Mountain</name>
+      <imageCode>?(mountains_v1.png;mountains_v3.png)</imageCode>
+    </entry>
+    <entry reference="1">
+      <name>Mountain</name>
+      <imageCode>?(mountains_v2.png;mountains_v4.png)</imageCode>
+    </entry>
+    <entry reference="2">
+      <name>Forest</name>
+      <imageCode>?(forest_v1.png;forest_v2.png)</imageCode>
+    </entry>
+    <entry reference="3">
+      <name>Hill</name>
+      <imageCode>?(hills_v1.png;hills_v2.png;hills_v3.png;hills_v4.png)</imageCode>
+    </entry>
+    <entry reference="4">
+      <name>Plains</name>
+      <imageCode>?(plains_v1.png;plains_v2.png;plains_v3.png;plains_v4.png;plains_v5.png;plains_v6.png;plains_v7.png)</imageCode>
+    </entry>
+    <entry reference="5">
+      <name>P2 Scorpion Tank</name>
+      <imageCode>@(2;scorpiontank.png)</imageCode>
+    </entry>
+    <entry reference="6">
+      <name>P2 Flak Tank</name>
+      <imageCode>@(2;flaktank.png)</imageCode>
+    </entry>
+    <entry reference="7">
+      <name>Road</name>
+      <imageCode>road_5_v1.png</imageCode>
+    </entry>
+    <entry reference="8">
+      <name>Road</name>
+      <imageCode>road_11_v1.png</imageCode>
+    </entry>
+    <entry reference="9">
+      <name>Road</name>
+      <imageCode>road_6_v1.png</imageCode>
+    </entry>
+    <entry reference="10">
+      <name>Road</name>
+      <imageCode>road_2_v1.png</imageCode>
+    </entry>
+    <entry reference="11">
+      <name>Road</name>
+      <imageCode>road_13_v1.png</imageCode>
+    </entry>
+    <entry reference="12">
+      <name>Road</name>
+      <imageCode>road_8_v1.png</imageCode>
+    </entry>
+    <entry reference="13">
+      <name>Road</name>
+      <imageCode>road_4_v1.png</imageCode>
+    </entry>
+    <entry reference="14">
+      <name>P1 Scorpion Tank</name>
+      <imageCode>@(1;scorpiontank.png)</imageCode>
+    </entry>
+    <entry reference="15">
+      <name>P1 Rocket Truck</name>
+      <imageCode>@(1;rockettruck.png)</imageCode>
+    </entry>
+    <entry reference="16">
+      <name>Road</name>
+      <imageCode>road_3_v1.png</imageCode>
+    </entry>
+  </palette>
+  <tile c="0" r="0">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="1" r="0">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="2" r="0">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="3" r="0">
+    <layer reference="11" depth="0" />
+  </tile>
+  <tile c="4" r="0">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="5" r="0">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="6" r="0">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="7" r="0">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="8" r="0">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="9" r="0">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="0" r="1">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="1" r="1">
+    <layer reference="7" depth="0" />
+  </tile>
+  <tile c="2" r="1">
+    <layer reference="10" depth="0" />
+  </tile>
+  <tile c="3" r="1">
+    <layer reference="12" depth="0" />
+  </tile>
+  <tile c="4" r="1">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="5" r="1">
+    <layer reference="2" depth="0" />
+    <layer reference="14" depth="2" />
+  </tile>
+  <tile c="6" r="1">
+    <layer reference="4" depth="0" />
+    <layer reference="14" depth="2" />
+  </tile>
+  <tile c="7" r="1">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="8" r="1">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="9" r="1">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="0" r="2">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="1" r="2">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="2" r="2">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="3" r="2">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="4" r="2">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="5" r="2">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="6" r="2">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="7" r="2">
+    <layer reference="4" depth="0" />
+    <layer reference="15" depth="2" />
+  </tile>
+  <tile c="8" r="2">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="9" r="2">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="0" r="3">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="1" r="3">
+    <layer reference="9" depth="0" />
+  </tile>
+  <tile c="2" r="3">
+    <layer reference="10" depth="0" />
+  </tile>
+  <tile c="3" r="3">
+    <layer reference="13" depth="0" />
+  </tile>
+  <tile c="4" r="3">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="5" r="3">
+    <layer reference="4" depth="0" />
+    <layer reference="14" depth="2" />
+  </tile>
+  <tile c="6" r="3">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="7" r="3">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="8" r="3">
+    <layer reference="11" depth="0" />
+  </tile>
+  <tile c="9" r="3">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="0" r="4">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="1" r="4">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="2" r="4">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="3" r="4">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="4" r="4">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="5" r="4">
+    <layer reference="4" depth="0" />
+    <layer reference="14" depth="2" />
+  </tile>
+  <tile c="6" r="4">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="7" r="4">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="8" r="4">
+    <layer reference="9" depth="0" />
+  </tile>
+  <tile c="9" r="4">
+    <layer reference="16" depth="0" />
+  </tile>
+  <tile c="0" r="5">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="1" r="5">
+    <layer reference="3" depth="0" />
+  </tile>
+  <tile c="2" r="5">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="3" r="5">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="4" r="5">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="5" r="5">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="6" r="5">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="7" r="5">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="8" r="5">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="9" r="5">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="0" r="6">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="1" r="6">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="2" r="6">
+    <layer reference="3" depth="0" />
+  </tile>
+  <tile c="3" r="6">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="4" r="6">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="5" r="6">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="6" r="6">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="7" r="6">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="8" r="6">
+    <layer reference="7" depth="0" />
+  </tile>
+  <tile c="9" r="6">
+    <layer reference="13" depth="0" />
+  </tile>
+  <tile c="0" r="7">
+    <layer reference="3" depth="0" />
+  </tile>
+  <tile c="1" r="7">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="2" r="7">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="3" r="7">
+    <layer reference="3" depth="0" />
+  </tile>
+  <tile c="4" r="7">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="5" r="7">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="6" r="7">
+    <layer reference="11" depth="0" />
+  </tile>
+  <tile c="7" r="7">
+    <layer reference="2" depth="0" />
+    <layer reference="5" depth="2" />
+  </tile>
+  <tile c="8" r="7">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="9" r="7">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="0" r="8">
+    <layer reference="4" depth="0" />
+    <layer reference="5" depth="2" />
+  </tile>
+  <tile c="1" r="8">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="2" r="8">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="3" r="8">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="4" r="8">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="5" r="8">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="6" r="8">
+    <layer reference="9" depth="0" />
+    <layer reference="5" depth="2" />
+  </tile>
+  <tile c="7" r="8">
+    <layer reference="10" depth="0" />
+  </tile>
+  <tile c="8" r="8">
+    <layer reference="13" depth="0" />
+    <layer reference="6" depth="2" />
+  </tile>
+  <tile c="9" r="8">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="0" r="9">
+    <layer reference="4" depth="0" />
+    <layer reference="6" depth="2" />
+  </tile>
+  <tile c="1" r="9">
+    <layer reference="4" depth="0" />
+    <layer reference="5" depth="2" />
+  </tile>
+  <tile c="2" r="9">
+    <layer reference="4" depth="0" />
+    <layer reference="5" depth="2" />
+  </tile>
+  <tile c="3" r="9">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="4" r="9">
+    <layer reference="3" depth="0" />
+  </tile>
+  <tile c="5" r="9">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="6" r="9">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="7" r="9">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="8" r="9">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="9" r="9">
+    <layer reference="1" depth="0" />
+  </tile>
+  <script>
+    <event>
+      <condition type="startGame" />
+	  <response type="disableMorale"><disable value="true" /></response>
+      <response type="disableControllers">
+        <disable value="true" />
+      </response>
+      <response type="disableAllUnits">
+        <disable value="true" />
+        <controller value="0" />
+      </response>
+      <response type="enableUnit">
+        <enable value="true" />
+        <controller value="0" />
+        <unit value="Strike Commando" />
+      </response>
+      <response type="enableUnit">
+        <enable value="true" />
+        <controller value="0" />
+        <unit value="Heavy Commando" />
+      </response>
+      <response type="enableUnit">
+        <enable value="true" />
+        <controller value="0" />
+        <unit value="Flak Tank" />
+      </response>
+      <response type="enableUnit">
+        <enable value="true" />
+        <controller value="0" />
+        <unit value="Scorpion Tank" />
+      </response>
+      <response type="enableUnit">
+        <enable value="true" />
+        <controller value="0" />
+        <unit value="Mortar Truck" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="When the enemy outnumbers you, you must use chokepoints and the terrain to level the playing field." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="highlight">
+        <x value="7" />
+        <y value="3" />
+        <show value="true" />
+      </response>
+      <response type="highlight">
+        <x value="8" />
+        <y value="2" />
+        <show value="true" />
+      </response>
+      <response type="highlight">
+        <x value="5" />
+        <y value="3" />
+        <show value="true" />
+      </response>
+      <response type="highlight">
+        <x value="6" />
+        <y value="1" />
+        <show value="true" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="I suggest you move two Scorpion Tanks into these positions to create a choke point." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="highlight">
+        <x value="7" />
+        <y value="3" />
+        <show value="false" />
+      </response>
+      <response type="highlight">
+        <x value="8" />
+        <y value="2" />
+        <show value="false" />
+      </response>
+      <response type="highlight">
+        <x value="5" />
+        <y value="3" />
+        <show value="false" />
+      </response>
+      <response type="highlight">
+        <x value="6" />
+        <y value="1" />
+        <show value="false" />
+      </response>
+      <response type="highlight">
+        <x value="7" />
+        <y value="2" />
+        <show value="true" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="This Rocket Truck's ranged attack can soften up the enemy units from safely behind your choke point." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="highlight">
+        <x value="7" />
+        <y value="2" />
+        <show value="false" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Just remember that ranged units like the Rocket Truck cannot move and attack in the same turn. Begin!" />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="disableControllers">
+        <disable value="False" />
+      </response>
+    </event>
+    <event>
+      <condition type="endGame">
+        <player value="1" />
+        <victory value="false" />
+      </condition>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Creating a defensible choke point at the start of this mission is key to surviving long enough to establish an army." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Remember to keep your Rocket Truck behind the choke point so that it can provide long range tactical support." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Sometimes you just need a little bit of recon. I understand. Let's give it another go." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+    </event>
+    <event>
+      <condition type="endGame">
+        <player value="1" />
+        <victory value="true" />
+      </condition>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Leveraging a strategic choke point can be the difference between success and defeat in many battles. Support your unranged units with long range artillery units like the Rocket Truck." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+    </event>
+  </script>
+</map>

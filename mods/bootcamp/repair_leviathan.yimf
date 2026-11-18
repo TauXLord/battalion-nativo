@@ -1,0 +1,638 @@
+<?xml version="1.0" encoding="utf-8"?>
+<map xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <description />
+  <name>Unnamed Map</name>
+  <author>Unknown Author</author>
+  <mode>Battalion Map Editor</mode>
+  <rows>10</rows>
+  <cols>10</cols>
+  <layers>3</layers>
+  <palette>
+    <entry reference="0">
+      <name>Mountain</name>
+      <imageCode>?(mountains_v1.png;mountains_v3.png)</imageCode>
+    </entry>
+    <entry reference="1">
+      <name>Plains</name>
+      <imageCode>?(plains_v1.png;plains_v2.png;plains_v3.png;plains_v4.png;plains_v5.png;plains_v6.png;plains_v7.png)</imageCode>
+    </entry>
+    <entry reference="2">
+      <name>Shore</name>
+      <imageCode>+(shore_8_v1.png;shore_7_v1.png;sea_0_v1.png;sea_0_v1.png)</imageCode>
+    </entry>
+    <entry reference="3">
+      <name>P1 Scorpion Tank</name>
+      <imageCode>@(1;scorpiontank.png)</imageCode>
+    </entry>
+    <entry reference="4">
+      <name>Sea</name>
+      <imageCode>+(sea_0_v1.png;sea_0_v1.png;sea_0_v1.png;sea_0_v1.png)</imageCode>
+    </entry>
+    <entry reference="5">
+      <name>Shore</name>
+      <imageCode>+(sea_0_v1.png;sea_0_v1.png;shore_2_v1.png;shore_1_v1.png)</imageCode>
+    </entry>
+    <entry reference="6">
+      <name>Reef</name>
+      <imageCode>?(reef_v1.png;reef_v2.png;reef_v3.png;reef_v4.png)</imageCode>
+    </entry>
+    <entry reference="7">
+      <name>Hill</name>
+      <imageCode>?(hills_v1.png;hills_v2.png;hills_v3.png;hills_v4.png)</imageCode>
+    </entry>
+    <entry reference="8">
+      <name>Forest</name>
+      <imageCode>?(forest_v1.png;forest_v2.png)</imageCode>
+    </entry>
+    <entry reference="9">
+      <name>P1 Flak Tank</name>
+      <imageCode>@(1;flaktank.png)</imageCode>
+    </entry>
+    <entry reference="10">
+      <name>Sea</name>
+      <imageCode>+(sea_0_v1.png;sea_0_v1.png;sea_7_v1.png;sea_8_v1.png)</imageCode>
+    </entry>
+    <entry reference="11">
+      <name>Sea</name>
+      <imageCode>+(sea_5_v1.png;sea_6_v1.png;sea_0_v1.png;sea_13_v1.png)</imageCode>
+    </entry>
+    <entry reference="12">
+      <name>Shore</name>
+      <imageCode>+(sea_0_v1.png;shore_6_v1.png;sea_0_v1.png;shore_5_v1.png)</imageCode>
+    </entry>
+    <entry reference="13">
+      <name>Sea</name>
+      <imageCode>+(sea_0_v1.png;sea_15_v1.png;sea_0_v1.png;sea_0_v1.png)</imageCode>
+    </entry>
+    <entry reference="14">
+      <name>Shore</name>
+      <imageCode>+(shore_10_v1.png;shore_7_v1.png;shore_3_v1.png;sea_0_v1.png)</imageCode>
+    </entry>
+    <entry reference="15">
+      <name>Sea</name>
+      <imageCode>+(sea_16_v1.png;sea_0_v1.png;sea_0_v1.png;sea_0_v1.png)</imageCode>
+    </entry>
+    <entry reference="16">
+      <name>Sea</name>
+      <imageCode>+(sea_0_v1.png;sea_0_v1.png;sea_14_v1.png;sea_0_v1.png)</imageCode>
+    </entry>
+    <entry reference="17">
+      <name>Sea</name>
+      <imageCode>+(sea_9_v1.png;sea_0_v1.png;sea_10_v1.png;sea_13_v1.png)</imageCode>
+    </entry>
+    <entry reference="18">
+      <name>Sea</name>
+      <imageCode>+(sea_16_v1.png;sea_11_v1.png;sea_7_v1.png;sea_4_v1.png)</imageCode>
+    </entry>
+    <entry reference="19">
+      <name>P1 Rocket Truck</name>
+      <imageCode>@(1;rockettruck.png)</imageCode>
+    </entry>
+    <entry reference="20">
+      <name>Sea</name>
+      <imageCode>+(sea_0_v1.png;sea_0_v1.png;sea_0_v1.png;sea_13_v1.png)</imageCode>
+    </entry>
+    <entry reference="21">
+      <name>Shore</name>
+      <imageCode>+(sea_0_v1.png;shore_6_v1.png;shore_2_v1.png;shore_11_v1.png)</imageCode>
+    </entry>
+    <entry reference="22">
+      <name>P2 Flak Tank</name>
+      <imageCode>@(2;flaktank.png)</imageCode>
+    </entry>
+    <entry reference="23">
+      <name>Shore</name>
+      <imageCode>+(shore_8_v1.png;shore_12_v1.png;sea_0_v1.png;shore_5_v1.png)</imageCode>
+    </entry>
+    <entry reference="24">
+      <name>Shore</name>
+      <imageCode>+(shore_4_v1.png;sea_0_v1.png;shore_3_v1.png;sea_0_v1.png)</imageCode>
+    </entry>
+    <entry reference="25">
+      <name>Archipelago</name>
+      <imageCode>?(archipelago_v1.png;archipelago_v2.png;archipelago_v3.png;archipelago_v4.png)</imageCode>
+    </entry>
+    <entry reference="26">
+      <name>Sea</name>
+      <imageCode>+(sea_5_v1.png;sea_2_v1.png;sea_0_v1.png;sea_12_v1.png)</imageCode>
+    </entry>
+    <entry reference="27">
+      <name>Mountain</name>
+      <imageCode>?(mountains_v2.png;mountains_v4.png)</imageCode>
+    </entry>
+    <entry reference="28">
+      <name>Road</name>
+      <imageCode>road_5_v1.png</imageCode>
+    </entry>
+    <entry reference="29">
+      <name>Road</name>
+      <imageCode>road_15_v1.png</imageCode>
+    </entry>
+    <entry reference="30">
+      <name>Rock Formation</name>
+      <imageCode>?(rock_formation_v1.png;rock_formation_v2.png;rock_formation_v3.png;rock_formation_v4.png)</imageCode>
+    </entry>
+    <entry reference="31">
+      <name>Sea</name>
+      <imageCode>+(sea_0_v1.png;sea_11_v1.png;sea_7_v1.png;sea_4_v1.png)</imageCode>
+    </entry>
+    <entry reference="32">
+      <name>Road</name>
+      <imageCode>road_11_v1.png</imageCode>
+    </entry>
+    <entry reference="33">
+      <name>Road</name>
+      <imageCode>road_10_v1.png</imageCode>
+    </entry>
+    <entry reference="34">
+      <name>Sea</name>
+      <imageCode>+(sea_0_v1.png;sea_11_v1.png;sea_0_v1.png;sea_12_v1.png)</imageCode>
+    </entry>
+    <entry reference="35">
+      <name>Road</name>
+      <imageCode>road_2_v1.png</imageCode>
+    </entry>
+    <entry reference="36">
+      <name>P2 Scorpion Tank</name>
+      <imageCode>@(2;scorpiontank.png)</imageCode>
+    </entry>
+    <entry reference="37">
+      <name>Road</name>
+      <imageCode>road_3_v1.png</imageCode>
+    </entry>
+    <entry reference="38">
+      <name>Road</name>
+      <imageCode>road_6_v1.png</imageCode>
+    </entry>
+    <entry reference="39">
+      <name>Sea</name>
+      <imageCode>+(sea_5_v1.png;sea_6_v1.png;sea_0_v1.png;sea_0_v1.png)</imageCode>
+    </entry>
+    <entry reference="40">
+      <name>Road</name>
+      <imageCode>road_14_v1.png</imageCode>
+    </entry>
+  </palette>
+  <tile c="0" r="0">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="1" r="0">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="2" r="0">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="3" r="0">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="4" r="0">
+    <layer reference="1" depth="0" />
+    <layer reference="9" depth="2" />
+  </tile>
+  <tile c="5" r="0">
+    <layer reference="24" depth="0" />
+    <layer reference="3" depth="2" />
+  </tile>
+  <tile c="6" r="0">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="7" r="0">
+    <layer reference="30" depth="0" />
+  </tile>
+  <tile c="8" r="0">
+    <layer reference="34" depth="0" />
+  </tile>
+  <tile c="9" r="0">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="0" r="1">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="1" r="1">
+    <layer reference="7" depth="0" />
+  </tile>
+  <tile c="2" r="1">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="3" r="1">
+    <layer reference="14" depth="0" />
+    <layer reference="19" depth="2" />
+  </tile>
+  <tile c="4" r="1">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="5" r="1">
+    <layer reference="15" depth="0" />
+  </tile>
+  <tile c="6" r="1">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="7" r="1">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="8" r="1">
+    <layer reference="13" depth="0" />
+  </tile>
+  <tile c="9" r="1">
+    <layer reference="39" depth="0" />
+  </tile>
+  <tile c="0" r="2">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="1" r="2">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="2" r="2">
+    <layer reference="14" depth="0" />
+    <layer reference="3" depth="2" />
+  </tile>
+  <tile c="3" r="2">
+    <layer reference="15" depth="0" />
+  </tile>
+  <tile c="4" r="2">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="5" r="2">
+    <layer reference="25" depth="0" />
+  </tile>
+  <tile c="6" r="2">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="7" r="2">
+    <layer reference="20" depth="0" />
+  </tile>
+  <tile c="8" r="2">
+    <layer reference="5" depth="0" />
+  </tile>
+  <tile c="9" r="2">
+    <layer reference="5" depth="0" />
+  </tile>
+  <tile c="0" r="3">
+    <layer reference="2" depth="0" />
+    <layer reference="3" depth="2" />
+  </tile>
+  <tile c="1" r="3">
+    <layer reference="2" depth="0" />
+    <layer reference="9" depth="2" />
+  </tile>
+  <tile c="2" r="3">
+    <layer reference="15" depth="0" />
+  </tile>
+  <tile c="3" r="3">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="4" r="3">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="5" r="3">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="6" r="3">
+    <layer reference="20" depth="0" />
+  </tile>
+  <tile c="7" r="3">
+    <layer reference="31" depth="0" />
+  </tile>
+  <tile c="8" r="3">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="9" r="3">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="0" r="4">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="1" r="4">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="2" r="4">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="3" r="4">
+    <layer reference="6" depth="0" />
+  </tile>
+  <tile c="4" r="4">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="5" r="4">
+    <layer reference="20" depth="0" />
+  </tile>
+  <tile c="6" r="4">
+    <layer reference="21" depth="0" />
+  </tile>
+  <tile c="7" r="4">
+    <layer reference="1" depth="0" />
+    <layer reference="22" depth="2" />
+  </tile>
+  <tile c="8" r="4">
+    <layer reference="1" depth="0" />
+    <layer reference="22" depth="2" />
+  </tile>
+  <tile c="9" r="4">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="0" r="5">
+    <layer reference="5" depth="0" />
+  </tile>
+  <tile c="1" r="5">
+    <layer reference="10" depth="0" />
+  </tile>
+  <tile c="2" r="5">
+    <layer reference="16" depth="0" />
+  </tile>
+  <tile c="3" r="5">
+    <layer reference="20" depth="0" />
+  </tile>
+  <tile c="4" r="5">
+    <layer reference="5" depth="0" />
+  </tile>
+  <tile c="5" r="5">
+    <layer reference="21" depth="0" />
+  </tile>
+  <tile c="6" r="5">
+    <layer reference="1" depth="0" />
+    <layer reference="9" depth="2" />
+  </tile>
+  <tile c="7" r="5">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="8" r="5">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="9" r="5">
+    <layer reference="1" depth="0" />
+    <layer reference="36" depth="2" />
+  </tile>
+  <tile c="0" r="6">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="1" r="6">
+    <layer reference="1" depth="0" />
+    <layer reference="3" depth="2" />
+  </tile>
+  <tile c="2" r="6">
+    <layer reference="17" depth="0" />
+  </tile>
+  <tile c="3" r="6">
+    <layer reference="21" depth="0" />
+  </tile>
+  <tile c="4" r="6">
+    <layer reference="8" depth="0" />
+    <layer reference="3" depth="2" />
+  </tile>
+  <tile c="5" r="6">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="6" r="6">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="7" r="6">
+    <layer reference="28" depth="0" />
+  </tile>
+  <tile c="8" r="6">
+    <layer reference="35" depth="0" />
+  </tile>
+  <tile c="9" r="6">
+    <layer reference="40" depth="0" />
+  </tile>
+  <tile c="0" r="7">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="1" r="7">
+    <layer reference="11" depth="0" />
+  </tile>
+  <tile c="2" r="7">
+    <layer reference="18" depth="0" />
+  </tile>
+  <tile c="3" r="7">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="4" r="7">
+    <layer reference="1" depth="0" />
+    <layer reference="22" depth="2" />
+  </tile>
+  <tile c="5" r="7">
+    <layer reference="1" depth="0" />
+    <layer reference="22" depth="2" />
+  </tile>
+  <tile c="6" r="7">
+    <layer reference="27" depth="0" />
+  </tile>
+  <tile c="7" r="7">
+    <layer reference="32" depth="0" />
+  </tile>
+  <tile c="8" r="7">
+    <layer reference="1" depth="0" />
+    <layer reference="36" depth="2" />
+  </tile>
+  <tile c="9" r="7">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="0" r="8">
+    <layer reference="4" depth="0" />
+  </tile>
+  <tile c="1" r="8">
+    <layer reference="12" depth="0" />
+  </tile>
+  <tile c="2" r="8">
+    <layer reference="8" depth="0" />
+  </tile>
+  <tile c="3" r="8">
+    <layer reference="14" depth="0" />
+  </tile>
+  <tile c="4" r="8">
+    <layer reference="23" depth="0" />
+  </tile>
+  <tile c="5" r="8">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="6" r="8">
+    <layer reference="28" depth="0" />
+  </tile>
+  <tile c="7" r="8">
+    <layer reference="33" depth="0" />
+  </tile>
+  <tile c="8" r="8">
+    <layer reference="37" depth="0" />
+  </tile>
+  <tile c="9" r="8">
+    <layer reference="1" depth="0" />
+  </tile>
+  <tile c="0" r="9">
+    <layer reference="6" depth="0" />
+  </tile>
+  <tile c="1" r="9">
+    <layer reference="13" depth="0" />
+  </tile>
+  <tile c="2" r="9">
+    <layer reference="2" depth="0" />
+  </tile>
+  <tile c="3" r="9">
+    <layer reference="15" depth="0" />
+  </tile>
+  <tile c="4" r="9">
+    <layer reference="13" depth="0" />
+  </tile>
+  <tile c="5" r="9">
+    <layer reference="26" depth="0" />
+  </tile>
+  <tile c="6" r="9">
+    <layer reference="29" depth="0" />
+  </tile>
+  <tile c="7" r="9">
+    <layer reference="0" depth="0" />
+  </tile>
+  <tile c="8" r="9">
+    <layer reference="38" depth="0" />
+  </tile>
+  <tile c="9" r="9">
+    <layer reference="40" depth="0" />
+  </tile>
+  <script>
+    <event>
+      <condition type="startGame" />
+	  <response type="disableMorale"><disable value="true" /></response>
+      <response type="disableControllers">
+        <disable value="true" />
+      </response>
+      <response type="disableUnit">
+        <disable value="true" />
+        <controller value="0" />
+        <unit value="Annihilator Tank" />
+      </response>
+      <response type="disableUnit">
+        <disable value="true" />
+        <controller value="0" />
+        <unit value="Stealth Tank" />
+      </response>
+      <response type="disableUnit">
+        <disable value="true" />
+        <controller value="0" />
+        <unit value="Rocket Truck" />
+      </response>
+      <response type="damageUnit">
+        <x value="0" />
+        <y value="3" />
+        <amount value="15" />
+      </response>
+      <response type="damageUnit">
+        <x value="1" />
+        <y value="3" />
+        <amount value="25" />
+      </response>
+      <response type="damageUnit">
+        <x value="2" />
+        <y value="2" />
+        <amount value="13" />
+      </response>
+      <response type="damageUnit">
+        <x value="3" />
+        <y value="1" />
+        <amount value="5" />
+      </response>
+      <response type="damageUnit">
+        <x value="4" />
+        <y value="0" />
+        <amount value="11" />
+      </response>
+      <response type="damageUnit">
+        <x value="5" />
+        <y value="0" />
+        <amount value="7" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="In some scenarios you'll be joining your troops mid-battle." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Here your forces have had to retreat across a channel after being pummeled by the enemy troops." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Rally your troops by repairing them from the safety of the remote island." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Repairing hurts the morale of your troops, so use it wisely on the frontlines." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="The repair will complete at the start of your next turn and will repair up to 25% of the health of the unit. You can repair repeatedly until the unit is at 100% health." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="If an enemy attacks you before the repair completes, you will lose the repair will fail and the unit will be unable to counterattack." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Once your army is back in top shape, call a fleet of Leviathans and take the island." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="You can order repairs and Leviathan pickups from the special actions menu. Click twice on a unit to bring up its special actions menu." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Good luck, soldier." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="disableControllers">
+        <disable value="false" />
+      </response>
+    </event>
+    <event>
+      <condition type="endGame">
+        <player value="1" />
+        <victory value="false" />
+      </condition>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Make sure you have repaired your units completely before mounting your assault." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Try to land all your Leviathans at the same time. It will reduce the effectiveness of the enemy's initial attack." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="This is a harder mission, for sure, but we need to prepare you for the real thing. Let's try again." />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+    </event>
+    <event>
+      <condition type="endGame">
+        <player value="1" />
+        <victory value="true" />
+      </condition>
+      <response type="chat">
+        <sender value="GENERAL PEARL" />
+        <message value="Congratulations, soldier. It looks like you are almost ready to graduate from boot camp!" />
+        <avatar value="pearl" />
+        <color value="FFFF0000" />
+      </response>
+    </event>
+  </script>
+</map>

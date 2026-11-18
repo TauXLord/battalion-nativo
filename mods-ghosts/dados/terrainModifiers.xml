@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<terrainmodifiers>
+
+	<modifier type="Terrain" name="Extractable">
+		<image value="Extractable"/>
+		<description value="Resources can be extracted from this tile."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<!-- Match on unit type, all sea units cost Infinity -->
+			<match type="unitType" value="sea">
+				<effect value="Infinity"/>
+			</match>
+			<!-- Modifier effect is hard coded -->
+		</modify>
+	</modifier>
+
+	<modifier type="Terrain" name="Ground">
+		<image value="Ground"/>
+		<description value="Sea units cannot enter."/>
+		<visible value="false"/>
+		<modify type="movementCost">
+			<!-- Match on unit type, all sea units cost Infinity -->
+			<match type="unitType" value="sea">
+				<effect value="Infinity"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Water">
+		<image value="Water"/>
+		<description value="Ground units cannot enter."/>
+		<visible value="false"/>
+		<modify type="movementCost">
+			<!-- Match on unit type, all ground units cost Infinity -->
+			<match type="unitType" value="ground">
+				<effect value="Infinity"/>
+			</match>
+		</modify>
+	</modifier>
+
+
+
+	<modifier type="Terrain" name="Impassable">
+		<image value="Impassable"/>
+		<description value="No unit may enter."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<effect value="Infinity"/>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Uneven">
+		<image value="Uneven"/>
+		<description value="Slows wheeled vehicles."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<!-- Match on movement type, if it's wheeled, it costs 2 -->
+			<match type="movementType" value="wheeled">
+				<effect value="1.5"/>
+			</match>
+		</modify>
+	</modifier>
+
+	<modifier type="Terrain" name="Rugged">
+		<image value="Rugged"/>
+		<description value="Slows wheeled vehicles and somewhat slows tracked vehicles."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<match type="movementType" value="wheeled">
+				<effect value="2.5"/>
+			</match>
+			<match type="movementType" value="tracked">
+				<effect value="2"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Precipitous">
+		<image value="Precipitous"/>
+		<description value="Allows only commandos. Severe movement cost."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<match type="movementType" value="feet">
+				<effect value="2"/>
+			</match>
+			<match type="movementType" value="wheeled">
+				<effect value="Infinity"/>
+			</match>
+			<match type="movementType" value="tracked">
+				<effect value="Infinity"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Barbed">
+		<image value="Barbed"/>
+		<description value="Commandos cannot enter barbed tiles."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<match type="movementType" value="feet">
+				<effect value="Infinity"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Shallow">
+		<image value="Shallow"/>
+		<description value="Large hulled ships cannot enter shallow waters."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<match type="modifier" value="Massive Hull">
+				<effect value="Infinity"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Cover">
+		<image value="Cover"/>
+		<description value="Damage to non-air units reduced by 10%."/>
+		<visible value="true"/>
+		<modify type="defense">
+			<match type="unitType" value="ground">
+				<effect value="-10%"/>
+			</match>
+			<match type="unitType" value="sea">
+				<effect value="-10%"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Camouflage">
+		<image value="Camouflage"/>
+		<description value="Damage to ground and sea units reduced by 20%."/>
+		<visible value="true"/>
+		<modify type="defense">
+			<match type="unitType" value="ground">
+				<effect value="-20%"/>
+			</match>
+			<match type="unitType" value="sea">
+				<effect value="-20%"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Bunker">
+		<image value="Bunker"/>
+		<description value="Damage to ground units reduced by 40%."/>
+		<visible value="true"/>
+		<modify type="defense">
+			<match type="unitType" value="ground">
+				<effect value="-40%"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="High Ground">
+		<image value="HighGround"/>
+		<description value="Reduces damage received by ranged fire by 25%"/>
+		<visible value="true"/>
+		<modify type="rangedDefense">
+			<match type="unitType" value="ground">
+				<effect value="-25%"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Farsight">
+		<image value="Farsight"/>
+		<description value="Increases maximum attack range of ranged units by 1."/>
+		<visible value="true"/>
+		<modify type="attackRange">
+			<effect value="+1"/>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Garrison">
+		<image value="Garrison"/>
+		<description value="Damage to non-air units reduced by 50%"/>
+		<visible value="true"/>
+		<modify type="defense">
+			<match type="unitType" value="ground">
+				<effect value="-50%"/>
+			</match>
+			<match type="unitType" value="sea">
+				<effect value="-50%"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Strait">
+		<image value="Strait"/>
+		<description value="Damage received by sea units is increased by 10%"/>
+		<visible value="true"/>
+		<modify type="defense">
+			<match type="unitType" value="sea">
+				<effect value="+10%"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Reduced Mobility">
+		<image value="ReducedMobility"/>
+		<description value="Ship movement is reduced."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<match type="unitType" value="sea">
+				<effect value="2"/>
+			</match>
+		</modify>
+	</modifier>
+
+	<modifier type="Terrain" name="Tricky Waters">
+		<image value="TrickyWaters"/>
+		<description
+			value="Tricky waters severely slow Massive Hull ships and slows all other types."/>
+		<visible value="true"/>
+		<modify type="movementCost">
+			<match type="unitType" value="sea">
+				<effect value="2"/>
+			</match>
+			<match type="modifier" value="Massive Hull">
+				<effect value="3"/>
+			</match>
+		</modify>
+	</modifier>
+
+	<modifier type="Terrain" name="Hazard">
+		<image value="Hazard"/>
+		<description value="Does 20 damage to any non-air units that start their turn on this tile."/>
+		<visible value="true"/>
+		<modify type="damage">
+			<match type="unitType" value="ground">
+				<effect value="20"/>
+			</match>
+			<match type="unitType" value="sea">
+				<effect value="20"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Canopy">
+		<image value="Canopy"/>
+		<description value="Ranged units cannot fire from this tile."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+	<modifier type="Terrain" name="Shielded">
+		<image value="Shielded"/>
+		<description value="Units in Shielded terrain can't be targetted by ranged units."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+
+	<modifier type="Terrain" name="Construction">
+		<image value="Construction"/>
+		<description value="Controlling team may build new units from this structure."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Terrain" name="Capturable">
+		<image value="Capturable"/>
+		<description value="This structure can be captured."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+	<modifier type="Terrain" name="Air Proficiency">
+		<image value="AirProficiency"/>
+		<description value="Each Air Control reduces cost of deploying air units by 5%."/>
+		<visible value="true"/>
+
+		<modify type="airCost">
+			<effect value="-5%"/>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Ground Proficiency">
+		<image value="GroundProficiency"/>
+		<description value="Each Ground Control reduces cost of deploying ground units by 5%."/>
+		<visible value="true"/>
+
+		<modify type="groundCost">
+			<effect value="-5%"/>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Sea Proficiency">
+		<image value="SeaProficiency"/>
+		<description value="Each Sea Control reduces cost of deploying sea units by 5%."/>
+		<visible value="true"/>
+
+		<modify type="seaCost">
+			<effect value="-5%"/>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Level 1 Oil Refining">
+		<image value="Level1OilRefining"/>
+		<description value="Delivers $60 per round to the controlling team, in equal portions per player turn."/>
+		<visible value="true"/>
+
+		<modify type="resources">
+			<effect value="+60"/>
+		</modify>
+	</modifier>
+	<modifier type="Terrain" name="Level 2 Oil Refining">
+		<image value="Level2OilRefining"/>
+		<description value="Delivers $240 per round to the controlling team, in equal portions per player turn."/>
+		<visible value="true"/>
+
+		<modify type="resources">
+			<effect value="+240"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Terrain" name="Level 3 Oil Refining">
+		<image value="Level3OilRefining"/>
+		<description value="Delivers $480 per round to the controlling team, in equal portions per player turn."/>
+		<visible value="true"/>
+
+		<modify type="resources">
+			<effect value="+480"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Terrain" name="Mission Critical">
+		<image value="MissionCritical"/>
+		<description value="Losing this structure means defeat (or victory!)."/>
+		<visible value="true"/>
+	</modifier>
+
+	<modifier type="Terrain" name="Reduced Efficiency">
+		<image value="Level1OilRefining"/>
+		<description
+			value="When running at reduced efficiency, this structure provides 50% less resources."/>
+		<visible value="false"/>
+
+		<modify type="reducedResources">
+			<effect value="-50%"/>
+		</modify>
+
+	</modifier>
+
+	<modifier type="Terrain" name="Shore">
+		<image value="Shore"/>
+		<description value="I am a shore, sure!"/>
+		<visible value="false"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+</terrainmodifiers>

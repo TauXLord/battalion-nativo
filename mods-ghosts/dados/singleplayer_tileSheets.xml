@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tilesheets>
+	<stockanimations>
+	</stockanimations>
+
+	<stocktilesheets>
+	</stocktilesheets>
+
+	<tilesheets>
+
+		<tilesheet name="restoreButton" width="126" height="71">
+			<image value="restoreButton"/>
+		</tilesheet>
+		
+		<tilesheet name="putThisGameOnYourSiteButton" width="138" height="22">
+			<image value="putThisGameOnYourSiteButton"/>
+		</tilesheet>
+		
+		<tilesheet name="bonusMapButton" width="126" height="71">
+			<image value="bonusMapButton"/>
+		</tilesheet>
+
+		<tilesheet name="campaignButton" width="164" height="94">
+			<image value="campaignButton"/>
+		</tilesheet>
+		
+		<tilesheet name="levelEditorButton" width="126" height="71">
+			<image value="levelEditorButton"/>
+		</tilesheet>
+
+		<tilesheet name="singleplayerButton" width="126" height="71">
+			<image value="singleplayerButton"/>
+		</tilesheet>
+		
+		<tilesheet name="multiplayerButton" width="126" height="71">
+			<image value="multiplayerButton"/>
+		</tilesheet>
+
+		<tilesheet name="optionsMainButton" width="126" height="71">
+			<image value="optionsMainButton"/>
+		</tilesheet>
+		
+		
+		<!-- Skirmish -->
+		<tilesheet name="playButton" width="189" height="107">
+			<image value="playButton"/>
+		</tilesheet>
+
+		<tilesheet name="creditsButton" width="126" height="71">
+			<image value="creditsButton"/>
+		</tilesheet>
+		
+	</tilesheets>
+</tilesheets>

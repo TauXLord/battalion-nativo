@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ballisticsTable>
+	<!-- We don't really need to include medium, as default modifier is 1x -->
+	<attack type="light">
+		<defense type="light" value="1.5"/>
+		<defense type="medium" value="1"/>
+		<defense type="heavy" value="0.5"/>
+	</attack>
+	<attack type="medium">
+		<defense type="light" value="1"/>
+		<defense type="medium" value="1"/>
+		<defense type="heavy" value="1"/>
+	</attack>
+	<attack type="heavy">
+		<defense type="light" value="0.5"/>
+		<defense type="medium" value="1"/>
+		<defense type="heavy" value="1.5"/>
+	</attack>
+</ballisticsTable>

@@ -1,0 +1,55 @@
+[hidden] { display: none !important; }
+a { color: #dce8ca; }
+main.hub, main.editor { width: min(calc(100vw - 32px), 1000px); }
+.hub h1 { font: 700 clamp(2.6rem, 7vw, 5.5rem)/1 Georgia, serif; letter-spacing: .07em; text-transform: uppercase; margin: 0 0 30px; }
+.campaigns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.campaign {
+  min-height: 204px; padding: 24px; border-radius: 10px; border: 1px solid #4c6055;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+  background: linear-gradient(140deg, #33444c, #1b2627); text-decoration: none;
+}
+.campaign.vengeance { background: linear-gradient(140deg, #4b4327, #292a20); }
+.campaign strong { font: 700 clamp(1.9rem, 5vw, 3.5rem)/1 Georgia, serif; }
+.campaign span, .edit-link { font-weight: 650; }
+.campaign:hover, .edit-link:hover { border-color: #a2af95; filter: brightness(1.14); }
+.edit-link { display: inline-block; margin-top: 18px; padding: 12px 16px; border: 1px solid #566a5b; border-radius: 5px; text-decoration: none; }
+.editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(225px, 290px); gap: 20px; align-items: start; }
+.board-wrap { overflow: auto; border: 1px solid #566a5b; padding: 8px; }
+#map-grid { display: grid; gap: 2px; }
+.cell { aspect-ratio: 1; padding: 0; border: 0; border-radius: 2px; font-size: clamp(.53rem, 1.1vw, .9rem); font-weight: 800; background: #6b7750; color: #fff; }
+.cell:hover, .cell:focus-visible { outline: 2px solid #f1e0ac; z-index: 1; }
+.cell.water { background: #376770; }
+.cell.rock { background: #656455; }
+.cell.forest { background: #475e41; }
+.cell.road { background: #7c6e58; }
+.cell[data-side="1"] { box-shadow: inset 0 0 0 2px #b2d7ff; color: #e6f2ff; }
+.cell[data-side="2"] { box-shadow: inset 0 0 0 2px #ffac95; color: #ffe0d7; }
+.tools { display: grid; gap: 10px; }
+.tools label { display: grid; gap: 4px; }
+.tools input, .tools select { min-height: 38px; border: 1px solid #566a5b; border-radius: 4px; color: inherit; background: #202b24; padding: 6px; width: 100%; }
+.actions, .dimensions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.primary { background: #c7ddb0; color: #172419; font-weight: 700; }
+#editor-status { margin: 0; color: #e1d1ab; }
+.scenario-list { display: grid; gap: 8px; }
+.scenario-list button { text-align: left; display: grid; gap: 5px; padding: 12px; }
+.scenario-list button span { font-weight: normal; color: #c1ceb8; }
+.scenario-list button[aria-pressed="true"] { border-color: #aabd88; background: #364b32; }
+#guest-screen { display:block; width:min(100%, calc((100dvh - 110px) * 7 / 6)); margin:auto; background:#000; cursor:crosshair; }
+#lan-status { overflow-wrap:anywhere; }
+.camera-controls { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:0 0 8px; }
+.camera-zoom { min-width:4ch; text-align:center; font-variant-numeric:tabular-nums; }
+.camera-controls details { position:relative; margin-left:4px; }
+.camera-controls summary { cursor:pointer; padding:7px; }
+.camera-settings { display:grid; gap:8px; position:absolute; z-index:3; top:100%; right:0; width:max-content; padding:10px; background:#223229; border:1px solid #566a5b; border-radius:4px; }
+#player-view:fullscreen #lan-status, #guest-view:fullscreen #guest-status { margin:2px 0 7px; }
+#guest-view:fullscreen #guest-screen { width:min(100%,calc((100dvh - 155px) * 7 / 6)); }
+#guest-pan { margin:4px 0 0; padding:4px 6px; }
+.lobby-seats, .lobby-prefs { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:14px 0; }
+.lobby-seats section { border:1px solid #566a5b; border-radius:6px; padding:12px; }
+.lobby-seats p { margin-bottom:0; }
+.lobby-prefs label, #lobby-invites label { display:grid; gap:5px; margin-bottom:8px; }
+.lobby-prefs select, #lobby-invites input { width:100%; box-sizing:border-box; padding:8px; color:inherit; background:#202b24; border:1px solid #566a5b; border-radius:4px; }
+.lobby-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.lobby-actions button:disabled { opacity:.55; cursor:default; }
+@media (max-width: 680px) { .editor-layout { grid-template-columns: 1fr; } .campaign { min-height: 155px; padding: 13px; } }
+@media (max-width: 420px) { .campaigns { grid-template-columns: 1fr; } }

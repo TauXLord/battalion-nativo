@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Battalion</title>
+  <link rel="stylesheet" href="/launcher.css">
+  <link rel="icon" href="data:,">
+  <script src="/runtime/ruffle.js"></script>
+  <style>
+    :root { color-scheme: dark; font: 15px system-ui, sans-serif; color: #e6ebe7; background: #111813; }
+    body { min-height: 100dvh; margin: 0; display: grid; place-content: center; padding: 16px; box-sizing: border-box; }
+    main { width: min(calc(100vw - 32px), calc((100dvh - 96px) * 7 / 6), 1120px); }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    h1 { font-size: clamp(1rem, 3vw, 1.5rem); margin: 0; }
+    button { color: inherit; font: inherit; border: 1px solid #566a5b; border-radius: 4px; background: #223229; padding: 7px 12px; cursor: pointer; }
+    #stage { aspect-ratio: 7 / 6; background: #000; outline: 1px solid #3b4c40; }
+    #player-view:fullscreen, #guest-view:fullscreen { width: 100%; display: flex; flex-direction: column; align-items: center; overflow: auto; }
+    #player-view:fullscreen #stage { width: min(100%, calc((100dvh - 112px) * 7 / 6)); flex: none; }
+    :fullscreen header { width: min(95%, 1000px); margin: 6px 0; }
+    ruffle-player { width: 100%; height: 100%; display: block; }
+    #error { color: #ffc5a7; }
+  </style>
+</head>
+<body>
+  <main id="player-view" hidden>
+    <header><a href="/">← Campanhas</a><h1 id="player-title">Battalion</h1><button id="fullscreen" type="button">Tela cheia</button></header>
+    <p id="lan-status" hidden></p>
+    <div id="player-camera" class="camera-controls" hidden></div>
+    <div id="stage"></div>
+    <p id="error" role="alert" hidden></p>
+  </main>
+  <main id="hub" class="hub" hidden>
+    <h1>Battalion</h1>
+    <div class="campaigns">
+      <a class="campaign ghosts" href="/?game=ghosts"><span>Episódio 2</span><strong>Ghosts</strong><span>Jogar campanha →</span></a>
+      <a class="campaign vengeance" href="/?game=vengeance"><span>Episódio 3</span><strong>Vengeance</strong><span>Jogar campanha →</span></a>
+    </div>
+    <a class="edit-link" href="/?editor">Editar mapas →</a>
+    <a class="edit-link" href="/?cenarios">Cenários e rede local →</a>
+  </main>
+  <main id="scenario-view" class="editor" hidden>
+    <header><a href="/">← Campanhas</a><h1>Cenários</h1></header>
+    <div class="editor-layout">
+      <div id="scenario-list" class="scenario-list"></div>
+      <aside class="tools">
+        <label>Modo <select id="scenario-mode"><option value="ai">Contra a IA</option><option value="hotseat">Dois jogadores no mesmo computador</option><option value="lan">Multiplayer LAN</option></select></label>
+        <div id="team-colors" class="tools"></div>
+        <button id="scenario-play" class="primary">Jogar cenário</button>
+        <p id="scenario-status" role="status"></p>
+      </aside>
+    </div>
+  </main>
+  <main id="guest-view" class="editor" hidden>
+    <header><h1>Battalion · Rede local</h1><button id="guest-fullscreen" type="button">Tela cheia</button></header>
+    <p id="guest-status" role="status"></p>
+    <div id="guest-camera" class="camera-controls" hidden></div>
+    <img id="guest-screen" alt="Tela da partida" draggable="false" hidden>
+    <div id="guest-pan" class="edit-link" aria-label="Mover câmera" hidden>
+      <button data-pan="112,0" aria-label="Esquerda">←</button><button data-pan="0,112" aria-label="Cima">↑</button>
+      <button data-pan="0,-112" aria-label="Baixo">↓</button><button data-pan="-112,0" aria-label="Direita">→</button>
+    </div>
+  </main>
+  <main id="lobby-view" class="editor" hidden>
+    <header><a id="lobby-back" href="/?cenarios">← Cenários</a><h1>Sala multiplayer</h1></header>
+    <div id="lobby-invites"></div>
+    <div class="lobby-seats">
+      <section><strong>Anfitrião</strong><p id="lobby-host"></p></section>
+      <section><strong>Convidado</strong><p id="lobby-guest"></p></section>
+    </div>
+    <div class="lobby-prefs">
+      <label>Cor da sua equipe <select id="lobby-color"></select></label>
+      <label>Seu voto para o mapa <select id="lobby-vote"></select></label>
+    </div>
+    <p id="lobby-map"></p>
+    <div class="lobby-actions">
+      <button id="lobby-ready" disabled>Marcar como pronto</button>
+      <button id="lobby-start" class="primary" disabled hidden>Começar partida</button>
+    </div>
+    <p id="lobby-status" role="status"></p>
+  </main>
+  <main id="editor-view" class="editor" hidden>
+    <header><a href="/">← Campanhas</a><h1>Editor de mapas</h1></header>
+    <div class="editor-layout">
+      <section class="board-wrap" aria-label="Mapa"><div id="map-grid"></div></section>
+      <aside class="tools">
+        <label>Motor <select id="map-game"><option value="ghosts">Ghosts</option><option value="vengeance">Vengeance</option></select></label>
+        <label>Nome <input id="map-title" maxlength="60"></label>
+        <div class="dimensions">
+          <label>Colunas <input id="map-cols" type="number" min="4" max="24"></label>
+          <label>Linhas <input id="map-rows" type="number" min="4" max="24"></label>
+        </div>
+        <div class="actions"><button id="blank-map">Mapa em branco</button><button id="template-map">Copiar capítulo 1</button></div>
+        <label>Ferramenta <select id="map-tool"><option value="land">Pintar terreno</option><option value="unit">Colocar unidade</option><option value="erase">Remover unidade</option></select></label>
+        <label id="brush-label">Peça <select id="map-brush"></select></label>
+        <div class="actions"><button id="import-map">Importar YIMF</button><button id="export-map">Exportar YIMF</button></div>
+        <input id="map-file" type="file" accept=".yimf,.xml" hidden>
+        <button id="test-map" class="primary">Jogar contra a IA</button>
+        <p id="editor-status" role="status"></p>
+      </aside>
+    </div>
+  </main>
+  <template id="camera-controls">
+    <button data-zoom="-1" aria-label="Diminuir zoom">−</button>
+    <output aria-label="Zoom do mapa" class="camera-zoom">100%</output>
+    <button data-zoom="1" aria-label="Aumentar zoom">+</button>
+    <button data-zoom="2">Mapa inteiro</button>
+    <details>
+      <summary>Câmera</summary>
+      <div class="camera-settings">
+        <label><input type="checkbox" data-camera="drag"> Arrastar o mapa</label>
+        <label><input type="checkbox" data-camera="edge"> Rolagem nas bordas</label>
+      </div>
+    </details>
+  </template>
+  <script>
+    const stage = document.querySelector('#stage');
+    const errorMessage = document.querySelector('#error');
+    const options = new URLSearchParams(location.search);
+    const edition = options.get('game') === 'ghosts' ? 'ghosts' : 'vengeance';
+    function showError(error) {
+      errorMessage.textContent = error.message;
+      errorMessage.hidden = false;
+    }
+    const controls = document.querySelector('#camera-controls');
+    for (const bar of document.querySelectorAll('.camera-controls')) {
+      bar.append(controls.content.cloneNode(true));
+    }
+    document.querySelector('#guest-camera output').hidden = true;
+    function fullscreen(view) {
+      return document.fullscreenElement ? document.exitFullscreen() : document.querySelector(view).requestFullscreen();
+    }
+    document.querySelector('#fullscreen').onclick = () => fullscreen('#player-view').catch(showError);
+    document.querySelector('#guest-fullscreen').onclick = () => fullscreen('#guest-view').catch(error => {
+      document.querySelector('#guest-status').textContent = error.message;
+    });
+    window.loadBattalion = async function (game, customData, mode = 'ai', scenario = 'editor') {
+      stage.replaceChildren();
+      errorMessage.hidden = true;
+      const player = window.RufflePlayer.newest().createPlayer();
+      stage.appendChild(player);
+      const baseline = options.has('original') && !customData;
+      const cameraBar = document.querySelector('#player-camera');
+      cameraBar.hidden = true;
+      const path = `/${baseline ? 'original' : 'jogo'}/battalion-${game}.swf`;
+      const source = customData ? { data: customData, swfFileName: `mapa-${game}-${scenario}.swf` } : { url: path };
+      const parameters = { api_path: new URL('/runtime/API_AS3_Local.swf', location.href).href };
+      const localMatch = mode === 'lan';
+      if (localMatch) parameters.local_match = '1';
+      if (mode === 'hotseat') parameters.local_hotseat = '1';
+      if (scenario !== 'editor') parameters.local_scenario = '1';
+      const config = {
+        ...source, parameters, autoplay: 'on', unmuteOverlay: 'hidden',
+        scale: 'showAll', forceScale: !baseline,
+        allowScriptAccess: !baseline, allowNetworking: baseline ? 'internal' : 'all',
+        openUrlMode: localMatch ? 'deny' : 'allow',
+        maxExecutionDuration: scenario === 'editor' ? 15 : 90,
+      };
+      const load = () => player.ruffle().load(config);
+      if (localMatch) {
+        const { loadWithCapture } = await import('/lan.js');
+        await loadWithCapture(player, load);
+      } else await load();
+      let camera;
+      if (!baseline) {
+        const { playerCamera } = await import('/camera.js');
+        camera = playerCamera(player, cameraBar, () => !localMatch ||
+          player.ruffle().callExternalInterface('localTurn') === 0);
+      }
+      return { player, camera };
+    };
+    if (options.has('cenarios') || options.has('guest')) {
+      document.querySelector(options.has('guest') ? '#guest-view' : '#scenario-view').hidden = false;
+      import('/cenarios.js').catch(error => { document.querySelector(options.has('guest') ? '#guest-status' : '#scenario-status').textContent = error.message; });
+    } else if (options.has('editor')) {
+      document.querySelector('#editor-view').hidden = false;
+      import('/editor.js').catch(error => { document.querySelector('#editor-status').textContent = error.message; });
+    } else if (options.has('game') || options.has('original')) {
+      document.title = edition === 'ghosts' ? 'Battalion: Ghosts' : 'Battalion: Vengeance';
+      document.querySelector('#player-title').textContent = document.title;
+      document.querySelector('#player-view').hidden = false;
+      window.loadBattalion(edition).catch(showError);
+    } else {
+      document.querySelector('#hub').hidden = false;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1026 @@
+<map style="wm_mode">
+  <name>Unnamed Map</name>
+  <author>urbansquall</author>
+  <description/>
+  <cols>18</cols>
+  <rows>10</rows>
+  <layers>3</layers>
+  <mode>Battalion Map Editor</mode>
+  <palette>
+    <entry reference="0">
+      <name>Mountain</name>
+      <imageCode>?(mountains_v1.png;mountains_v2.png;mountains_v3.png;mountains_v4.png)</imageCode>
+    </entry>
+    <entry reference="1">
+      <name>Forest</name>
+      <imageCode>?(forest_v1.png;forest_v2.png;forest_v3.png;forest_v4.png)</imageCode>
+    </entry>
+    <entry reference="2">
+      <name>P2 Scorpion Tank</name>
+      <imageCode>@(2;scorpion.png)</imageCode>
+    </entry>
+    <entry reference="3">
+      <name>Plains</name>
+      <imageCode>?(plains_v1.png;plains_v2.png;plains_v3.png;plains_v4.png;plains_v5.png;plains_v6.png;plains_v7.png;plains_v8.png)</imageCode>
+    </entry>
+    <entry reference="4">
+      <name>Road</name>
+      <imageCode>road_2_v1.png</imageCode>
+    </entry>
+    <entry reference="5">
+      <name>P2 Jammer Truck</name>
+      <imageCode>@(2;jammer.png)</imageCode>
+    </entry>
+    <entry reference="6">
+      <name>P2 Flak Tank</name>
+      <imageCode>@(2;flak.png)</imageCode>
+    </entry>
+    <entry reference="7">
+      <name>Ore Deposit</name>
+      <imageCode>?(ore_deposit_v1.png;ore_deposit_v2.png)</imageCode>
+    </entry>
+    <entry reference="8">
+      <name>Road</name>
+      <imageCode>road_5_v1.png</imageCode>
+    </entry>
+    <entry reference="9">
+      <name>P2 Rocket Truck</name>
+      <imageCode>@(2;rocket.png)</imageCode>
+    </entry>
+    <entry reference="10">
+      <name>Road</name>
+      <imageCode>road_11_v1.png</imageCode>
+    </entry>
+    <entry reference="11">
+      <name>P2 Warmachine</name>
+      <imageCode>@(2;warmachine.png)</imageCode>
+    </entry>
+    <entry reference="12">
+      <name>Road</name>
+      <imageCode>road_8_v1.png</imageCode>
+    </entry>
+    <entry reference="13">
+      <name>Road</name>
+      <imageCode>road_6_v1.png</imageCode>
+    </entry>
+    <entry reference="14">
+      <name>Enriched Ore Deposit</name>
+      <imageCode>?(enriched_ore_deposit_v1.png;enriched_ore_deposit_v2.png)</imageCode>
+    </entry>
+    <entry reference="15">
+      <name>Road</name>
+      <imageCode>road_13_v1.png</imageCode>
+    </entry>
+    <entry reference="16">
+      <name>Road</name>
+      <imageCode>road_10_v1.png</imageCode>
+    </entry>
+    <entry reference="17">
+      <name>P2 Turret</name>
+      <imageCode>@(2;turret.png)</imageCode>
+    </entry>
+    <entry reference="18">
+      <name>Road</name>
+      <imageCode>road_7_v1.png</imageCode>
+    </entry>
+    <entry reference="19">
+      <name>P2 Annihilator Tank</name>
+      <imageCode>@(2;annihilator.png)</imageCode>
+    </entry>
+    <entry reference="20">
+      <name>Road</name>
+      <imageCode>road_4_v1.png</imageCode>
+    </entry>
+    <entry reference="21">
+      <name>Road</name>
+      <imageCode>road_3_v1.png</imageCode>
+    </entry>
+    <entry reference="22">
+      <name>Road</name>
+      <imageCode>road_9_v1.png</imageCode>
+    </entry>
+    <entry reference="23">
+      <name>Road</name>
+      <imageCode>road_14_v1.png</imageCode>
+    </entry>
+    <entry reference="24">
+      <name>P2 Blockade</name>
+      <imageCode>@(2;blockade.png)</imageCode>
+    </entry>
+    <entry reference="25">
+      <name>P1 Stealth Tank</name>
+      <imageCode>@(1;stealth.png)</imageCode>
+    </entry>
+    <entry reference="26">
+      <name>P1 Raptor Fighter</name>
+      <imageCode>@(1;raptor.png)</imageCode>
+    </entry>
+    <entry reference="27">
+      <name>P1 Spider Tank</name>
+      <imageCode>@(1;spider.png)</imageCode>
+    </entry>
+    <entry reference="28">
+      <name>Road</name>
+      <imageCode>road_12_v1.png</imageCode>
+    </entry>
+    <entry reference="29">
+      <name>P1 Condor Bomber</name>
+      <imageCode>@(1;condor.png)</imageCode>
+    </entry>
+    <entry reference="30">
+      <name>P1 Scorpion Tank</name>
+      <imageCode>@(1;scorpion.png)</imageCode>
+    </entry>
+    <entry reference="31">
+      <name>P1 Flak Tank</name>
+      <imageCode>@(1;flak.png)</imageCode>
+    </entry>
+    <entry reference="32">
+      <name>P1 Warmachine</name>
+      <imageCode>@(1;warmachine.png)</imageCode>
+    </entry>
+    <entry reference="33">
+      <name>P1 Rocket Truck</name>
+      <imageCode>@(1;rocket.png)</imageCode>
+    </entry>
+  </palette>
+  <tile c="0" r="0">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="0" r="1">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="0" r="2">
+    <layer reference="1" depth="0"/>
+    <layer reference="2" depth="2"/>
+  </tile>
+  <tile c="0" r="3">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="0" r="4">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="0" r="5">
+    <layer reference="4" depth="0"/>
+    <layer reference="5" depth="2"/>
+  </tile>
+  <tile c="0" r="6">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="0" r="7">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="0" r="8">
+    <layer reference="1" depth="0"/>
+    <layer reference="6" depth="2"/>
+  </tile>
+  <tile c="0" r="9">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="1" r="0">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="1" r="1">
+    <layer reference="7" depth="0"/>
+  </tile>
+  <tile c="1" r="2">
+    <layer reference="1" depth="0"/>
+    <layer reference="2" depth="2"/>
+  </tile>
+  <tile c="1" r="3">
+    <layer reference="8" depth="0"/>
+    <layer reference="9" depth="2"/>
+  </tile>
+  <tile c="1" r="4">
+    <layer reference="10" depth="0"/>
+    <layer reference="11" depth="2"/>
+  </tile>
+  <tile c="1" r="5">
+    <layer reference="12" depth="0"/>
+  </tile>
+  <tile c="1" r="6">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="1" r="7">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="1" r="8">
+    <layer reference="13" depth="0"/>
+    <layer reference="9" depth="2"/>
+  </tile>
+  <tile c="1" r="9">
+    <layer reference="7" depth="0"/>
+  </tile>
+  <tile c="2" r="0">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="2" r="1">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="2" r="2">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="2" r="3">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="2" r="4">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="2" r="5">
+    <layer reference="7" depth="0"/>
+  </tile>
+  <tile c="2" r="6">
+    <layer reference="3" depth="0"/>
+    <layer reference="2" depth="2"/>
+  </tile>
+  <tile c="2" r="7">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="2" r="8">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="2" r="9">
+    <layer reference="1" depth="0"/>
+    <layer reference="11" depth="2"/>
+  </tile>
+  <tile c="3" r="0">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="3" r="1">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="3" r="2">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="3" r="3">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="3" r="4">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="3" r="5">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="3" r="6">
+    <layer reference="3" depth="0"/>
+    <layer reference="2" depth="2"/>
+  </tile>
+  <tile c="3" r="7">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="3" r="8">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="3" r="9">
+    <layer reference="14" depth="0"/>
+  </tile>
+  <tile c="4" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="4" r="1">
+    <layer reference="15" depth="0"/>
+    <layer reference="9" depth="2"/>
+  </tile>
+  <tile c="4" r="2">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="4" r="3">
+    <layer reference="16" depth="0"/>
+  </tile>
+  <tile c="4" r="4">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="4" r="5">
+    <layer reference="3" depth="0"/>
+    <layer reference="17" depth="2"/>
+  </tile>
+  <tile c="4" r="6">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="4" r="7">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="4" r="8">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="4" r="9">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="5" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="5" r="1">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="5" r="2">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="5" r="3">
+    <layer reference="18" depth="0"/>
+    <layer reference="5" depth="2"/>
+  </tile>
+  <tile c="5" r="4">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="5" r="5">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="5" r="6">
+    <layer reference="10" depth="0"/>
+    <layer reference="6" depth="2"/>
+  </tile>
+  <tile c="5" r="7">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="5" r="8">
+    <layer reference="12" depth="0"/>
+  </tile>
+  <tile c="5" r="9">
+    <layer reference="13" depth="0"/>
+    <layer reference="5" depth="2"/>
+  </tile>
+  <tile c="6" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="6" r="1">
+    <layer reference="3" depth="0"/>
+    <layer reference="11" depth="2"/>
+  </tile>
+  <tile c="6" r="2">
+    <layer reference="14" depth="0"/>
+  </tile>
+  <tile c="6" r="3">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="6" r="4">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="6" r="5">
+    <layer reference="3" depth="0"/>
+    <layer reference="19" depth="2"/>
+  </tile>
+  <tile c="6" r="6">
+    <layer reference="3" depth="0"/>
+    <layer reference="6" depth="2"/>
+  </tile>
+  <tile c="6" r="7">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="6" r="8">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="6" r="9">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="7" r="0">
+    <layer reference="3" depth="0"/>
+    <layer reference="2" depth="2"/>
+  </tile>
+  <tile c="7" r="1">
+    <layer reference="14" depth="0"/>
+  </tile>
+  <tile c="7" r="2">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="7" r="3">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="7" r="4">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="7" r="5">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="7" r="6">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="7" r="7">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="7" r="8">
+    <layer reference="8" depth="0"/>
+  </tile>
+  <tile c="7" r="9">
+    <layer reference="20" depth="0"/>
+  </tile>
+  <tile c="8" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="8" r="1">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="8" r="2">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="8" r="3">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="8" r="4">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="8" r="5">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="8" r="6">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="8" r="7">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="8" r="8">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="8" r="9">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="9" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="9" r="1">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="9" r="2">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="9" r="3">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="9" r="4">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="9" r="5">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="9" r="6">
+    <layer reference="3" depth="0"/>
+    <layer reference="17" depth="2"/>
+  </tile>
+  <tile c="9" r="7">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="9" r="8">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="9" r="9">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="10" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="10" r="1">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="10" r="2">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="10" r="3">
+    <layer reference="21" depth="0"/>
+  </tile>
+  <tile c="10" r="4">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="10" r="5">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="10" r="6">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="10" r="7">
+    <layer reference="22" depth="0"/>
+  </tile>
+  <tile c="10" r="8">
+    <layer reference="12" depth="0"/>
+  </tile>
+  <tile c="10" r="9">
+    <layer reference="10" depth="0"/>
+  </tile>
+  <tile c="11" r="0">
+    <layer reference="3" depth="0"/>
+    <layer reference="2" depth="2"/>
+  </tile>
+  <tile c="11" r="1">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="11" r="2">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="11" r="3">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="11" r="4">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="11" r="5">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="11" r="6">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="11" r="7">
+    <layer reference="4" depth="0"/>
+  </tile>
+  <tile c="11" r="8">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="11" r="9">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="12" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="12" r="1">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="12" r="2">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="12" r="3">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="12" r="4">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="12" r="5">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="12" r="6">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="12" r="7">
+    <layer reference="23" depth="0"/>
+  </tile>
+  <tile c="12" r="8">
+    <layer reference="7" depth="0"/>
+  </tile>
+  <tile c="12" r="9">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="13" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="13" r="1">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="13" r="2">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="13" r="3">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="13" r="4">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="13" r="5">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="13" r="6">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="13" r="7">
+    <layer reference="3" depth="0"/>
+    <layer reference="24" depth="2"/>
+  </tile>
+  <tile c="13" r="8">
+    <layer reference="0" depth="0"/>
+  </tile>
+  <tile c="13" r="9">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="14" r="0">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="14" r="1">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="14" r="2">
+    <layer reference="7" depth="0"/>
+    <layer reference="25" depth="2"/>
+  </tile>
+  <tile c="14" r="3">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="14" r="4">
+    <layer reference="7" depth="0"/>
+  </tile>
+  <tile c="14" r="5">
+    <layer reference="1" depth="0"/>
+    <layer reference="26" depth="2"/>
+  </tile>
+  <tile c="14" r="6">
+    <layer reference="1" depth="0"/>
+    <layer reference="27" depth="2"/>
+  </tile>
+  <tile c="14" r="7">
+    <layer reference="28" depth="0"/>
+    <layer reference="27" depth="2"/>
+  </tile>
+  <tile c="14" r="8">
+    <layer reference="3" depth="0"/>
+    <layer reference="27" depth="2"/>
+  </tile>
+  <tile c="14" r="9">
+    <layer reference="1" depth="0"/>
+    <layer reference="26" depth="2"/>
+  </tile>
+  <tile c="15" r="0">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="15" r="1">
+    <layer reference="1" depth="0"/>
+    <layer reference="25" depth="2"/>
+  </tile>
+  <tile c="15" r="2">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="15" r="3">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="15" r="4">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="15" r="5">
+    <layer reference="1" depth="0"/>
+    <layer reference="29" depth="2"/>
+  </tile>
+  <tile c="15" r="6">
+    <layer reference="3" depth="0"/>
+    <layer reference="30" depth="2"/>
+  </tile>
+  <tile c="15" r="7">
+    <layer reference="4" depth="0"/>
+    <layer reference="30" depth="2"/>
+  </tile>
+  <tile c="15" r="8">
+    <layer reference="3" depth="0"/>
+    <layer reference="30" depth="2"/>
+  </tile>
+  <tile c="15" r="9">
+    <layer reference="1" depth="0"/>
+    <layer reference="29" depth="2"/>
+  </tile>
+  <tile c="16" r="0">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="16" r="1">
+    <layer reference="14" depth="0"/>
+    <layer reference="25" depth="2"/>
+  </tile>
+  <tile c="16" r="2">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="16" r="3">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="16" r="4">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="16" r="5">
+    <layer reference="3" depth="0"/>
+    <layer reference="26" depth="2"/>
+  </tile>
+  <tile c="16" r="6">
+    <layer reference="3" depth="0"/>
+    <layer reference="31" depth="2"/>
+  </tile>
+  <tile c="16" r="7">
+    <layer reference="4" depth="0"/>
+    <layer reference="32" depth="2"/>
+  </tile>
+  <tile c="16" r="8">
+    <layer reference="14" depth="0"/>
+    <layer reference="31" depth="2"/>
+  </tile>
+  <tile c="16" r="9">
+    <layer reference="3" depth="0"/>
+    <layer reference="26" depth="2"/>
+  </tile>
+  <tile c="17" r="0">
+    <layer reference="1" depth="0"/>
+  </tile>
+  <tile c="17" r="1">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="17" r="2">
+    <layer reference="3" depth="0"/>
+    <layer reference="25" depth="2"/>
+  </tile>
+  <tile c="17" r="3">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="17" r="4">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <tile c="17" r="5">
+    <layer reference="14" depth="0"/>
+  </tile>
+  <tile c="17" r="6">
+    <layer reference="3" depth="0"/>
+    <layer reference="32" depth="2"/>
+  </tile>
+  <tile c="17" r="7">
+    <layer reference="4" depth="0"/>
+    <layer reference="33" depth="2"/>
+  </tile>
+  <tile c="17" r="8">
+    <layer reference="3" depth="0"/>
+    <layer reference="32" depth="2"/>
+  </tile>
+  <tile c="17" r="9">
+    <layer reference="3" depth="0"/>
+  </tile>
+  <script>
+    <event>
+      <condition type="endGame">
+        <player value="1"/>
+        <victory value="false"/>
+      </condition>
+      <response type="disableControllers">
+        <disable value="true"/>
+      </response>
+      <response type="chat">
+        <sender value="MAJOR MAYJOR"/>
+        <message value="Hmm. So I'm supposed to follow Hayne's example? Maybe Uncle wants me to go crazy and disobey orders, leading to my eventual defeat as well..."/>
+        <avatar value="mayjor"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="disableControllers">
+        <disable value="false"/>
+      </response>
+    </event>
+    <event>
+      <condition type="startGame"/>
+      <response type="disableMorale">
+        <disable value="true"/>
+      </response>
+      <response type="disableControllers">
+        <disable value="true"/>
+      </response>
+      <response type="chat">
+        <sender value="GENERAL DURAND"/>
+        <message value="Lieutenant Hayne! What is the meaning of this?"/>
+        <avatar value="evil_durand"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="LIEUTENANT HAYNE"/>
+        <message value="I am completing my mission, sir."/>
+        <avatar value="hayne"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="GENERAL DURAND"/>
+        <message value="Your mission is complete. Your orders were to return to rejoin my forces."/>
+        <avatar value="evil_durand"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="LIEUTENANT HAYNE"/>
+        <message value="I have unfinished business here. Captain Tucker and the Dragoons remain a threat."/>
+        <avatar value="hayne"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="GENERAL DURAND"/>
+        <message value="A threat I will deal with! And that is why your orders are to return to base immediately!"/>
+        <avatar value="evil_durand"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="LIEUTENANT HAYNE"/>
+        <message value="I'm sorry, General. Your transmission is breaking up."/>
+        <avatar value="hayne"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="GENERAL DURAND"/>
+        <message value="I'll have you drummed out for this, Hayne! This is treas..."/>
+        <avatar value="evil_durand"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="MAJOR MAYJOR"/>
+        <message value="You hung up on him!"/>
+        <avatar value="mayjor"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="LIEUTENANT HAYNE"/>
+        <message value="Not another word from you, Major. Prepare the troops."/>
+        <avatar value="hayne"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="chat">
+        <sender value="MAJOR MAYJOR"/>
+        <message value="I know they help us move through the mountains... but the Spider Tanks have always creeped me out. I mean, are they poisonous, too? No one will tell me."/>
+        <avatar value="mayjor"/>
+        <color value="FF0000FF"/>
+      </response>
+      <response type="disableControllers">
+        <disable value="false"/>
+      </response>
+    </event>
+    <event>
+      <condition type="endGame">
+        <player value="1"/>
+        <victory value="true"/>
+      </condition>
+      <response type="disableControllers">
+        <disable value="true"/>
+      </response>
+      <response type="chat">
+        <sender value="CAPTAIN ARGENT"/>
+        <message value="Did you see him? He's like a crazy animal out there."/>
+        <avatar value="argent"/>
+        <color value="FFFF0000"/>
+      </response>
+      <response type="chat">
+        <sender value="GENERAL USUL"/>
+        <message value="I saw."/>
+        <avatar value="usul"/>
+        <color value="FF00FF00"/>
+      </response>
+      <response type="chat">
+        <sender value="CAPTAIN ARGENT"/>
+        <message value="Are you sure this is still a good idea?"/>
+        <avatar value="argent"/>
+        <color value="FFFF0000"/>
+      </response>
+      <response type="chat">
+        <sender value="GENERAL USUL"/>
+        <message value="Captain Tucker has a sound plan. He has studied his enemy. It will succeed."/>
+        <avatar value="usul"/>
+        <color value="FF00FF00"/>
+      </response>
+      <response type="chat">
+        <sender value="CAPTAIN ARGENT"/>
+        <message value="Why am I always the bait?"/>
+        <avatar value="argent"/>
+        <color value="FFFF0000"/>
+      </response>
+      <response type="disableControllers">
+        <disable value="false"/>
+      </response>
+    </event>
+    <event>
+      <condition type="startGame"/>
+      <response type="disableAllUnits">
+        <disable value="true"/>
+        <player value="1"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Strike Commando"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Heavy Commando"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Flak Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Spider Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Scorpion Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Mortar Truck"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Rocket Truck"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Stealth Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Annihilator Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Condor Bomber"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Raptor Fighter"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Hunter Support"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Corvette Fighter"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="Battlecruiser"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="1"/>
+        <unit value="U-Boat"/>
+      </response>
+      <response type="disableAllUnits">
+        <disable value="true"/>
+        <player value="2"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Strike Commando"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Heavy Commando"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Flak Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Scorpion Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Mortar Truck"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Rocket Truck"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Stealth Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Annihilator Tank"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Condor Bomber"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Raptor Fighter"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Hunter Support"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Corvette Fighter"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Battlecruiser"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="U-Boat"/>
+      </response>
+      <response type="enableUnit">
+        <enable value="true"/>
+        <player value="2"/>
+        <unit value="Jammer Truck"/>
+      </response>
+    </event>
+  </script>
+</map>

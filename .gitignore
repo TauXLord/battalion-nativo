@@ -1,0 +1,16 @@
+.tools/
+work/
+backups/
+runtime/*.map
+moderno/node_modules/
+moderno/dist/
+
+# Executáveis e pacotes gerados (refeitos por tools/empacotar-nativo.ps1)
+/*.exe
+/*.tar.gz
+Battalion-Atualizado/
+runtime/
+# Checkpoints e resultados de treino da IA
+treino-tatica/
+# Configurações locais do Claude Code
+.claude/settings.local.json

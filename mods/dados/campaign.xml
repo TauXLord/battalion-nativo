@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8"?>
+<campaign levels="10" levelname="campaign_level" completename="campaign_complete"
+	victoryImage="campaign_victory_3" headerBackground="ep3_campaign_header">
+	<level number="0" name="Chapter 1: Honor">
+		<map url="maps/ep3/Mission_1.yimf" name="Mission 1"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_1"/>
+		<brief
+			value="The final campaign begins. Commander Yurik leads the proud Dragoon warriors in an invasion of the Akadian homeland to stop General Durand once and for all. For now, the soldiers must contend with the remnants of Durand's fleeing troops."/>
+		<objective value="Destroy the enemy units."/>
+
+		<mapsettings rounds="2147483647" silverMedal="5000" goldMedal="8500" resources="0">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="1" name="Chapter 2: Arm's Length">
+		<map url="maps/ep3/Mission_2.yimf" name="Mission 2"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_2"/>
+		<brief
+			value="The Dragoons occupy a fortified position with the awesome power of their long-range weaponry. Knowing their chances are slim, Durand sends his forces rushing into to assault the Dragoon position while he continues his own retreat."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="15000" goldMedal="17500" resources="0">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="2" name="Chapter 3: Air to the Throne">
+		<map url="maps/ep3/Mission_3.yimf" name="Mission 3"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_3"/>
+		<brief
+			value="It appears that the Akadians are finally ready to present Command Yurik with the challenge he has been seeking. A squad of aerial and long-range units confront the Dragoons."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="17000" goldMedal="20000" resources="0">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="3" name="Chapter 4: Arachnaphobia">
+		<map url="maps/ep3/Mission_4.yimf" name="Mission 4"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_4"/>
+		<brief
+			value="The Dragoon Army is now firmly within Akadian territory. Trying to make their way through a mountain pass, the Dragoons are met with a series of Akadian barricades meant to slow their progress. A sure sign that an ambush is coming."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="8000" goldMedal="12000" resources="250">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="4" name="Chapter 5: Bull Horns">
+		<map url="maps/ep3/Mission_5.yimf" name="Mission 5"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_5"/>
+		<brief
+			value="Captain Tucker and the Dragoons have come across an Akadian War Machine outpost entrenched in the mountains. They'll have to contend with the War Machines or face constant attacks agains their rear flank as they advance. Supported by rocket trucks, scorpions and spider tanks... these War Machines aren't going to go down easy."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="100" goldMedal="200" resources="0">
+			<teams>
+				<team active="true">
+					<name value="N. Federation"/>
+					<teamname value="Red Federation"/>
+					<color value="ffff0000"/>
+					<avatar value="tucker"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+					<allies value="2"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="5" name="Chapter 6: Ghosts">
+		<map url="maps/ep3/Mission_6.yimf" name="Mission 6"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_6"/>
+		<brief
+			value="After scouts report that a large radar signature is moving towards the Dragoons via the nearby Khandar River, naval units scramble to deal with a potential assault from the river. What they find is an Akadian assault, but not the kind expected."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="100" goldMedal="200" resources="0">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="hayne"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="6" name="Chapter 7: Welcoming Committee">
+		<map url="maps/ep3/Mission_7.yimf" name="Mission 7"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_7"/>
+		<brief
+			value="The Dragoon forces will have to ford the Khandar River, which bends to block their advance. Circumventing the river would require crossing the mountains, which the Dragoons cannot do without abandoning all their motorized units. Durand is clearly aware of this barrier and has a contingent of War Machines waiting for the Dragoons on the other side of the the river."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="100" goldMedal="200" resources="0">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="7" name="Chapter 8: Argent's Return">
+		<map url="maps/ep3/Mission_8.yimf" name="Mission 8"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_8"/>
+		<brief
+			value="True to his word, Durand has another obstacle in store for the Dragoons. As the army advances into a clearing, they are met by a sizable Akadian ambush. Mountains and barricades protect a wide array of Akadian units, presenting a formidable challenge. Unfortunately for Captain Argent, this is exactly when he manages to catch up to his allies."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="100" goldMedal="200" resources="5000">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="8" name="Chapter 9: The Pass">
+		<map url="maps/ep3/Mission_9.yimf" name="Mission 9"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_9"/>
+		<brief
+			value="The main Dragoon force is nearing Durand's central fortress. The assault looks to be nearly impossible, with seemingly endless Akadian forces defending all routes to approach the fortress. Commander Yurik, ever stoic, is ready to advance in the face of insurmountable odds. Lieutenant Hayne, only slightly less unhinged, returns with an alternative for the Dragoon force."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="100" goldMedal="200" resources="0">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+	<level number="9" name="Chapter 10: Vengeance">
+		<map url="maps/ep3/Mission_10.yimf" name="Mission 10"/>
+		<team name="Northern Federation" icon="NF" bg="header_campaign_10"/>
+		<brief
+			value="Tucker, Yurik and Hayne prepare to assault the last stronghold of General Durand. The General's position is defended with all the units he could muster. It's an impressive force, and the battle looks to be a difficult one, especially since Durand has somehow gotten his hands on a key bit of Dragoon technology."/>
+		<objective value="Do the stuff the brief told you to do... quick... smart..."/>
+
+		<mapsettings rounds="2147483647" silverMedal="100" goldMedal="200" resources="0">
+			<teams>
+				<team active="true">
+					<name value="Dragoons"/>
+					<teamname value="Red Federation"/>
+					<color value="ff00ff00"/>
+					<avatar value="yurik"/>
+					<rank value="6"/>
+					<controllertype value="Human"/>
+				</team>
+				<team active="true">
+					<name value="Akadians"/>
+					<teamname value="Blue Constitution"/>
+					<color value="ff0000ff"/>
+					<avatar value="evil_durand"/>
+					<rank value="1"/>
+					<controllertype value="AI"/>
+				</team>
+			</teams>
+		</mapsettings>
+	</level>
+</campaign>

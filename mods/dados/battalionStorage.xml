@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<storage>
+	<storage key="increasedStorage" type="I" value="1"/>
+	<storage key="dialog" type="B" value="true"/>
+	<storage key="sound" type="B" value="true"/>
+	<storage key="music" type="B" value="true"/>
+	<storage key="attemptedBootcamp" type="B" value="false"/>
+	<storage key="saveGame" type="S" value=""/>
+	<storage key="campaign_level" type="I" value="0"/>
+	<storage key="campaign_complete" type="I" value="0"/>
+	<storage key="bootcamp_level" type="I" value="0"/>
+	<storage key="bootcamp_complete" type="I" value="0"/>
+	<storage key="aidifficulty" type="I" value="1"/>
+</storage>

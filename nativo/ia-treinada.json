@@ -1,0 +1,39 @@
+{
+ "format": 2,
+ "params": {
+  "linchpinValue": 3023.3,
+  "killBonus": 0.64788,
+  "riskFactor": 0.26462,
+  "progress": 11.444,
+  "progressCap": 1.6374,
+  "terrainCover": 4.7339,
+  "cohesion": 21.342,
+  "screen": 14.702,
+  "wmDanger": 0.72867,
+  "wmSafeMove": 79.176,
+  "buildBase": 7.8541,
+  "buildPower": 0.081452,
+  "buildDurability": 0.15108,
+  "antiAirNeed": 173.93,
+  "captureNeed": 5.5836,
+  "spamPenalty": 2.219,
+  "budgetTurns": 3.2256,
+  "reserve": 819.17,
+  "lowFunds": 547.79,
+  "extractLowBudget": 586.14,
+  "oreSeek": 20.816,
+  "captureScore": 22.594,
+  "refineryClaim": 250.12,
+  "escort": 1.9795,
+  "repairBase": 29.183,
+  "endThreshold": 23.314,
+  "strandedPenalty": 88.441,
+  "navalBonus": 173.96,
+  "shoreSeek": 142.75
+ },
+ "generation": 60,
+ "validacao": {
+  "terra": "33/3/4",
+  "ilhas": "19/1/0"
+ }
+}

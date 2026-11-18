@@ -1,0 +1,1895 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tilesheets>
+	<stockanimations>
+		<animation name="right" loops="-1" wait="250">
+			<frame frame="0"/>
+			<frame frame="6"/>
+			<frame frame="12"/>
+			<frame frame="18"/>
+		</animation>
+		<animation name="down" loops="-1" wait="250">
+			<frame frame="1"/>
+			<frame frame="7"/>
+			<frame frame="13"/>
+			<frame frame="19"/>
+		</animation>
+		<animation name="left" loops="-1" wait="250">
+			<frame frame="2"/>
+			<frame frame="8"/>
+			<frame frame="14"/>
+			<frame frame="20"/>
+		</animation>
+		<animation name="up" loops="-1" wait="250">
+			<frame frame="3"/>
+			<frame frame="9"/>
+			<frame frame="15"/>
+			<frame frame="21"/>
+		</animation>
+
+		<animation name="right_idle" loops="-1" wait="500">
+			<frame frame="4"/>
+			<frame frame="10"/>
+			<frame frame="16"/>
+			<frame frame="22"/>
+		</animation>
+		<animation name="down_idle" loops="-1" wait="500">
+			<frame frame="1"/>
+			<frame frame="7"/>
+			<frame frame="13"/>
+			<frame frame="19"/>
+		</animation>
+		<animation name="left_idle" loops="-1" wait="500">
+			<frame frame="5"/>
+			<frame frame="11"/>
+			<frame frame="17"/>
+			<frame frame="23"/>
+		</animation>
+		<animation name="up_idle" loops="-1" wait="500">
+			<frame frame="3"/>
+			<frame frame="9"/>
+			<frame frame="15"/>
+			<frame frame="21"/>
+		</animation>
+
+		<animation name="spin" loops="-1" wait="500">
+			<frame frame="0"/>
+			<frame frame="1"/>
+			<frame frame="2"/>
+			<frame frame="3"/>
+		</animation>
+	</stockanimations>
+
+	<stocktilesheets>
+		<tilesheet name="Unit" width="56" height="56">
+			<stockanimation name="right"/>
+			<stockanimation name="down"/>
+			<stockanimation name="left"/>
+			<stockanimation name="up"/>
+
+			<stockanimation name="right_idle"/>
+			<stockanimation name="down_idle"/>
+			<stockanimation name="left_idle"/>
+			<stockanimation name="up_idle"/>
+
+			<stockanimation name="spin"/>
+		</tilesheet>
+
+		<tilesheet name="UnitTall" width="56" height="112">
+			<stockanimation name="right"/>
+			<stockanimation name="down"/>
+			<stockanimation name="left"/>
+			<stockanimation name="up"/>
+
+			<stockanimation name="right_idle"/>
+			<stockanimation name="down_idle"/>
+			<stockanimation name="left_idle"/>
+			<stockanimation name="up_idle"/>
+
+			<stockanimation name="spin"/>
+		</tilesheet>
+	
+	</stocktilesheets>
+
+	<tilesheets>
+		<tilesheet name="error" width="32" height="32">
+			<image value="error"/>
+		</tilesheet>
+
+
+		<stocktilesheet stockname="UnitTall" name="Albatross Transport" calcY="t">
+			<image value="albatross"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Annihilator Tank" calcY="t">
+			<image value="annihilator"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Battlecruiser" calcY="t">
+			<image value="battlecruiser"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="Unit" name="Blockade" calcY="t">
+			<image value="blockade"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="Unit" name="Strike Commando" calcY="t">
+			<image value="commando"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Condor Bomber" calcY="t">
+			<image value="condor"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Corvette Fighter" calcY="t">
+			<image value="corvette"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Flak Tank" calcY="t">
+			<image value="flak"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="Unit" name="Heavy Commando" calcY="t">
+			<image value="hcommando"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Hunter Support" calcY="t">
+			<image value="hunter"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="Unit" name="Intrepid" calcY="t">
+			<image value="intrepid"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Jammer Truck" calcY="t">
+			<image value="jammer"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="Unit" name="Lancer Tank" calcY="t">
+			<image value="lancer"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Leviathan Barge" calcY="t">
+			<image value="leviathan"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Mortar Truck" calcY="t">
+			<image value="mortar"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Raptor Fighter" calcY="t">
+			<image value="raptor"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Vulture Drone" calcY="t">
+			<image value="vulture"/>
+		</stocktilesheet>		
+		<stocktilesheet stockname="UnitTall" name="Rocket Truck" calcY="t">
+			<image value="rocket"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="Unit" name="Scorpion Tank" calcY="t">
+			<image value="scorpion"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="Unit" name="Spider Tank" calcY="t">
+			<image value="spider"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="Unit" name="Stealth Tank" calcY="t">
+			<image value="stealth"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Turret" calcY="t">
+			<image value="turret"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="U-Boat" calcY="t">
+			<image value="uboat"/>
+		</stocktilesheet>
+		<stocktilesheet stockname="UnitTall" name="Warmachine" calcY="t">
+			<image value="warmachine"/>
+		</stocktilesheet>
+
+		
+		
+		
+		
+		<tilesheet name="Annihilator Tank Firing" width="144" height="144" calcY="t">
+			<image value="annihilator_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Battlecruiser Firing" width="144" height="144" calcY="t">
+			<image value="battlecruiser_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Strike Commando Firing" width="144" height="144" calcY="t">
+			<image value="commando_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+				<frame frame="40"/>
+				<frame frame="44"/>
+				<frame frame="48"/>
+				<frame frame="52"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+				<frame frame="41"/>
+				<frame frame="45"/>
+				<frame frame="49"/>
+				<frame frame="53"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+				<frame frame="42"/>
+				<frame frame="46"/>
+				<frame frame="50"/>
+				<frame frame="54"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+				<frame frame="43"/>
+				<frame frame="47"/>
+				<frame frame="51"/>
+				<frame frame="55"/>				
+			</animation>
+		</tilesheet>
+		<tilesheet name="Condor Bomber Firing" width="144" height="144" calcY="t">
+			<image value="condor_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+				<frame frame="40"/>
+				<frame frame="44"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+				<frame frame="41"/>
+				<frame frame="45"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+				<frame frame="42"/>
+				<frame frame="46"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+				<frame frame="43"/>
+				<frame frame="47"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Corvette Fighter Firing" width="144" height="144" calcY="t">
+			<image value="corvette_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Flak Tank Firing" width="144" height="144" calcY="t">
+			<image value="flak_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+			</animation>
+		</tilesheet>
+		<tilesheet name="Heavy Commando Firing" width="144" height="144" calcY="t">
+			<image value="hcommando_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+				<frame frame="40"/>
+				<frame frame="44"/>
+				<frame frame="48"/>
+				<frame frame="52"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+				<frame frame="41"/>
+				<frame frame="45"/>
+				<frame frame="49"/>
+				<frame frame="53"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+				<frame frame="42"/>
+				<frame frame="46"/>
+				<frame frame="50"/>
+				<frame frame="54"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+				<frame frame="43"/>
+				<frame frame="47"/>
+				<frame frame="51"/>
+				<frame frame="55"/>				
+			</animation>
+		</tilesheet>
+		<tilesheet name="Hunter Support Firing" width="144" height="144" calcY="t">
+			<image value="hunter_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+				<frame frame="40"/>
+				<frame frame="44"/>
+				<frame frame="48"/>
+				<frame frame="52"/>
+				<frame frame="56"/>
+				<frame frame="60"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+				<frame frame="41"/>
+				<frame frame="45"/>
+				<frame frame="49"/>
+				<frame frame="53"/>
+				<frame frame="57"/>
+				<frame frame="61"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+				<frame frame="42"/>
+				<frame frame="46"/>
+				<frame frame="50"/>
+				<frame frame="54"/>
+				<frame frame="58"/>
+				<frame frame="62"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+				<frame frame="43"/>
+				<frame frame="47"/>
+				<frame frame="51"/>
+				<frame frame="55"/>				
+				<frame frame="59"/>
+				<frame frame="63"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Intrepid Firing" width="144" height="144" calcY="t">
+			<image value="intrepid_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+			</animation>
+		</tilesheet>
+		<tilesheet  name="Lancer Tank Firing" width="144" height="144" calcY="t">
+			<image value="lancer_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Mortar Truck Firing" width="144" height="144" calcY="t">
+			<image value="mortar_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Raptor Fighter Firing" width="144" height="144" calcY="t">
+			<image value="raptor_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+				<frame frame="40"/>
+				<frame frame="44"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+				<frame frame="41"/>
+				<frame frame="45"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+				<frame frame="42"/>
+				<frame frame="46"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+				<frame frame="43"/>
+				<frame frame="47"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Vulture Drone Firing" width="144" height="144" calcY="t">
+			<image value="vulture_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+				<frame frame="40"/>
+				<frame frame="44"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+				<frame frame="41"/>
+				<frame frame="45"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+				<frame frame="42"/>
+				<frame frame="46"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+				<frame frame="43"/>
+				<frame frame="47"/>
+			</animation>
+		</tilesheet>		
+		<tilesheet name="Rocket Truck Firing" width="144" height="144" calcY="t">
+			<image value="rocket_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+				<frame frame="40"/>
+				<frame frame="44"/>
+				<frame frame="48"/>
+				<frame frame="52"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+				<frame frame="41"/>
+				<frame frame="45"/>
+				<frame frame="49"/>
+				<frame frame="53"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+				<frame frame="42"/>
+				<frame frame="46"/>
+				<frame frame="50"/>
+				<frame frame="54"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+				<frame frame="43"/>
+				<frame frame="47"/>
+				<frame frame="51"/>
+				<frame frame="55"/>				
+			</animation>
+		</tilesheet>
+		<tilesheet name="Scorpion Tank Firing" width="144" height="144" calcY="t">
+			<image value="scorpion_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Spider Tank Firing" width="144" height="144" calcY="t">
+			<image value="spider_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Stealth Tank Firing" width="144" height="144" calcY="t">
+			<image value="stealth_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="Turret Firing" width="144" height="144" calcY="t">
+			<image value="turret_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+			</animation>
+		</tilesheet>
+		<tilesheet name="U-Boat Firing" width="144" height="144" calcY="t">
+			<image value="uboat_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+			</animation>
+		</tilesheet>
+		<tilesheet name="Warmachine Firing" width="144" height="144" calcY="t">
+			<image value="warmachine_firing"/>
+			<animation name="right_firing" loops="0" wait="80">
+				<frame frame="0"/>
+				<frame frame="4"/>
+				<frame frame="8"/>
+				<frame frame="12"/>
+				<frame frame="16"/>
+				<frame frame="20"/>
+				<frame frame="24"/>
+				<frame frame="28"/>
+				<frame frame="32"/>
+				<frame frame="36"/>
+				<frame frame="40"/>
+				<frame frame="44"/>
+				<frame frame="48"/>
+				<frame frame="52"/>
+			</animation>
+			<animation name="down_firing" loops="0" wait="80">
+				<frame frame="1"/>
+				<frame frame="5"/>
+				<frame frame="9"/>
+				<frame frame="13"/>
+				<frame frame="17"/>
+				<frame frame="21"/>
+				<frame frame="25"/>
+				<frame frame="29"/>
+				<frame frame="33"/>
+				<frame frame="37"/>
+				<frame frame="41"/>
+				<frame frame="45"/>
+				<frame frame="49"/>
+				<frame frame="53"/>
+			</animation>
+			<animation name="left_firing" loops="0" wait="80">
+				<frame frame="2"/>
+				<frame frame="6"/>
+				<frame frame="10"/>
+				<frame frame="14"/>
+				<frame frame="18"/>
+				<frame frame="22"/>
+				<frame frame="26"/>
+				<frame frame="30"/>
+				<frame frame="34"/>
+				<frame frame="38"/>
+				<frame frame="42"/>
+				<frame frame="46"/>
+				<frame frame="50"/>
+				<frame frame="54"/>
+			</animation>
+			<animation name="up_firing" loops="0" wait="80">
+				<frame frame="3"/>
+				<frame frame="7"/>
+				<frame frame="11"/>
+				<frame frame="15"/>
+				<frame frame="19"/>
+				<frame frame="23"/>
+				<frame frame="27"/>
+				<frame frame="31"/>
+				<frame frame="35"/>
+				<frame frame="39"/>				
+				<frame frame="43"/>
+				<frame frame="47"/>
+				<frame frame="51"/>
+				<frame frame="55"/>				
+			</animation>
+		</tilesheet>
+		
+		
+		
+		
+		
+		
+		<tilesheet name="Explosion" width="56" height="96">
+			<image value="explosion"/>
+			<animation name="default" loops="0" wait="75">
+				<frame frame="0"/>
+				<frame frame="1"/>
+				<frame frame="2"/>
+				<frame frame="3"/>
+				<frame frame="4"/>
+				<frame frame="5"/>
+				<frame frame="6"/>
+				<frame frame="7"/>
+				<frame frame="8"/>
+				<frame frame="9"/>
+				<frame frame="10"/>
+				<frame frame="11"/>
+				<frame frame="12"/>
+				<frame frame="13"/>
+				<frame frame="14"/>
+				<frame frame="15"/>
+			</animation>
+		</tilesheet>
+		
+
+		<tilesheet name="minimap_overlay" width="8" height="8" calcY="t">
+			<image value="minimap_overlay"/>
+			<animation name="minimap_unit">
+				<frame frame="0"/>
+			</animation>
+			<animation name="minimap_capital">
+				<frame frame="1"/>
+			</animation>
+			<animation name="minimap_control">
+				<frame frame="2"/>
+			</animation>
+			<animation name="minimap_refinery">
+				<frame frame="3"/>
+			</animation>
+		</tilesheet>
+		
+
+		<tilesheet name="chunks" width="20" height="10">
+			<image value="chunks"/>
+		</tilesheet>
+
+		<tilesheet name="Small Explosion" width="56" height="56">
+			<image value="small_explosion"/>
+
+			<animation name="default" loops="0" wait="100">
+				<frame frame="0"/>
+				<frame frame="1"/>
+				<frame frame="2"/>
+				<frame frame="3"/>
+				<frame frame="4"/>
+				<frame frame="5"/>
+				<frame frame="6"/>
+				<frame frame="7"/>
+			</animation>
+		</tilesheet>
+		
+		<tilesheet name="rankBadges" width="18" height="18">
+			<image value="rankBadges"/>
+		</tilesheet>
+
+		<tilesheet name="attackTargets" width="56" height="56">
+			<image value="attackTargets"/>
+		</tilesheet>
+
+		<tilesheet name="info_icons" width="20" height="20">
+			<image value="info_icons"/>
+			<animation name="Ground">
+				<frame frame="0"/>
+			</animation>
+			<animation name="Water">
+				<frame frame="1"/>
+			</animation>
+			<animation name="Impassable">
+				<frame frame="2"/>
+			</animation>
+			<animation name="Uneven">
+				<frame frame="3"/>
+			</animation>
+
+			<animation name="Pavement">
+				<!-- IGNORE -->
+				<frame frame="4"/>
+			</animation>
+			<animation name="Rugged">
+				<frame frame="5"/>
+			</animation>
+			<animation name="Precipitous">
+				<frame frame="6"/>
+			</animation>
+			<animation name="Barbed">
+				<frame frame="7"/>
+			</animation>
+
+			<animation name="Shallow">
+				<frame frame="8"/>
+			</animation>
+			<animation name="Cover">
+				<frame frame="9"/>
+			</animation>
+			<animation name="Camouflage">
+				<frame frame="10"/>
+			</animation>
+			<animation name="Bunker">
+				<frame frame="11"/>
+			</animation>
+
+			<animation name="HighGround">
+				<frame frame="12"/>
+			</animation>
+			<animation name="Farsight">
+				<frame frame="13"/>
+			</animation>
+			<animation name="Garrison">
+				<frame frame="14"/>
+			</animation>
+			<animation name="Strait">
+				<frame frame="15"/>
+			</animation>
+
+			<animation name="ReducedMobility">
+				<frame frame="16"/>
+			</animation>
+			<animation name="Hazard">
+				<frame frame="17"/>
+			</animation>
+			<animation name="Canopy">
+				<frame frame="18"/>
+			</animation>
+			<animation name="Shielded">
+				<frame frame="19"/>
+			</animation>
+
+			<animation name="Construction">
+				<frame frame="20"/>
+			</animation>
+			<animation name="Capturable">
+				<frame frame="21"/>
+			</animation>
+			<animation name="AirProficiency">
+				<frame frame="22"/>
+			</animation>
+			<animation name="GroundProficiency">
+				<frame frame="23"/>
+			</animation>
+
+			<animation name="SeaProficiency">
+				<frame frame="24"/>
+			</animation>
+			<animation name="Level1OilRefining">
+				<frame frame="25"/>
+			</animation>
+			<animation name="Level2OilRefining">
+				<frame frame="26"/>
+			</animation>
+			<animation name="Level3OilRefining">
+				<frame frame="27"/>
+			</animation>
+
+			<animation name="MissionCritical">
+				<frame frame="28"/>
+			</animation>
+			<animation name="Shore">
+				<frame frame="29"/>
+			</animation>
+
+			<!-- START UNIT MODIFIERS -->
+			<!-- START UNIT MODIFIERS -->
+			<!-- START UNIT MODIFIERS -->
+			<!-- START UNIT MODIFIERS -->
+
+			<animation name="Skysweeper">
+				<frame frame="30"/>
+			</animation>
+			<animation name="CounterBattery">
+				<frame frame="31"/>
+			</animation>
+			<animation name="Capture">
+				<frame frame="32"/>
+			</animation>
+			<animation name="Flak">
+				<frame frame="33"/>
+			</animation>
+			<animation name="Transport">
+				<frame frame="34"/>
+			</animation>
+			<animation name="Unbuildable">
+				<frame frame="35"/>
+			</animation>
+			<animation name="Cloaking">
+				<frame frame="36"/>
+			</animation>
+			<animation name="TrickyWaters">
+				<frame frame="37"/>
+			</animation>
+			<animation name="AirBound">
+				<frame frame="38"/>
+			</animation>
+			<animation name="SeaBound">
+				<frame frame="39"/>
+			</animation>
+
+			<animation name="GroundBound">
+				<frame frame="40"/>
+			</animation>
+			<animation name="Blitz">
+				<frame frame="41"/>
+			</animation>
+			<animation name="Mammoth">
+				<frame frame="42"/>
+			</animation>
+			<animation name="weapon_none">
+				<frame frame="43"/>
+			</animation>
+			<animation name="Maintenance">
+				<frame frame="44"/>
+			</animation>
+			<animation name="FireBomb">
+				<frame frame="45"/>
+			</animation>
+			<animation name="Overdrive">
+				<!-- IGNORE -->
+				<frame frame="46"/>
+			</animation>
+			<animation name="Radar">
+				<frame frame="47"/>
+			</animation>
+			<animation name="AntiSub">
+				<frame frame="48"/>
+			</animation>
+			<animation name="Submerged">
+				<frame frame="49"/>
+			</animation>
+
+			<animation name="MassiveHull">
+				<frame frame="50"/>
+			</animation>
+
+			<!-- ICONS -->
+			<!-- ICONS -->
+			<!-- ICONS -->
+			<!-- ICONS -->
+
+			<animation name="armor_light">
+				<frame frame="51"/>
+			</animation>
+			<animation name="armor_medium">
+				<frame frame="52"/>
+			</animation>
+			<animation name="armor_heavy">
+				<frame frame="53"/>
+			</animation>
+			<animation name="wheeled">
+				<frame frame="54"/>
+			</animation>
+			<animation name="tracked">
+				<frame frame="55"/>
+			</animation>
+			<animation name="wings">
+				<frame frame="56"/>
+			</animation>
+			<animation name="none">
+				<frame frame="57"/>
+			</animation>
+			<animation name="rudder">
+				<frame frame="58"/>
+			</animation>
+			<animation name="feet">
+				<frame frame="59"/>
+			</animation>
+
+
+			<animation name="weapon_light">
+				<frame frame="60"/>
+			</animation>
+			<animation name="weapon_medium">
+				<frame frame="61"/>
+			</animation>
+			<animation name="weapon_heavy">
+				<frame frame="62"/>
+			</animation>
+
+			<!-- Begin second UNIT mods-->
+			<animation name="DoubleDamage">
+				<frame frame="63"/>
+			</animation>
+
+			<animation name="Tracking">
+				<frame frame="64"/>
+			</animation>
+
+			<animation name="Constructor">
+				<frame frame="65"/>
+			</animation>
+
+			<animation name="Extractor">
+				<frame frame="66"/>
+			</animation>
+
+			<animation name="Extractable">
+				<frame frame="67"/>
+			</animation>
+
+			<animation name="Irreparable">
+				<frame frame="68"/>
+			</animation>
+
+			<animation name="Jamming">
+				<frame frame="69"/>
+			</animation>
+
+			<animation name="Piercing">
+				<frame frame="70"/>
+			</animation>
+
+			<animation name="Fixed">
+				<frame frame="71"/>
+			</animation>
+
+			<animation name="Linchpin">
+				<frame frame="72"/>
+			</animation>
+
+			<animation name="NotSelectable">
+				<frame frame="73"/>
+			</animation>
+			
+			<animation name="BlindSpot">
+				<frame frame="74"/>
+			</animation>
+			
+			<animation name="Stun">
+				<frame frame="75"/>
+			</animation>
+			
+			<animation name="Scavenge">
+				<frame frame="76"/>
+			</animation>
+			
+
+		</tilesheet>
+
+		<tilesheet name="continueButton" width="152" height="41">
+			<image value="continueButton"/>
+		</tilesheet>
+
+		<tilesheet name="endTurnButton" width="126" height="71">
+			<image value="endturnbutton"/>
+		</tilesheet>
+
+		<tilesheet name="button_finish" width="126" height="71">
+			<image value="button_finish"/>
+		</tilesheet>
+
+		<tilesheet name="closeButton" width="126" height="71">
+			<image value="closeButton"/>
+		</tilesheet>
+
+		<tilesheet name="yesButton" width="126" height="71">
+			<image value="yesButton"/>
+		</tilesheet>
+
+		<tilesheet name="noButton" width="126" height="71">
+			<image value="noButton"/>
+		</tilesheet>
+
+		<tilesheet name="optionsButton" width="28" height="40">
+			<image value="optionsButton"/>
+		</tilesheet>
+		
+		<tilesheet name="leaveGameButton" width="126" height="71">
+			<image value="leaveGameButton"/>
+		</tilesheet>
+
+		<tilesheet name="moveUndoButton" width="28" height="40">
+			<image value="undo_move_button"/>
+		</tilesheet>
+
+		<tilesheet name="nextUnitButton" width="33" height="40">
+			<image value="nextUnitButton"/>
+		</tilesheet>
+
+		<tilesheet name="saveButton" width="126" height="71">
+			<image value="saveButton"/>
+		</tilesheet>
+
+		<tilesheet name="unitOptionsButton" width="24" height="24">
+			<image value="unitOptionsButton"/>
+		</tilesheet>
+
+		<tilesheet name="continueButton" width="152" height="41">
+			<image value="continueButton"/>
+		</tilesheet>
+
+		<tilesheet name="soundButton" width="76" height="89">
+			<image value="soundButton"/>
+		</tilesheet>
+
+		<tilesheet name="soundButtonToggled" width="76" height="89">
+			<image value="soundButtonToggled"/>
+		</tilesheet>
+
+		<tilesheet name="musicButton" width="76" height="89">
+			<image value="musicButton"/>
+		</tilesheet>
+
+		<tilesheet name="musicButtonToggled" width="76" height="89">
+			<image value="musicButtonToggled"/>
+		</tilesheet>
+
+		<tilesheet name="clearDataButton" width="76" height="89">
+			<image value="clearDataButton"/>
+		</tilesheet>
+
+		<tilesheet name="dialogButton" width="76" height="89">
+			<image value="dialogButton"/>
+		</tilesheet>
+		
+		<tilesheet name="dangerIndicator" width="56" height="56">
+			<image value="dangerIndicator"/>
+		</tilesheet>
+
+		<tilesheet name="dialogButtonToggled" width="76" height="89">
+			<image value="dialogButtonToggled"/>
+		</tilesheet>
+
+		<tilesheet name="creditsButton" width="132" height="28">
+			<image value="creditsButton"/>
+		</tilesheet>
+
+		<tilesheet name="wm_build_cancel" width="56" height="56">
+			<image value="wm_build_cancel"/>
+		</tilesheet>
+
+		<tilesheet name="wm_build_side" width="56" height="56">
+			<image value="wm_build_side"/>
+		</tilesheet>
+
+		<tilesheet name="wm_build_up" width="56" height="56">
+			<image value="wm_build_up"/>
+		</tilesheet>
+
+		<tilesheet name="wm_build_down" width="56" height="56">
+			<image value="wm_build_down"/>
+		</tilesheet>
+		
+		<tilesheet name="status_icons" width="32" height="32">
+			<image value="status_icons"/>
+			
+			<animation name="info">
+				<frame frame="0"/>
+			</animation>
+			<animation name="warning">
+				<frame frame="1"/>
+			</animation>
+		</tilesheet>
+		
+		<tilesheet name="nextMissionButton" width="33" height="46">
+			<image value="nextMissionButton"/>
+		</tilesheet>
+		<tilesheet name="previousMissionButton" width="33" height="46">
+			<image value="previousMissionButton"/>
+		</tilesheet>
+		
+		<tilesheet name="medal" width="30" height="30">
+			<image value="medal"/>
+			
+			<animation name="none">
+				<frame frame="0"/>
+			</animation>
+			<animation name="bronze">
+				<frame frame="1"/>
+			</animation>
+			<animation name="silver">
+				<frame frame="2"/>
+			</animation>
+			<animation name="gold">
+				<frame frame="3"/>
+			</animation>
+			<animation name="locked">
+				<frame frame="4"/>
+			</animation>
+			<animation name="unlocked">
+				<frame frame="5"/>
+			</animation>
+		</tilesheet>
+
+		<tilesheet name="cursor" width="48" height="48">
+			<image value="cursor"/>
+
+			<animation name="move">
+				<frame frame="0"/>
+			</animation>
+			<animation name="attack">
+				<frame frame="1"/>
+			</animation>
+			<animation name="default">
+				<frame frame="2"/>
+			</animation>
+			<animation name="option">
+				<frame frame="3"/>
+			</animation>
+			<animation name="select">
+				<frame frame="4"/>
+			</animation>
+			<animation name="left">
+				<frame frame="5"/>
+			</animation>
+			<animation name="right">
+				<frame frame="6"/>
+			</animation>
+			<animation name="up">
+				<frame frame="7"/>
+			</animation>
+			<animation name="down">
+				<frame frame="8"/>
+			</animation>
+
+			<animation name="leftup">
+				<frame frame="9"/>
+			</animation>
+			<animation name="rightup">
+				<frame frame="10"/>
+			</animation>
+			<animation name="leftdown">
+				<frame frame="11"/>
+			</animation>
+			<animation name="rightdown">
+				<frame frame="12"/>
+			</animation>
+		</tilesheet>
+
+		<tilesheet name="flag" width="14" height="12">
+			<image value="flag"/>
+			<animation name="default" loops="-1" wait="250">
+				<frame frame="0"/>
+				<frame frame="1"/>
+				<frame frame="2"/>
+				<frame frame="3"/>
+			</animation>
+		</tilesheet>
+
+		<tilesheet name="moraleStatus" width="26" height="27">
+			<image value="moraleStatus"/>
+		</tilesheet>
+		
+		<tilesheet name="unitCancel" width="18" height="15">
+			<image value="unitCancel"/>
+		</tilesheet>
+
+		<tilesheet name="unitAlbatross" width="36" height="29">
+			<image value="unitAlbatross"/>
+		</tilesheet>
+		
+		<tilesheet name="scroll_corner" width="45" height="45">
+			<image value="scroll_corner"/>
+		</tilesheet>
+		
+		<tilesheet name="scroll_edge" width="25" height="558">
+			<image value="scroll_edge"/>
+		</tilesheet>
+		
+		<tilesheet name="unitLeviathan" width="36" height="29">
+			<image value="unitLeviathan"/>
+		</tilesheet>
+		
+		<tilesheet name="unitBuild" width="36" height="29">
+			<image value="unitBuild"/>
+		</tilesheet>
+		
+		<tilesheet name="unitRepair" width="36" height="29">
+			<image value="unitRepair"/>
+		</tilesheet>
+		
+		<tilesheet name="unitExtract" width="36" height="29">
+			<image value="unitExtract"/>
+		</tilesheet>
+		
+		<tilesheet name="unitUnload" width="36" height="29">
+			<image value="unitUnload"/>
+		</tilesheet>
+		
+		<tilesheet name="build_button_buildUnit" width="126" height="71">
+			<image value="build_button_buildUnit"/>
+		</tilesheet>
+		
+		<tilesheet name="build_button_cancel" width="126" height="71">
+			<image value="build_button_cancel"/>
+		</tilesheet>
+		
+<tilesheet name="avatars" width="130" height="150">
+			<image value="avatars"/>
+			<animation name="durand">
+				<frame frame="0"/>
+			</animation>
+			<animation name="mullen">
+				<frame frame="1"/>
+			</animation>
+			<animation name="pearl">
+				<frame frame="2"/>
+			</animation>
+			<animation name="tucker">
+				<frame frame="3"/>
+			</animation>
+			<animation name="argent">
+				<frame frame="4"/>
+			</animation>
+			<animation name="general">
+				<frame frame="5"/>
+			</animation>
+
+			<animation name="evil_durand">
+				<frame frame="6"/>
+			</animation>
+			<animation name="mayjor">
+				<frame frame="7"/>
+			</animation>
+			<animation name="Akadian_3">
+				<frame frame="8"/>
+			</animation>
+			<animation name="evil_durand_dark">
+				<frame frame="9"/>
+			</animation>
+			<animation name="hayne">
+				<frame frame="10"/>
+			</animation>
+			<animation name="blank">
+				<frame frame="11"/>
+			</animation>
+
+			<animation name="usul">
+				<frame frame="12"/>
+			</animation>
+			<animation name="drag_2">
+				<frame frame="13"/>
+			</animation>
+			<animation name="drag_3">
+				<frame frame="14"/>
+			</animation>
+			<animation name="blank_asdasddd">
+				<frame frame="15"/>
+			</animation>
+			<animation name="blank_asdzxc">
+				<frame frame="16"/>
+			</animation>
+			<animation name="yurik">
+				<frame frame="17"/>
+			</animation>
+		</tilesheet>
+		
+	</tilesheets>
+</tilesheets>

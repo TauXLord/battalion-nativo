@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151e1b">
+  <title>Battalion: Vengeance</title>
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <main id="app">
+    <header class="topbar">
+      <div class="brand"><span class="insignia" aria-hidden="true">✦</span><div><strong>BATTALION</strong><span>VENGEANCE</span></div></div>
+      <nav aria-label="Modos">
+        <button id="campaign" aria-pressed="true">Campanha</button>
+        <button id="editor" aria-pressed="false">Editor de mapas</button>
+      </nav>
+      <button id="fullscreen" class="utility">⛶ <span>Tela cheia</span></button>
+    </header>
+    <div class="layout">
+      <section class="field" aria-label="Tabuleiro">
+        <header class="mission">
+          <div><p id="episode" class="eyebrow">Campanha</p><h1 id="mission-title"></h1></div>
+          <div id="round" class="round"></div>
+        </header>
+        <div id="board" aria-label="Mapa da batalha"></div>
+        <footer class="legend" id="legend">
+          <span><i class="legend-move"></i> Movimento</span>
+          <span><i class="legend-range"></i> Alcance</span>
+          <span><i class="legend-target"></i> Alvo</span>
+          <span id="coordinates" class="coordinates"></span>
+        </footer>
+      </section>
+      <aside class="sidebar">
+        <section id="battle-panel">
+          <div class="objective"><p class="eyebrow">Objetivo</p><h2>Elimine as forças inimigas</h2></div>
+          <div class="teams"><div><i class="dot ally"></i> Dragoons <b id="ally-count"></b></div><div><i class="dot enemy"></i> Akadians <b id="enemy-count"></b></div></div>
+          <div class="form-row"><label for="difficulty">Dificuldade</label><select id="difficulty"><option value="normal">Normal</option><option value="hard">Difícil</option><option value="extreme">Extrema</option></select></div>
+          <section id="intel" aria-live="polite"></section>
+          <div class="actions">
+            <button id="end" class="primary">Encerrar turno <span aria-hidden="true">→</span></button>
+            <button id="restart">Reiniciar partida</button>
+            <button id="return" hidden>Voltar ao editor</button>
+          </div>
+        </section>
+        <section id="editor-panel" hidden>
+          <div class="objective"><p class="eyebrow">Cenário</p><h2>Editor de mapas</h2></div>
+          <label class="stack">Nome do mapa <input id="map-name" type="text" maxlength="64"></label>
+          <div class="dimensions"><label>Colunas <input id="columns" type="number" min="4" max="16" value="10"></label><label>Linhas <input id="rows" type="number" min="4" max="16" value="10"></label></div>
+          <div class="button-row"><button id="new-map">Mapa novo</button><button id="copy-map">Copiar capítulo 1</button></div>
+          <label class="stack">Ferramenta <select id="brush"><option value="terrain">Pintar terreno</option><option value="ally">Inserir Dragoon</option><option value="enemy">Inserir Akadian</option><option value="erase">Apagar unidade</option></select></label>
+          <label class="stack" id="terrain-control">Terreno <select id="terrain"></select></label>
+          <label class="stack" id="unit-control" hidden>Unidade <select id="unit"></select></label>
+          <div class="actions">
+            <button id="play-map" class="primary">Testar contra a IA <span aria-hidden="true">→</span></button>
+            <div class="button-row"><button id="export">Exportar JSON</button><button id="import">Importar JSON</button></div>
+            <input id="map-file" type="file" accept=".json,application/json" hidden>
+          </div>
+        </section>
+        <p id="status" role="status"></p>
+      </aside>
+    </div>
+    <dialog id="briefing">
+      <p class="eyebrow" id="dialog-kicker"></p><h2 id="dialog-title"></h2>
+      <p id="dialog-text"></p>
+      <div class="button-row"><button id="skip-dialog">Pular diálogo</button><button id="next-dialog" class="primary">Continuar</button></div>
+    </dialog>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

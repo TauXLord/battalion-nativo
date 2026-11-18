@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<battalion>
+	<resources>
+		<xml url="xml/terrainModifiers.xml" name="TerrainModifiers"/>
+		<xml url="xml/terrain.xml" name="Terrain"/>
+		<xml url="xml/unitModifiers.xml" name="UnitModifiers"/>
+		<xml url="xml/units.xml" name="Units"/>
+		<xml url="xml/ballisticsTable.xml" name="BallisticsTable"/>
+		<xml url="xml/tileSheets.xml" name="GlobalTileSheets"/>
+		<xml url="xml/singleplayer_tileSheets.xml" name="SingleplayerTileSheets"/>
+		<xml url="xml/ep2/battalionStorage.xml" name="Storage"/>
+		
+		<xml url="xml/ep2/campaign.xml" name="Campaign"/>
+		<xml url="xml/ep2/bootcamp.xml" name="Bootcamp"/>
+		
+		<!--
+		<xml url="xml/ep2/ai_campaign.xml" name="Campaign"/>
+		<xml url="xml/ep2/ai_bootcamp.xml" name="Bootcamp"/>
+		-->
+		
+	</resources>
+	<settings name="Settings"/>
+	<storage storagename="batghosts_v1" name="Storage"/>
+	<modifierlist name="TerrainModifiers"/>
+	<modifierlist name="UnitModifiers"/>
+	<unitlist name="Units"/>
+	<terrainlist name="Terrain"/>
+	<globaltilesheetlist name="GlobalTileSheets"/>
+	<episodetilesheetlist name="SingleplayerTileSheets"/>
+	<ballisticstable name="BallisticsTable"/>
+	<campaign name="Campaign"/>
+	<campaign name="Bootcamp"/>
+	<loadmap url="maps/ep2/Kongregate_Bonus_Map.yimf" name="SmallMap"/>
+	<player1 type="AI"/>
+	<player2 type="Human"/>
+</battalion>

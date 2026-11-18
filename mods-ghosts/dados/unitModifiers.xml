@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unitmodifiers>
+	<modifier type="Unit" name="Skysweeper">
+		<image value="Skysweeper"/>
+		<description value="This unit can engage air craft."/>
+		<visible value="true"/>
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Blind Spot">
+		<image value="BlindSpot"/>
+		<description value="This unit cannot counter attack."/>
+		<visible value="true"/>
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Linchpin">
+		<image value="Linchpin"/>
+		<description value="Keep at least one Linchpin unit alive to stay in the fight."/>
+		<visible value="true"/>
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Scavenge">
+		<image value="Scavenge"/>
+		<description value="Unit can move and attack again if it kills its target."/>
+		<visible value="true"/>
+		<!-- Modifier effect is hard coded -->
+	</modifier>	
+
+	<modifier type="Unit" name="Counter Battery">
+		<image value="CounterBattery"/>
+		<description value="Counter-attacks ranged units."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Not Selectable">
+		<image value="NotSelectable"/>
+		<description value="This unit isn't selectable. It just sits there."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Piercing">
+		<image value="Piercing"/>
+		<description value="Attack damages any unit directly behind target."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Fixed">
+		<image value="Fixed"/>
+		<description value="This unit does not prevent military defeat."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Jamming">
+		<image value="Jamming"/>
+		<description value="Emits a no-fly zone that also uncloaks stealth units."/>
+		<visible value="true"/>
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+
+	<modifier type="Unit" name="Irreparable">
+		<image value="Irreparable"/>
+		<description value="This unit cannot be repaired."/>
+		<visible value="true"/>
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Extractor">
+		<image value="Extractor"/>
+		<description value="This unit can extract resources from Ore Deposits."/>
+		<visible value="true"/>
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+	<modifier type="Unit" name="Constructor">
+		<image value="Constructor"/>
+		<description value="This unit can build other units."/>
+		<visible value="true"/>
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+	<modifier type="Unit" name="Capture">
+		<image value="Capture"/>
+		<description value="This unit can capture properties."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+	<modifier type="Unit" name="Flak">
+		<image value="Flak"/>
+		<description value="Does 2x damage to light armor."/>
+		<visible value="true"/>
+
+		<modify type="damage">
+			<match type="armorType" value="light">
+				<effect value="+100%"/>
+			</match>
+		</modify>
+	</modifier>
+	<modifier type="Unit" name="Transport">
+		<image value="Transport"/>
+		<description value="Transports other units."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+	<modifier type="Unit" name="Unbuildable">
+		<image value="Unbuildable"/>
+		<description value="Cannot be built."/>
+		<visible value="false"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Cloaking">
+		<image value="Cloaking"/>
+		<description value="This unit cloaks after moving."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+	<modifier type="Unit" name="Cloak Damage">
+		<!-- IGNORE -->
+
+		<image value="Flak"/>
+		<description value="This unit does 2x damage because it is cloaked."/>
+		<visible value="true"/>
+
+		<modify type="damage">
+			<effect value="+100%"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Unit" name="Air Bound">
+		<image value="AirBound"/>
+		<description value="This unit can engage air units."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Sea Bound">
+		<image value="SeaBound"/>
+		<description value="This unit can engage sea units."/>
+		<visible value="false"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Ground Bound">
+		<image value="GroundBound"/>
+		<description value="This unit can engage ground units."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Blitz">
+		<image value="Blitz"/>
+		<description value="+20% damage if unit initiates attack."/>
+		<visible value="true"/>
+
+		<modify type="attackBonus">
+			<effect value="+20%"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Unit" name="Mammoth">
+		<image value="Mammoth"/>
+		<description value="Unit does 15% less damage on counter attack."/>
+		<visible value="true"/>
+
+		<modify type="returnAttackBonus">
+			<effect value="-15%"/>
+		</modify>
+	</modifier>
+	
+
+	<modifier type="Unit" name="Courage Under Fire">
+		<!-- IGNORE -->
+
+		<image value="CourageUnderFire"/>
+		<description value="+25% damage on counter attack."/>
+		<visible value="true"/>
+
+		<modify type="counterAttackBonus">
+			<effect value="+25%"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Unit" name="Maintenance">
+		<image value="Maintenance"/>
+		<description value="Unit heals 5 HP each round."/>
+		<visible value="true"/>
+
+		<modify type="heal">
+			<effect value="5"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Unit" name="Fire Bomb">
+		<image value="FireBomb"/>
+		<description value="Does 20% more damage if target is on a structure."/>
+		<visible value="true"/>
+
+		<modify type="structureBonus">
+			<effect value="+20%"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Unit" name="Overdrive">
+		<!-- IGNORE -->
+		<image value="Overdrive"/>
+		<description value="+2 range when at full health."/>
+		<visible value="true"/>
+
+		<modify type="overdrive">
+			<effect value="+2"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Unit" name="Radar">
+		<!-- IGNORE -->
+		<image value="Radar"/>
+		<description value="Detects stealth units at the start of its turn."/>
+		<visible value="true"/>
+
+		<modify type="radar">
+			<effect value="+1"/>
+		</modify>
+	</modifier>
+
+	<modifier type="Unit" name="Anti-Sub">
+		<image value="AntiSub"/>
+		<description value="Can attack submerged units."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Submerged">
+		<image value="Submerged"/>
+		<description value="Can only be attacked by Anti-Sub units."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Massive Hull">
+		<image value="MassiveHull"/>
+		<description value="Unit cannot enter shallow waters."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+	<modifier type="Unit" name="Tracking">
+		<image value="Tracking"/>
+		<description value="Unit will attack stealth units on interception."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+	
+	<modifier type="Unit" name="Stun">
+		<image value="Stun"/>
+		<description value="Enemy units will not counter-attack in response to an attack."/>
+		<visible value="true"/>
+
+		<!-- Modifier effect is hard coded -->
+	</modifier>
+
+</unitmodifiers>

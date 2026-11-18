@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Battalion</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,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">
+  <link rel="stylesheet" href="/launcher.css">
+  <link rel="stylesheet" href="/nativo.css">
+  <script defer src="/inicio.js"></script>
+</head>
+<body>
+  <main id="home-view" class="home" hidden>
+    <header class="home-hero">
+      <canvas id="home-tank" width="168" height="112" aria-hidden="true"></canvas>
+      <div>
+        <h1>Battalion</h1>
+        <p>Estratégia por turnos · edição nativa</p>
+      </div>
+      <button type="button" class="profile-chip" id="home-profile" aria-label="Perfil do jogador">
+        <img id="home-profile-photo" alt="" hidden><span id="home-profile-name">Criar perfil</span>
+      </button>
+      <button type="button" class="settings-button" data-settings>⚙ Configurações</button>
+    </header>
+
+    <section class="home-section" aria-labelledby="home-campaigns">
+      <h2 id="home-campaigns">Campanhas</h2>
+      <div class="campaign-cards">
+        <article class="campaign-card vengeance">
+          <a class="campaign-main" href="/?campanha">
+            <span class="campaign-banner" aria-hidden="true"></span>
+            <span class="campaign-text">
+              <strong>Vengeance</strong>
+              <span>O comandante Yurik e os Dragoons invadem Akádia para derrotar o general Durand.</span>
+              <small class="campaign-progress" data-progress="vengeance"></small>
+            </span>
+          </a>
+          <nav aria-label="Outros mapas de Vengeance">
+            <a href="/?campanha&amp;group=bootcamp">Treinamento</a><a href="/?campanha&amp;group=bonus">Mapa bônus</a>
+          </nav>
+        </article>
+        <article class="campaign-card ghosts">
+          <a class="campaign-main" href="/?campanha=ghosts">
+            <span class="campaign-banner" aria-hidden="true"></span>
+            <span class="campaign-text">
+              <strong>Ghosts</strong>
+              <span>O tenente Hayne comanda o exército de Akádia contra o que resta da Federação do Norte.</span>
+              <small class="campaign-progress" data-progress="ghosts"></small>
+            </span>
+          </a>
+          <nav aria-label="Outros mapas de Ghosts">
+            <a href="/?campanha=ghosts&amp;group=bootcamp">Treinamento</a><a href="/?campanha=ghosts&amp;group=bonus">Mapa bônus</a>
+          </nav>
+        </article>
+      </div>
+    </section>
+
+    <section class="home-section" aria-labelledby="home-match">
+      <h2 id="home-match">Partida avulsa</h2>
+      <div class="mode-cards">
+        <a class="mode-card" href="/?partida=ia">
+          <canvas class="mode-art" data-art="annihilator:ff00ff00|scorpion:ffff0000" width="132" height="64" aria-hidden="true"></canvas>
+          <strong>Contra a IA</strong><span>Você contra o computador, em qualquer mapa.</span>
+        </a>
+        <a class="mode-card" href="/?partida=local">
+          <canvas class="mode-art" data-art="scorpion:ff00ff00|scorpion:ff0000ff" width="132" height="64" aria-hidden="true"></canvas>
+          <strong>Mesmo dispositivo</strong><span>De 2 a 4 pessoas revezando no mesmo computador.</span>
+        </a>
+        <a class="mode-card" href="/?partida=online">
+          <canvas class="mode-art" data-art="raptor:ff00ff00|raptor:ffffd800" width="132" height="64" aria-hidden="true"></canvas>
+          <strong>Multiplayer</strong><span>Sala na rede local ou pela internet, com convites.</span>
+        </a>
+        <a class="mode-card" href="/?partida=ias">
+          <canvas class="mode-art" data-art="battlecruiser:ff0000ff|battlecruiser:ffff0000" width="132" height="64" aria-hidden="true"></canvas>
+          <strong>Assistir às IAs</strong><span>As IAs se enfrentam na arena ou num mapa procedural.</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="home-section" aria-labelledby="home-maps">
+      <h2 id="home-maps">Mapas</h2>
+      <div class="tool-cards">
+        <a class="tool-card" href="/?partida=ia&amp;mapas=personalizados"><strong>Mapas personalizados</strong>
+          <span>Jogue mapas criados no editor ou importados de um arquivo.</span></a>
+        <a class="tool-card" href="/?partida=ia&amp;gerar"><strong>Mapa procedural</strong>
+          <span>Gere um mapa novo com terreno, ilhas e bases sorteados.</span></a>
+        <a class="tool-card" href="/?editor"><strong>Editor de mapas</strong>
+          <span>Pinte o terreno, posicione unidades e teste contra a IA.</span></a>
+      </div>
+    </section>
+    <p class="home-footer" id="home-ai"></p>
+  </main>
+
+  <main id="scenario-view" class="skirmish" hidden>
+    <header class="page-header">
+      <a href="/" class="back-link">← Menu</a>
+      <h1 id="skirmish-title">Partida avulsa</h1>
+      <button type="button" class="settings-button" data-settings aria-label="Configurações">⚙</button>
+    </header>
+    <nav class="mode-tabs" aria-label="Modo de jogo">
+      <button type="button" data-mode="ai">Contra a IA</button>
+      <button type="button" data-mode="hotseat">Mesmo dispositivo</button>
+      <button type="button" data-mode="lan">Multiplayer</button>
+      <button type="button" data-mode="spectator">Assistir às IAs</button>
+    </nav>
+    <p id="mode-hint" class="mode-hint"></p>
+    <div class="skirmish-layout">
+      <section class="map-picker" aria-label="Escolha do mapa">
+        <h2>Mapas do jogo</h2>
+        <div id="scenario-list" class="scenario-list"></div>
+        <h2 id="custom-heading">Mapas personalizados</h2>
+        <div id="custom-list" class="scenario-list"></div>
+        <p id="custom-empty" class="muted">Nenhum mapa personalizado ainda. Crie um no editor ou importe um arquivo .json.</p>
+        <div class="map-actions">
+          <button type="button" id="open-generator">Gerar mapa procedural</button>
+          <label class="button-like">Importar mapa (.json)<input type="file" id="import-map" class="visually-hidden" accept=".json,application/json"></label>
+          <a class="button-like" href="/?editor">Abrir o editor</a>
+        </div>
+        <p id="import-status" class="muted" role="status"></p>
+      </section>
+      <aside class="tools match-setup">
+        <figure class="map-preview">
+          <canvas id="scenario-preview" width="264" height="264" aria-label="Prévia do mapa escolhido"></canvas>
+          <figcaption><strong id="preview-title"></strong><span id="preview-info"></span></figcaption>
+        </figure>
+        <select id="scenario-mode" hidden>
+          <option value="lan">Multiplayer</option><option value="ai">Contra a IA</option>
+          <option value="hotseat">Mesmo dispositivo</option><option value="spectator">Assistir às IAs</option>
+        </select>
+        <label id="local-humans" hidden>Jogadores humanos <select id="scenario-humans"></select></label>
+        <label id="local-coalitions" class="check" hidden><input type="checkbox" id="scenario-coalitions" checked> Alianças por continente</label>
+        <p id="coalition-teams" class="muted" hidden>Equipes 1 e 2 no oeste. Equipes 3 e 4 no leste.</p>
+        <label id="local-difficulty" hidden>Dificuldade da IA <select id="scenario-difficulty">
+          <option value="0">Fácil · IA clássica</option><option value="1" selected>Normal · IA treinada</option>
+          <option value="2">Difícil · IA treinada com dano extra</option>
+        </select></label>
+        <div id="scenario-colors" class="team-colors" hidden></div>
+        <button id="scenario-play" class="primary big">Jogar</button>
+      </aside>
+    </div>
+    <dialog id="map-generator" aria-labelledby="generator-title">
+      <form method="dialog">
+        <h2 id="generator-title">Gerar mapa procedural</h2>
+        <div class="generator-layout">
+          <section class="tools">
+            <div class="generator-setup">
+              <label>Formato <select id="generator-size">
+                <option value="24x24">Pequeno · 24 × 24</option><option value="32x32" selected>Médio · 32 × 32</option>
+                <option value="40x40">Grande · 40 × 40</option><option value="64x64">Enorme · 64 × 64</option>
+                <option value="100x100">Gigante · 100 × 100</option><option value="48x24">Horizontal · 48 × 24</option>
+                <option value="80x40">Horizontal largo · 80 × 40</option><option value="24x48">Vertical · 24 × 48</option>
+                <option value="40x80">Vertical alto · 40 × 80</option><option value="custom">Personalizado</option>
+              </select></label>
+              <label>Largura <input id="generator-width" type="number" min="16" max="100" step="1" value="32"></label>
+              <label>Altura <input id="generator-height" type="number" min="16" max="100" step="1" value="32"></label>
+              <p id="generator-chaos" class="generator-chaos" hidden>Modo caos: mapa pequeno para tantas equipes, as bases ficam coladas.</p>
+              <label>Equipes <select id="generator-teams">
+                <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                <option value="5">5</option><option value="6">6</option><option value="7">7</option>
+                <option value="8">8</option><option value="9">9</option>
+              </select></label>
+              <label>Equipes da IA <select id="generator-ai"></select></label>
+              <label>Veios de minério <select id="generator-veins">
+                <option value="0">Nenhum</option><option value="1" selected>Poucos</option>
+                <option value="2">Médios</option><option value="3">Muitos</option>
+              </select></label>
+              <label><span>Ilhas sem pontes</span><input id="generator-islands" type="checkbox"></label>
+            </div>
+            <fieldset id="generator-weights"><legend>Pesos do terreno</legend></fieldset>
+          </section>
+          <figure>
+            <canvas id="generator-preview" width="320" height="320" aria-label="Prévia do terreno e das bases"></canvas>
+            <figcaption id="generator-status" role="status"></figcaption>
+          </figure>
+        </div>
+        <div class="generator-actions">
+          <button type="button" id="generator-reroll">Gerar outra prévia</button>
+          <button type="button" class="primary" id="generator-use" disabled>Usar este mapa</button>
+          <button value="cancel">Fechar</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+  <main id="native-editor" class="editor" hidden>
+    <header><a href="/">← Menu</a><h1>Editor de mapas</h1>
+      <nav class="game-links" aria-label="Edição do mapa"><a href="/?editor">Vengeance</a><a href="/?editor=ghosts">Ghosts</a></nav>
+    </header>
+    <div class="editor-layout">
+      <div class="board-wrap"><canvas id="edit-board" aria-label="Mapa em edição"></canvas></div>
+      <aside class="tools">
+        <label>Mapa base <select id="edit-base"></select></label>
+        <label>Nome <input id="edit-name" maxlength="60"></label>
+        <div class="dimensions">
+          <label>Colunas <input id="edit-width" type="number" min="4" max="40" value="12"></label>
+          <label>Linhas <input id="edit-height" type="number" min="4" max="40" value="12"></label>
+        </div>
+        <button id="edit-new">Criar mapa vazio</button>
+        <label>Camada <select id="edit-layer">
+          <option value="terrain">Terreno</option><option value="unit">Unidade</option><option value="structure">Construção</option>
+        </select></label>
+        <label>Peça <select id="edit-piece"></select></label>
+        <label id="edit-team-row" hidden>Equipe <select id="edit-team"></select></label>
+        <label>Importar mapa JSON <input type="file" id="edit-import" accept=".json,application/json"></label>
+        <button id="edit-export">Exportar mapa JSON</button>
+        <label>Dificuldade <select id="edit-difficulty">
+          <option value="0">Fácil · IA clássica</option><option value="1" selected>Normal · IA treinada</option><option value="2">Difícil</option>
+        </select></label>
+        <button id="edit-play" class="primary">Testar contra a IA</button>
+        <button id="edit-hotseat">Testar com jogadores locais</button>
+        <p id="edit-status" role="status"></p>
+      </aside>
+    </div>
+  </main>
+  <main id="campaign-view" hidden>
+    <header><a href="/">← Menu</a><h1 id="campaign-title">Vengeance</h1>
+      <nav class="game-links" id="campaign-groups" aria-label="Mapas da campanha">
+        <a id="chapter-link">Campanha</a><a id="bootcamp-link">Treinamento</a><a id="bonus-link">Mapa bônus</a>
+        <button type="button" class="settings-button" data-settings aria-label="Configurações">⚙</button>
+      </nav>
+    </header>
+    <section class="campaign-screen" aria-label="Campanha Vengeance">
+      <nav id="chapter-badges" aria-label="Capítulos"></nav>
+      <h2 id="chapter-title" class="chapter-title"></h2>
+      <button id="chapter-prev" class="chapter-arrow" aria-label="Previous Chapter">◀</button>
+      <button id="chapter-next" class="chapter-arrow" aria-label="Next Chapter">▶</button>
+      <section class="mission-preview"><h3>Mission Preview</h3><canvas id="mission-preview" width="140" height="174"></canvas></section>
+      <section class="mission-brief"><h3>Mission Brief</h3><p id="mission-brief"></p></section>
+      <section class="mission-difficulty"><h3>AI Difficulty</h3>
+        <label title="IA clássica"><input type="radio" name="difficulty" value="0"> Easy</label>
+        <label title="IA treinada"><input type="radio" name="difficulty" value="1" checked> Normal</label>
+        <label title="IA treinada com dano extra"><input type="radio" name="difficulty" value="2"> Hard</label>
+      </section>
+      <a class="campaign-back" href="/">Main Menu</a>
+      <button id="mission-start">Start Game</button>
+    </section>
+    <p class="campaign-note">Fácil usa a IA clássica do jogo. Normal e Difícil usam a IA treinada.</p>
+    <div class="campaign-coop">
+      <button type="button" id="mission-coop">Jogar em dupla pela rede</button>
+      <span id="mission-coop-note"></span>
+    </div>
+  </main>
+  <main id="lobby-view" class="editor" hidden>
+    <header><a id="lobby-back" href="/?partida=online">← Partida avulsa</a><h1>Sala multiplayer</h1></header>
+    <div id="lobby-invites"></div>
+    <div id="lobby-seats" class="lobby-seats">
+      <section><strong>Anfitrião</strong><p id="lobby-host"></p></section>
+      <section><strong>Convidado 1</strong><p id="lobby-guest"></p></section>
+    </div>
+    <div class="lobby-prefs">
+      <label>Cor da sua equipe <select id="lobby-color"></select></label>
+      <label>Seu voto para o mapa <select id="lobby-vote"></select></label>
+    </div>
+    <p id="lobby-map"></p>
+    <div class="lobby-actions">
+      <button id="lobby-ready" disabled>Marcar como pronto</button>
+      <button id="lobby-start" class="primary" disabled hidden>Começar partida</button>
+    </div>
+    <p id="lobby-status" role="status"></p>
+  </main>
+  <main id="player-view" hidden>
+    <header><a href="/">← Menu</a><h1 id="player-title">Battalion</h1>
+      <div class="player-tools"><button id="game-settings" class="settings-button" aria-label="Configurações" title="Configurações">⚙</button>
+        <button id="fullscreen">Tela cheia</button></div></header>
+    <p id="lan-status" role="status">Carregando partida…</p>
+    <div id="player-camera" class="camera-controls" hidden>
+      <button data-zoom="-1" aria-label="Diminuir zoom">−</button>
+      <output aria-label="Zoom do mapa" class="camera-zoom">100%</output>
+      <button data-zoom="1" aria-label="Aumentar zoom">+</button>
+      <button data-zoom="2">Mapa inteiro</button>
+    </div>
+    <div id="stage">
+      <p id="turn-banner" role="status" hidden></p>
+      <canvas id="game" width="700" height="600" aria-label="Tabuleiro Battalion" tabindex="0"></canvas>
+      <button class="game-button undo" aria-label="Undo Move" disabled></button>
+      <button class="game-button next" aria-label="Next Unit" disabled></button>
+      <button class="game-button options" aria-label="Open Menu"></button>
+      <button class="game-button end" aria-label="End Turn" disabled></button>
+      <button id="campaign-continue" class="game-button" aria-label="Continue" hidden></button>
+      <div id="terrain-modifiers" aria-label="Informações da unidade ou do terreno" hidden></div>
+      <div id="wm-directions" aria-label="Saídas da máquina de guerra" hidden>
+        <button type="button" data-direction="up" aria-label="Construir acima"></button>
+        <button type="button" data-direction="right" aria-label="Construir à direita"></button>
+        <button type="button" data-direction="down" aria-label="Construir abaixo"></button>
+        <button type="button" data-direction="left" aria-label="Construir à esquerda"></button>
+        <button type="button" data-direction="cancel" aria-label="Voltar à lista de unidades"></button>
+      </div>
+      <div id="terrain-tooltip" role="tooltip" hidden><strong></strong><p></p></div>
+    </div>
+    <p id="campaign-line" class="visually-hidden" aria-live="polite"></p>
+    <dialog id="wm-construct" aria-label="Produção da máquina de guerra">
+      <canvas width="700" height="600" aria-hidden="true"></canvas>
+      <div class="wm-catalog-buttons"></div>
+      <div class="wm-catalog-info"></div>
+      <div class="wm-catalog-tooltip" id="wm-catalog-tooltip" role="tooltip" hidden><strong></strong><p></p></div>
+      <form method="dialog">
+        <button class="wm-catalog-close" aria-label="Fechar produção"></button>
+      </form>
+    </dialog>
+    <dialog id="construct">
+      <form method="dialog">
+        <span id="construct-funds"></span>
+        <label>Unidade <select id="construct-unit"></select></label>
+        <button value="build">Escolher</button><button value="cancel">Cancelar</button>
+      </form>
+    </dialog>
+  </main>
+
+  <dialog id="options" class="settings" aria-labelledby="settings-title">
+    <form method="dialog">
+      <header class="settings-head">
+        <h2 id="settings-title">Configurações</h2>
+        <button value="close" class="close-button" aria-label="Fechar">✕</button>
+      </header>
+      <fieldset id="settings-profile" class="profile-editor">
+        <legend>Perfil</legend>
+        <div class="profile-row">
+          <img id="profile-photo" class="profile-photo" alt="Foto do perfil" hidden>
+          <span id="profile-placeholder" class="profile-photo profile-empty" aria-hidden="true">?</span>
+          <div class="profile-fields">
+            <label class="field"><span>Seu nome</span>
+              <input id="profile-name" type="text" maxlength="24" autocomplete="nickname" placeholder="Comandante"></label>
+            <label class="field"><span>Foto (PNG, JPG ou GIF)</span>
+              <input id="profile-file" type="file" accept="image/png,image/jpeg,image/gif"></label>
+            <div class="profile-actions">
+              <button type="button" id="profile-save">Salvar perfil</button>
+              <button type="button" id="profile-remove-photo">Remover foto</button>
+            </div>
+          </div>
+        </div>
+        <p class="muted" id="profile-status" role="status">O nome e a foto aparecem nas partidas, inclusive para os outros jogadores na rede.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Idioma</legend>
+        <label class="field"><span>Idioma do jogo</span><select id="settings-language">
+          <option value="pt">Português (Brasil)</option><option value="en">English</option>
+        </select></label>
+        <p class="muted" id="settings-language-note" hidden>O novo idioma vale a partir da próxima tela. A partida atual continua como está.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Áudio</legend>
+        <label class="toggle"><input type="checkbox" id="audio" checked><span>Efeitos sonoros</span></label>
+        <label class="toggle"><input type="checkbox" id="music" checked><span>Música</span></label>
+        <label class="slider"><span>Volume</span><input type="range" id="game-volume" min="0" max="100" value="100">
+          <output id="game-volume-value" for="game-volume">100%</output></label>
+      </fieldset>
+      <fieldset>
+        <legend>Câmera</legend>
+        <label class="toggle"><input type="checkbox" data-camera="drag"><span>Arrastar o mapa com o mouse</span></label>
+        <label class="toggle"><input type="checkbox" data-camera="edge"><span>Rolar o mapa ao encostar nas bordas</span></label>
+      </fieldset>
+      <fieldset>
+        <legend>Inteligência artificial</legend>
+        <label class="field"><span>Dificuldade padrão</span><select id="settings-difficulty">
+          <option value="0">Fácil · IA clássica</option><option value="1">Normal · IA treinada</option>
+          <option value="2">Difícil · IA treinada com dano extra</option>
+        </select></label>
+        <p class="muted" id="settings-ai-info">Fácil usa a IA clássica do jogo, com dano e renda reduzidos na campanha.</p>
+        <label class="field"><span>Tempo de raciocínio da IA clássica (segundos por ação)</span>
+          <input id="settings-ai-time" type="number" min="0" max="60" step="1" value="1"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Tela</legend>
+        <button type="button" id="settings-fullscreen">Alternar tela cheia</button>
+      </fieldset>
+      <fieldset id="settings-system" class="system-actions" hidden>
+        <legend>Dados e sistema</legend>
+        <div class="system-buttons">
+          <button type="button" id="system-close">Fechar o jogo</button>
+          <button type="button" id="system-delete" class="danger">Excluir meus dados…</button>
+          <button type="button" id="system-uninstall" class="danger">Desinstalar o Battalion…</button>
+        </div>
+        <p class="muted">Estas opções só aparecem no computador que está rodando o jogo.</p>
+      </fieldset>
+      <footer class="settings-actions">
+        <a id="settings-exit" class="button-like" href="/" hidden>Sair para o menu</a>
+        <button value="close" class="primary" id="settings-close">Fechar</button>
+      </footer>
+    </form>
+  </dialog>
+  <dialog id="system-confirm" class="settings" aria-labelledby="system-confirm-title">
+    <form method="dialog">
+      <h2 id="system-confirm-title"></h2>
+      <p id="system-confirm-text"></p>
+      <ul id="system-confirm-list"></ul>
+      <label class="toggle" id="system-confirm-ai-row"><input type="checkbox" id="system-confirm-ai">
+        <span>Apagar também a IA treinada e os treinos deste computador</span></label>
+      <label class="field" id="system-confirm-type-row"><span id="system-confirm-type-label"></span>
+        <input id="system-confirm-type" type="text" autocomplete="off"></label>
+      <p id="system-confirm-status" role="status"></p>
+      <footer class="settings-actions">
+        <button value="cancel">Cancelar</button>
+        <button type="button" id="system-confirm-go" class="danger"></button>
+      </footer>
+    </form>
+  </dialog>
+  <p id="game-closed" class="game-closed" hidden>O Battalion foi fechado. Você já pode fechar esta janela.</p>
+  <p id="startup" role="status">Carregando o Battalion… Se o menu não aparecer, recarregue a página pela janela do launcher.</p>
+  <noscript><p>Ative o JavaScript no navegador para abrir o Battalion.</p></noscript>
+  <p id="error" role="alert" hidden></p>
+</body>
+</html>

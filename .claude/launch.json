@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "battalion-nativo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["nativo/servidor.js"],
+      "port": 8770
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<terrain>
+	<terrain name="Factory Base">
+		<cost value="1"/>
+		<description value=""/>
+		<minimapimage value="minimap_plains"/>
+	</terrain>
+
+	<terrain name="Enriched Ore Deposit">
+		<cost value="1"/>
+		<description value="Warmachines can extract Ore from Enriched Ore Deposits."/>
+		<minimapimage value="minimap_plains"/>
+
+		<modifier type="Extractable"/>
+	</terrain>
+
+	<terrain name="Depleted Ore Deposit">
+		<cost value="1"/>
+		<description value="Nothing else can be extracted from this tile."/>
+		<minimapimage value="minimap_plains"/>
+
+		<modifier type=""/>
+	</terrain>
+
+	<terrain name="Ore Deposit">
+		<cost value="1"/>
+		<description value="Warmachines can extract Ore from Ore Deposits."/>
+		<minimapimage value="minimap_plains"/>
+
+		<modifier type="Extractable"/>
+	</terrain>
+
+	<terrain name="Plains">
+		<cost value="1"/>
+		<description
+			value="Plains slow movement slightly but provide some minimal cover against enemy attacks."/>
+		<minimapimage value="minimap_plains"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Uneven"/>
+		<modifier type="Cover"/>
+	</terrain>
+	<terrain name="Sea">
+		<cost value="1"/>
+		<description value="The open sea forms the theater for naval combat."/>
+		<minimapimage value="minimap_sea"/>
+
+		<modifier type="Water"/>
+	</terrain>
+	<terrain name="Road">
+		<cost value="1"/>
+		<description
+			value="Roads help slower ground units cover long distances quickly, but provide no defensive cover."/>
+		<minimapimage value="minimap_road"/>
+
+		<modifier type="Ground"/>
+		<!-- <modifier type="Pavement" /> -->
+	</terrain>
+	<terrain name="Forest">
+		<cost value="1"/>
+		<description
+			value="Forests will slow wheeled and tracked units, but will provide defensive cover from attacks."/>
+		<minimapimage value="minimap_forest"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Rugged"/>
+		<modifier type="Camouflage"/>
+	</terrain>
+	<terrain name="Mountain">
+		<cost value="1"/>
+		<description
+			value="Mountains are the best place to bunker infantry during an assault or strategic defense."/>
+		<minimapimage value="minimap_mountain"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Precipitous"/>
+		<modifier type="Bunker"/>
+	</terrain>
+	<terrain name="Desert">
+		<cost value="1"/>
+		<description value="Infantry units cannot enter the desert."/>
+		<minimapimage value="minimap_desert"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Rugged"/>
+		<modifier type="Barbed"/>
+	</terrain>
+	<terrain name="Reef">
+		<cost value="1"/>
+		<description value="Reefs slow movement and improves defense against attack."/>
+		<minimapimage value="minimap_reef"/>
+
+		<modifier type="Water"/>
+		<modifier type="Tricky Waters"/>
+		<modifier type="Cover"/>
+	</terrain>
+	<terrain name="Shore">
+		<cost value="1"/>
+		<description
+			value="Shores are the link between the land and sea. Order Leviathan pick ups for ground troops here."/>
+		<minimapimage value="minimap_shore"/>
+
+		<modifier type="Shore"/>
+		<modifier type="Shallow"/>
+	</terrain>
+	<terrain name="Bridge">
+		<cost value="1"/>
+		<description
+			value="Bridges are useful for connecting islands of land, but they lack defensive cover."/>
+		<minimapimage value="minimap_bridge"/>
+
+		<modifier type="Ground"/>
+	</terrain>
+	<terrain name="Command Center">
+		<cost value="1"/>
+		<description
+			value="This is your base of operations. Do not allow the enemy to capture any Command Center."/>
+		<minimapimage value="minimap_capital"/>
+		<sprite value="capital"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Capturable"/>
+		<modifier type="Garrison"/>
+		<modifier type="Mission Critical"/>
+		<modifier type="Reduced Efficiency"/>
+	</terrain>
+	<terrain name="Air Control">
+		<cost value="1"/>
+		<description value="Air Controls enable air unit manufacturing at your warfactories."/>
+		<minimapimage value="minimap_control"/>
+		<sprite value="aircontrol"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Capturable"/>
+		<modifier type="Air Proficiency"/>
+		<modifier type="Cover"/>
+	</terrain>
+	<terrain name="Ground Control">
+		<cost value="1"/>
+		<description value="Ground Controls enable ground unit manufacturing at your warfactories."/>
+		<minimapimage value="minimap_control"/>
+		<sprite value="groundcontrol"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Capturable"/>
+		<modifier type="Ground Proficiency"/>
+		<modifier type="Cover"/>
+	</terrain>
+	<terrain name="Factory">
+		<cost value="1"/>
+		<description value="Warfactories allow you to build new units."/>
+		<minimapimage value="minimap_control"/>
+		<sprite value="factory"/>
+
+		<!-- Boats can be made here, so it is a water structure <modifier type="Ground" /> -->
+		<modifier type="Shore"/>
+		<modifier type="Capturable"/>
+		<modifier type="Construction"/>
+		<modifier type="Cover"/>
+
+	</terrain>
+	<terrain name="Sea Control">
+		<cost value="1"/>
+		<description
+			value="Sea Controls enable sea unit manufacturing at your sea-bordering warfactories."/>
+		<minimapimage value="minimap_control"/>
+		<sprite value="seacontrol"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Capturable"/>
+		<modifier type="Sea Proficiency"/>
+		<modifier type="Cover"/>
+	</terrain>
+	<terrain name="Oil Refinery">
+		<cost value="1"/>
+		<description
+			value="The most basic oil producing property. Capture it to establish an income stream."/>
+		<minimapimage value="minimap_refinery"/>
+		<sprite value="oilrefinery"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Capturable"/>
+		<modifier type="Level 1 Oil Refining"/>
+		<modifier type="Cover"/>
+		<modifier type="Reduced Efficiency"/>
+	</terrain>
+	<terrain name="Advanced Oil Refinery">
+		<cost value="1"/>
+		<description
+			value="An advanced oil production facility. Capture it to enhance your income stream."/>
+		<minimapimage value="minimap_refinery"/>
+		<sprite value="oiladvanced"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Capturable"/>
+		<modifier type="Level 2 Oil Refining"/>
+		<modifier type="Cover"/>
+		<modifier type="Reduced Efficiency"/>
+	</terrain>
+	<terrain name="Oil Rig">
+		<cost value="1"/>
+		<description
+			value="An advanced oil production sea-facility. Capture it with Intrepids to enhance your income stream."/>
+		<minimapimage value="minimap_refinery"/>
+		<sprite value="oilrig"/>
+
+		<modifier type="Water"/>
+		<modifier type="Capturable"/>
+		<modifier type="Level 2 Oil Refining"/>
+		<modifier type="Cover"/>
+		<modifier type="Reduced Efficiency"/>
+	</terrain>
+	<terrain name="Hill">
+		<cost value="1"/>
+		<description
+			value="Hills can provide your ranged units with the boost necessary to challenge an entrenched opponent."/>
+		<minimapimage value="minimap_plains"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Farsight"/>
+		<modifier type="Camouflage"/>
+		<modifier type="Rugged"/>
+	</terrain>
+	<terrain name="Canyon">
+		<cost value="1"/>
+		<description value="Use Canyons to avoid ranged fire when traversing an area."/>
+		<minimapimage value="minimap_plains"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Shielded"/>
+	</terrain>
+	<terrain name="Wasteland">
+		<cost value="1"/>
+		<description
+			value="Wastelands are dangerous to your units but they provide massive defensive bonuses."/>
+		<minimapimage value="minimap_plains"/>
+
+		<modifier type="Ground"/>
+		<modifier type="Garrison"/>
+		<modifier type="Hazard"/>
+	</terrain>
+	<terrain name="Volcano">
+		<cost value="1"/>
+		<description value="No unit can cross the deadly Volcano."/>
+		<minimapimage value="minimap_plains"/>
+
+		<modifier type="Impassable"/>
+	</terrain>
+
+	<terrain name="Archipelago">
+		<cost value="1"/>
+		<description
+			value="A cluster of small islands providing some defensive cover at the cost of mobility."/>
+		<minimapimage value="minimap_reef"/>
+
+		<modifier type="Water"/>
+		<modifier type="Reduced Mobility"/>
+		<modifier type="Camouflage"/>
+	</terrain>
+
+	<terrain name="Rock Formation">
+		<cost value="1"/>
+		<description
+			value="The Rock Formation provides heavy defensive cover, but will damage sea units that rest on them."/>
+		<minimapimage value="minimap_reef"/>
+
+		<modifier type="Water"/>
+		<modifier type="Garrison"/>
+		<modifier type="Hazard"/>
+	</terrain>
+
+	<terrain name="High Bridge">
+		<cost value="1"/>
+		<description
+			value="The High Bridge can be crossed by ground units and sailed under by sea units."/>
+		<minimapimage value="minimap_reef"/>
+	</terrain>
+</terrain>

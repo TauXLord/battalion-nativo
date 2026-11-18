@@ -1,0 +1,659 @@
+<?xml version="1.0" encoding="utf-8"?>
+<units>
+
+	<unit name="Warmachine">
+		<sprite value="Warmachine"/>
+		<audio value="Warmachine"/>
+		<cost value="2500"/>
+		<range value="3"/>
+		<health value="75"/>
+		<damage value="60"/>
+		<weaponRangeMin value="2"/>
+		<weaponRangeMax value="3"/>
+		<description value="The Warmachine is the cornerstone of your army."/>
+
+		<unitType value="ground"/>
+		<movementType value="tracked"/>
+		<weaponType value="medium"/>
+		<armorType value="medium"/>
+
+
+
+		<modifier type="Constructor"/>
+		<modifier type="Skysweeper"/>
+		<modifier type="Extractor"/>
+		<modifier type="Linchpin"/>
+		<modifier type="Unbuildable"/>
+	</unit>
+
+	<unit name="Jammer Truck">
+		<sprite value="Jammer Truck"/>
+		<audio value="Jammer Truck"/>
+		<cost value="300"/>
+		<range value="5"/>
+		<health value="50"/>
+		<damage value="0"/>
+		<weaponRangeMin value="0"/>
+		<weaponRangeMax value="0"/>
+		<description value="The Jammer is effective at neutralizing cloak bonuses and air raids."/>
+
+		<unitType value="ground"/>
+		<movementType value="wheeled"/>
+		<weaponType value="none"/>
+		<armorType value="light"/>
+
+		<modifier type="Radar">
+			<effect value="+2"/>
+		</modifier>
+		<modifier type="Jamming"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+	<unit name="Blockade">
+		<sprite value="Blockade"/>
+		<audio value="Blockade"/>
+		<cost value="40"/>
+		<range value="0"/>
+		<health value="70"/>
+		<damage value="0"/>
+		<weaponRangeMin value="0"/>
+		<weaponRangeMax value="0"/>
+		<description value="Blockades get in the way of stuff."/>
+
+		<unitType value="ground"/>
+		<movementType value="tracked"/>
+		<weaponType value="none"/>
+		<armorType value="medium"/>
+
+		<modifier type="Irreparable"/>
+		<modifier type="Fixed"/>
+		<modifier type="Unbuildable"/>
+		<modifier type="Not Selectable"/>
+	</unit>
+
+	<unit name="Lancer Tank">
+		<sprite value="Lancer Tank"/>
+		<audio value="Lancer Tank"/>
+		<cost value="270"/>
+		<range value="6"/>
+		<health value="70"/>
+		<damage value="35"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description value="Lancer attacks will hit any unit behind the one you targetted."/>
+
+		<unitType value="ground"/>
+		<movementType value="tracked"/>
+		<weaponType value="medium"/>
+		<armorType value="medium"/>
+
+		<modifier type="Piercing"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+	<unit name="Spider Tank">
+		<sprite value="Spider Tank"/>
+		<audio value="Spider Tank"/>
+		<cost value="250"/>
+		<range value="4"/>
+		<health value="32"/>
+		<damage value="55"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description value="The Spider Tank stuns its target to avoid counter attack."/>
+
+		<unitType value="ground"/>
+		<movementType value="feet"/>
+		<weaponType value="light"/>
+		<armorType value="light"/>
+
+		<modifier type="Stun"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+	<unit name="Heavy Commando">
+		<sprite value="Heavy Commando"/>
+		<audio value="Heavy Commando"/>
+		<cost value="100"/>
+		<range value="3"/>
+		<health value="40"/>
+		<damage value="35"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description value="Heavies like to engage tanks and capture properties."/>
+
+		<unitType value="ground"/>
+		<movementType value="feet"/>
+		<weaponType value="heavy"/>
+		<armorType value="light"/>
+
+
+		<modifier type="Capture"/>
+		<modifier type="Tracking"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Strike Commando">
+		<sprite value="Strike Commando"/>
+		<audio value="Strike Commando"/>
+		<cost value="75"/>
+		<range value="3"/>
+		<health value="40"/>
+		<damage value="28"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description value="Enemy Commandos and Trucks fear the property-capturing Strike Commando."/>
+
+		<unitType value="ground"/>
+		<movementType value="feet"/>
+		<weaponType value="light"/>
+		<armorType value="light"/>
+
+
+
+		<modifier type="Capture"/>
+		<modifier type="Tracking"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Flak Tank">
+		<sprite value="Flak Tank"/>
+		<audio value="Flak Tank"/>
+		<cost value="240"/>
+		<range value="5"/>
+		<health value="70"/>
+		<damage value="17"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description
+			value="The Flak Tank's cannon shreds aircraft and lightly armored units to pieces."/>
+
+		<unitType value="ground"/>
+		<movementType value="tracked"/>
+		<weaponType value="light"/>
+		<armorType value="medium"/>
+
+
+
+		<modifier type="Flak"/>
+		<modifier type="Skysweeper"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Scorpion Tank">
+		<sprite value="Scorpion Tank"/>
+		<audio value="Scorpion Tank"/>
+		<cost value="270"/>
+		<range value="6"/>
+		<health value="70"/>
+		<damage value="35"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description value="The versatile Scorpion Tank is the back bone of most armed forces."/>
+
+		<unitType value="ground"/>
+		<movementType value="tracked"/>
+		<weaponType value="medium"/>
+		<armorType value="medium"/>
+
+
+
+		<modifier type="Blitz"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Mortar Truck">
+		<sprite value="Mortar Truck"/>
+		<audio value="Mortar Truck"/>
+		<cost value="285"/>
+		<range value="5"/>
+		<health value="50"/>
+		<damage value="48"/>
+		<weaponRangeMin value="2"/>
+		<weaponRangeMax value="3"/>
+		<description
+			value="The Mortar Truck is a general purpose cost-effective medium range artillery unit."/>
+
+		<unitType value="ground"/>
+		<movementType value="wheeled"/>
+		<weaponType value="medium"/>
+		<armorType value="light"/>
+
+
+
+		<modifier type="Counter Battery"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Rocket Truck">
+		<sprite value="Rocket Truck"/>
+		<audio value="Rocket Truck"/>
+		<cost value="470"/>
+		<range value="4"/>
+		<health value="40"/>
+		<damage value="40"/>
+		<weaponRangeMin value="3"/>
+		<weaponRangeMax value="5"/>
+		<description value="Specialized long range unit that can fire on enemy aircraft and tanks."/>
+
+		<unitType value="ground"/>
+		<movementType value="wheeled"/>
+		<weaponType value="heavy"/>
+		<armorType value="light"/>
+
+
+
+		<modifier type="Counter Battery"/>
+		<modifier type="Skysweeper"/>
+		<modifier type="Anti-Sub"/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Annihilator Tank">
+		<sprite value="Annihilator Tank"/>
+		<audio value="Annihilator Tank"/>
+		<cost value="525"/>
+		<range value="4"/>
+		<health value="140"/>
+		<damage value="70"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description
+			value="The mammoth Annihilator packs a big punch and knows how to take a beating."/>
+
+		<unitType value="ground"/>
+		<movementType value="tracked"/>
+		<weaponType value="heavy"/>
+		<armorType value="heavy"/>
+
+
+
+		<modifier type="Mammoth"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Turret">
+		<sprite value="Turret"/>
+		<audio value="Turret"/>
+		<cost value="100"/>
+		<range value="0"/>
+		<health value="100"/>
+		<damage value="40"/>
+		<weaponRangeMin value="2"/>
+		<weaponRangeMax value="5"/>
+		<description
+			value="This immobile defensive unit helps deter both ground, sea and air invasions."/>
+
+		<unitType value="ground"/>
+		<movementType value="none"/>
+		<weaponType value="medium"/>
+		<armorType value="heavy"/>
+
+
+
+		<modifier type="Maintenance"/>
+		<modifier type="Skysweeper"/>
+		<modifier type="Fixed"/>
+		<modifier type="Unbuildable"/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Stealth Tank">
+		<sprite value="Stealth Tank"/>
+		<audio value="Stealth Tank"/>
+		<cost value="340"/>
+		<range value="5"/>
+		<health value="40"/>
+		<damage value="30"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description
+			value="Stealth attack bonuses make this a powerful weapon in the hands of a capable general."/>
+
+		<unitType value="ground"/>
+		<movementType value="tracked"/>
+		<weaponType value="medium"/>
+		<armorType value="medium"/>
+
+
+
+		<modifier type="Cloaking"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Albatross Transport">
+		<sprite value="Albatross Transport"/>
+		<audio value="Albatross Transport"/>
+		<cost value="20"/>
+		<range value="6"/>
+		<health value="50"/>
+		<damage value=""/>
+		<weaponRangeMin value=""/>
+		<weaponRangeMax value=""/>
+		<description value="The Albatross is the fastest way to move Commandos around the map."/>
+
+		<unitType value="air"/>
+		<movementType value="wings"/>
+		<weaponType value="none"/>
+		<armorType value="light"/>
+
+
+
+		<modifier type="Transport"/>
+		<modifier type="Unbuildable"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Raptor Fighter">
+		<sprite value="Raptor Fighter"/>
+		<audio value="Raptor Fighter"/>
+		<cost value="400"/>
+		<range value="7"/>
+		<health value="50"/>
+		<damage value="25"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description value="Effective at engaging air, sea and ground targets."/>
+
+		<unitType value="air"/>
+		<movementType value="wings"/>
+		<weaponType value="light"/>
+		<armorType value="light"/>
+
+
+
+		<modifier type="Skysweeper"/>
+		<modifier type="Irreparable"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+	<unit name="Vulture Drone">
+		<sprite value="Vulture Drone"/>
+		<audio value="Raptor Fighter"/>
+		<cost value="550"/>
+		<range value="5"/>
+		<health value="55"/>
+		<damage value="30"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description value="A specialized scavenger that can move and attack again, if it kills its target."/>
+
+		<unitType value="air"/>
+		<movementType value="wings"/>
+		<weaponType value="medium"/>
+		<armorType value="light"/>
+
+		<modifier type="Scavenge"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+	<unit name="Condor Bomber">
+		<sprite value="Condor Bomber"/>
+		<audio value="Condor Bomber"/>
+		<cost value="600"/>
+		<range value="3"/>
+		<health value="72"/>
+		<damage value="70"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description
+			value="The Condor Bomber is as hardy as it is powerful. It fears only the enemy Raptor."/>
+
+		<unitType value="air"/>
+		<movementType value="wings"/>
+		<weaponType value="heavy"/>
+		<armorType value="light"/>
+
+
+
+		<!-- <modifier type="Fire Bomb"/> -->
+		<modifier type="Anti-Sub"/>
+		<modifier type="Blind Spot"/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Leviathan Barge">
+		<sprite value="Leviathan Barge"/>
+		<audio value="Leviathan Barge"/>
+		<cost value="35"/>
+		<range value="4"/>
+		<health value="60"/>
+		<damage value=""/>
+		<weaponRangeMin value="0"/>
+		<weaponRangeMax value="0"/>
+		<description value="Leviathans transport ground units across the oceans."/>
+
+		<unitType value="sea"/>
+		<movementType value="rudder"/>
+		<weaponType value="none"/>
+		<armorType value="medium"/>
+
+
+
+		<modifier type="Transport"/>
+		<modifier type="Unbuildable"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Hunter Support">
+		<sprite value="Hunter Support"/>
+		<audio value="Hunter Support"/>
+		<cost value="450"/>
+		<range value="5"/>
+		<health value="90"/>
+		<damage value="17"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description
+			value="Hunters excel at keeping the oceans clear of enemy aircraft and U-boats."/>
+
+		<unitType value="sea"/>
+		<movementType value="rudder"/>
+		<weaponType value="light"/>
+		<armorType value="medium"/>
+
+
+
+		<modifier type="Skysweeper"/>
+		<modifier type="Anti-Sub"/>
+		<modifier type="Flak"/>
+		<modifier type="Sea Bound"/>
+		<modifier type="Tracking"/>
+	</unit>
+
+
+
+
+	<unit name="Corvette Fighter">
+		<sprite value="Corvette Fighter"/>
+		<audio value="Corvette Fighter"/>
+		<cost value="500"/>
+		<range value="5"/>
+		<health value="90"/>
+		<damage value="45"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description
+			value="The Corvette is the brawler of the seas, capable of engaging most enemy targets effectively."/>
+
+		<unitType value="sea"/>
+		<movementType value="rudder"/>
+		<weaponType value="medium"/>
+		<armorType value="medium"/>
+
+
+
+		<modifier type="Blitz"/>
+		<modifier type="Massive Hull"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="U-Boat">
+		<sprite value="U-Boat"/>
+		<audio value="U-Boat"/>
+		<cost value="475"/>
+		<range value="4"/>
+		<health value="25"/>
+		<damage value="35"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description
+			value="The U-boat's cloak is useful for holding choke points and attacking an entrenched foe."/>
+
+		<unitType value="sea"/>
+		<movementType value="rudder"/>
+		<weaponType value="heavy"/>
+		<armorType value="light"/>
+
+
+
+		<modifier type="Cloaking"/>
+		<modifier type="Submerged"/>
+		<modifier type="Anti-Sub"/>
+		<modifier type="Sea Bound"/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Battlecruiser">
+		<sprite value="Battlecruiser"/>
+		<audio value="Battlecruiser"/>
+		<cost value="800"/>
+		<range value="4"/>
+		<health value="140"/>
+		<damage value="50"/>
+		<weaponRangeMin value="3"/>
+		<weaponRangeMax value="6"/>
+		<description
+			value="The massive guns of the Battlecruiser can fire further than all other units."/>
+
+		<unitType value="sea"/>
+		<movementType value="rudder"/>
+		<weaponType value="heavy"/>
+		<armorType value="heavy"/>
+
+
+
+		<modifier type="Counter Battery"/>
+		<modifier type="Massive Hull"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+	<unit name="Intrepid">
+		<sprite value="Intrepid"/>
+		<audio value="Intrepid"/>
+		<cost value="200"/>
+		<range value="5"/>
+		<health value="50"/>
+		<damage value="15"/>
+		<weaponRangeMin value="1"/>
+		<weaponRangeMax value="1"/>
+		<description
+			value="Use the Intrepid to capture sea properties and warfactories along coast lines."/>
+
+		<unitType value="sea"/>
+		<movementType value="rudder"/>
+		<weaponType value="light"/>
+		<armorType value="light"/>
+
+
+
+		<modifier type="Capture"/>
+		<modifier type=""/>
+		<modifier type=""/>
+		<modifier type="Sea Bound"/>
+		<modifier type=""/>
+	</unit>
+
+
+
+
+</units>
