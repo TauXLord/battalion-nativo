@@ -157,7 +157,11 @@ function pushMatch(room) {
 }
 
 const pause = ms => new Promise(resolve=>setTimeout(resolve,ms))
-const computerSide = room => activeSides(room.game).find(side=>side>room.seats.length && canTakeTurn(room.game,side))
+// IA joga pelas equipes sem jogador e pelas de quem caiu e não voltou a tempo (seat.ai).
+const computerSide = room => activeSides(room.game).find(side=>
+  (side > room.seats.length || room.seats[side-1]?.ai) && canTakeTurn(room.game,side))
+// Tempo para um jogador que caiu voltar antes de a IA assumir a equipe dele.
+const reconnectGrace = Number(process.env.BATTALION_RECONNECT_MS ?? 120000)
 async function playComputer(room) {
   if (room.running || !computerSide(room)) return
   room.running = true
@@ -388,6 +392,8 @@ async function api(req,res,parts,local,throughInternet) {
     return reply(res,204)
   }
   if (!room.game || !key) return fail(res,404,'Partida indisponível.')
+  // Qualquer contato na partida mantém o jogador como conectado (reconexão).
+  seat.seen = Date.now()
   if (room.coop) {
     const coop = room.game
     if (!post && action === 'update') {
@@ -438,9 +444,19 @@ async function api(req,res,parts,local,throughInternet) {
   return fail(res,404,'Operação indisponível.')
 }
 
+// Avisos de conexão: quem caiu, quanto falta para a IA assumir e quem já está com a IA.
+function seatNotices(room) {
+  if (!room.game || room.coop) return []
+  return room.seats.flatMap((seat,index)=>{
+    if (!seat || connected(seat)) return []
+    const name = seat.profile?.name || 'Equipe ' + (index+1)
+    if (seat.ai) return [{kind:'ai',team:index+1,name}]
+    return [{kind:'waiting',team:index+1,name,seconds:Math.max(0,Math.ceil((seat.seen+reconnectGrace-Date.now())/1000))}]
+  })
+}
 // Estado da partida para um jogador, com nome e foto dos perfis.
 function matchState(room,side) {
-  if (!room.coop) return {...snapshot(room.game,side),teams:seatTeams(room,side)}
+  if (!room.coop) return {...snapshot(room.game,side),teams:seatTeams(room,side),notices:seatNotices(room)}
   const state = room.game.stateFor(side)
   if (!state) return null
   // Na dupla, o time 1 mostra os dois nomes e a foto de quem está vendo.
@@ -454,6 +470,30 @@ function pushMatchTo(res,room,side) {
   const state = matchState(room,side)
   if (state) res.write('data: ' + JSON.stringify(state) + '\n\n')
 }
+
+// Presença na partida: quem tem a tela aberta (conexão de estado ativa) conta como conectado.
+// Quem caiu tem `reconnectGrace` para voltar; depois a IA assume a equipe, até o jogador voltar.
+setInterval(() => {
+  for (const room of rooms.values()) {
+    if (!room.game || room.coop) continue
+    for (const side of new Set(room.viewers.values())) {
+      const seat = room.seats[side-1]
+      if (seat) seat.seen = Date.now()
+    }
+    let changed = false
+    for (const seat of room.seats) {
+      if (!seat) continue
+      const away = !connected(seat)
+      if (away && !seat.ai && Date.now() - seat.seen > reconnectGrace) { seat.ai = true; changed = true }
+      else if (!away && seat.ai) { seat.ai = false; changed = true }
+      else if (away) changed = true
+    }
+    if (changed) {
+      pushMatch(room)
+      void playComputer(room).catch(error=>console.error('Turno da IA:',error.message))
+    }
+  }
+},5000).unref()
 
 setInterval(() => {
   for (const [id,room] of rooms) {

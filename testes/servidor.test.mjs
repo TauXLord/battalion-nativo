@@ -17,7 +17,7 @@ const post = (path,body = '') => call(path,{method:'POST',body})
 
 before(async () => {
   server = spawn(process.execPath,['nativo/servidor.js'],{cwd:fileURLToPath(new URL('..',import.meta.url)),
-    env:{...process.env,BATTALION_NATIVE_PORT:String(port)},stdio:'ignore'})
+    env:{...process.env,BATTALION_NATIVE_PORT:String(port),BATTALION_RECONNECT_MS:'1000'},stdio:'ignore'})
   for (let i=0; i<50; i++) {
     try { if ((await fetch(origin + '/launcher-status')).ok) return } catch {}
     await new Promise(resolve=>setTimeout(resolve,100))
@@ -58,6 +58,35 @@ test('perfil: nome aparece na sala e foto é servida',async () => {
   assert.equal(lobby.seats[0].name,'Comandante')
   const photo = await fetch(`${origin}/lan/avatar/${room}/${host}/1`)
   assert.equal(photo.headers.get('content-type'),'image/gif')
+})
+
+test('jogador que cai: aviso de espera e depois a IA assume a equipe dele',{timeout:60000},async () => {
+  const {room,slot:host} = await newRoom(2,2)
+  const guest = (await post('/lan/join/' + room)).text
+  await post(`/lan/prefs/${room}/${host}`,'ff00ff00,7,1')
+  await post(`/lan/prefs/${room}/${guest}`,'ff0000ff,7,1')
+  assert.equal((await post(`/lan/start/${room}/${host}`)).status,200)
+  let state = (await call(`/lan/update/${room}/${host}/-1`)).json()
+  await call(`/lan/command/${room}/${host}`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({type:'end',version:state.version})})
+  // O convidado não aparece mais: primeiro o aviso de espera, depois a IA joga por ele.
+  let waited = false
+  for (let i=0; i<50; i++) {
+    await new Promise(resolve=>setTimeout(resolve,1000))
+    state = (await call(`/lan/update/${room}/${host}/-1`)).json()
+    if (state.notices?.some(notice=>notice.kind === 'waiting')) waited = true
+    if (state.notices?.some(notice=>notice.kind === 'ai') && state.round > 1) break
+  }
+  assert.ok(waited,'mostrou o aviso de espera')
+  assert.ok(state.notices.some(notice=>notice.kind === 'ai' && notice.team === 2),'IA assumiu a equipe 2')
+  assert.ok(state.round > 1,'a partida seguiu')
+  // O convidado volta: a IA larga a equipe dele.
+  for (let i=0; i<10; i++) {
+    await call(`/lan/update/${room}/${guest}/-1`)
+    await new Promise(resolve=>setTimeout(resolve,1000))
+  }
+  state = (await call(`/lan/update/${room}/${host}/-1`)).json()
+  assert.ok(!state.notices.some(notice=>notice.team === 2),'jogador retomou a equipe')
 })
 
 test('ações de sistema exigem o cabeçalho e a desinstalação só roda pelo executável',async () => {

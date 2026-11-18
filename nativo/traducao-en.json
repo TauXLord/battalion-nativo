@@ -453,5 +453,7 @@
  "Falha ao acessar os dados do perfil.": "Could not access the profile data.",
  "▶ Continuar partida": "▶ Continue match",
  "Partida": "Match",
- "Esta missão não está mais disponível.": "This mission is no longer available."
+ "Esta missão não está mais disponível.": "This mission is no longer available.",
+ "{name} saiu da partida; a IA assumiu essa equipe até ele voltar.": "{name} left the match; the AI took over that team until they come back.",
+ "{name} caiu. Aguardando a volta ({n} s); depois a IA assume.": "{name} disconnected. Waiting for them to return ({n} s); then the AI takes over."
 }

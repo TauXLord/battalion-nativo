@@ -1267,7 +1267,16 @@ export async function play(data, base, side, transport) {
     return row * map.width + col
   }
 
+  // Multiplayer: avisa quem caiu (com a contagem até a IA assumir) e quais equipes estão com a IA.
+  const connectionNotices = () => (state?.notices ?? []).map(notice => notice.kind === 'ai' ?
+    t('{name} saiu da partida; a IA assumiu essa equipe até ele voltar.',{name:t(notice.name)}) :
+    t('{name} caiu. Aguardando a volta ({n} s); depois a IA assume.',{name:t(notice.name),n:notice.seconds})).join(' ')
   function updateStatus() {
+    const notices = connectionNotices()
+    statusText()
+    if (notices) status.textContent = notices + ' · ' + status.textContent
+  }
+  function statusText() {
     status.textContent = t(error) || (!connected ? t('Carregando partida…') : t(state.objective) ??
       (strike || motion?.attack ? t('Combate em andamento…') :
       state.winner ? victoryText(state.winner) :

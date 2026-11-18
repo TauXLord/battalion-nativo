@@ -705,13 +705,14 @@ async function open() {
   if (guestRoom) {
     if (!/^[a-f0-9]{24}$/.test(guestRoom)) throw Error('Abra o convite gerado pelo anfitrião.')
     const key = 'battalion-nativo-' + guestRoom
-    let slot = sessionStorage.getItem(key)
+    // A vaga fica guardada mesmo fechando a aba: reabrir o convite volta para a mesma equipe (reconexão).
+    let slot = stored(key) ?? sessionStorage.getItem(key)
     if (slot) {
       try { await request('lobby/' + guestRoom + '/' + slot) }
       catch { slot = null }
     }
     if (!slot) slot = await (await request('join/' + guestRoom,{method:'POST'})).text()
-    sessionStorage.setItem(key,slot)
+    store(key,slot)
     return start(data,guestRoom,slot,2)
   }
   try {
