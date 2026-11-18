@@ -46,6 +46,7 @@ const files = new Map([
   ['/visao.js','./visao.js'],
   ['/campanha.js','./campanha.js'], ['/ia.js','./ia.js'], ['/editor.js','./editor.js'], ['/cooperativo.js','./cooperativo.js'],
   ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'],
+  ['/estatisticas.js','./estatisticas.js'], ['/replay.js','./replay.js'],
   ['/ia-worker.js','./ia-worker.js'], ['/planejador.js','./planejador.js'], ['/procedural.js','./procedural.js'],
   ['/rede-ia.js','./rede-ia.js'], ['/ia-tatica.js','./ia-tatica.js'],
   ['/idioma.js','./idioma.js'], ['/traducao-en.json','./traducao-en.json'], ['/traducao-pt.json','./traducao-pt.json'],
@@ -77,7 +78,7 @@ const connected = seat => Boolean(seat) && Date.now() - seat.seen < 12000
 function publicSeat(seat,index) {
   const online = connected(seat)
   return {connected:online,ready:online && seat.ready,vote:seat?.vote ?? 0,color:seat?.color ?? defaultColors[index],
-    name:seat?.profile?.name || undefined}
+    name:seat?.profile?.name || undefined,stats:seat?.profile?.stats?.partidas ? seat.profile.stats : undefined}
 }
 function preferences(room,you) {
   const seats = room.seats.map(publicSeat)
@@ -323,7 +324,10 @@ async function api(req,res,parts,local,throughInternet) {
     // Guarda a foto já decodificada (bytes), que é o que vai para os outros jogadores.
     const match = typeof profile?.avatar === 'string' ? profile.avatar.match(photoPattern) : null
     const photo = match && {type:'image/'+match[1],bytes:Buffer.from(match[2],'base64')}
-    seat.profile = name || photo ? {name,avatar:Boolean(photo),photo,version:Date.now()} : null
+    // Resumo das estatísticas (números inteiros) para mostrar ao lado do nome na sala.
+    const whole = value => Number.isInteger(value) && value >= 0 && value < 1e7 ? value : 0
+    const stats = profile?.stats && {partidas:whole(profile.stats.partidas),vitorias:whole(profile.stats.vitorias)}
+    seat.profile = name || photo || stats?.partidas ? {name,avatar:Boolean(photo),photo,stats,version:Date.now()} : null
     touch(seat)
     if (room.game) pushMatch(room)
     return reply(res,204)

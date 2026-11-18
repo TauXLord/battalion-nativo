@@ -5,6 +5,8 @@ import { campaignProgress, campaignTransport, saveVictory } from './campanha.js'
 import { coopEligible } from './cooperativo.js'
 import { deleteProfileStorage, loadProfile, maxNameLength, profilePhoto, saveProfile } from './perfil-jogador.js'
 import { clearSavedMatch, deleteSavesStorage, loadSavedMatch, saveMatch } from './salvamento.js'
+import { loadStats, recordMatch, statsSummary } from './estatisticas.js'
+import { replayTransport, validReplay } from './replay.js'
 import { matchAudio } from './audio.js'
 import { scenarioMatch, scenarioSlots } from './partida.js'
 import { defaultAiTime, validAiTime } from './ia.js'
@@ -176,6 +178,17 @@ async function setupProfile(dialog) {
   }
   name.value = draft.name
   show()
+  // Estatísticas deste computador (partidas no modo desenvolvedor e como espectador não contam).
+  const stats = loadStats()
+  const chapters = ['vengeance','ghosts'].reduce((sum,group)=>sum+Object.keys(campaignProgress(group)).length,0)
+  const modeNames = {ia:'Contra a IA',local:'Mesmo dispositivo',campanha:'Campanha',rede:'Multiplayer'}
+  const rows = [['Partidas',stats.partidas],['Vitórias',stats.vitorias],['Derrotas',stats.derrotas],
+    ['Unidades inimigas destruídas',stats.destruidas],['Unidades perdidas',stats.perdidas],['Capítulos de campanha concluídos',chapters],
+    ...Object.entries(stats.modos).map(([mode,{vitorias,derrotas}])=>[modeNames[mode] ?? mode,
+      t('{v} vitórias, {d} derrotas',{v:vitorias,d:derrotas})])]
+  $('profile-stats').replaceChildren(...rows.flatMap(([label,value])=>[
+    Object.assign(document.createElement('dt'),{textContent:t(label)}),
+    Object.assign(document.createElement('dd'),{textContent:String(value)})]))
   file.onchange = async () => {
     const chosen = file.files[0]
     file.value = ''
@@ -324,19 +337,24 @@ async function start(data,room,slot,side,invites = []) {
   const {generated,coop} = await (await request('lobby/' + room + '/' + slot)).json()
   // Nome e foto do perfil para os outros jogadores verem na sala e na partida.
   const profile = await loadProfile()
-  if (profile) await request('profile/' + room + '/' + slot,{method:'POST',body:JSON.stringify(profile)}).catch(()=>{})
+  await request('profile/' + room + '/' + slot,{method:'POST',
+    body:JSON.stringify({...profile,stats:statsSummary()})}).catch(()=>{})
   // Campanha Ghosts em dupla: as imagens e regras vêm do anfitrião.
   if (coop?.ghosts) data = await (await request('dados/' + room + '/' + slot)).json()
   const maps = coop ? [['coop',t('Campanha em dupla')+' · '+t(coop.title)]] :
     Object.entries(data.maps).map(([id,map]) => [id,t(map.title)])
   if (generated) maps.push(['procedural',t(generatedTitle)])
   const {map,you,coop:started} = await lobby({room,slot:side === 1 ? undefined : slot,invites,maps,palette,t})
+  // Estatísticas: cada partida em rede conta uma vez, como vitória ou derrota (espectador não conta).
+  let counted = false
+  const count = victory => { if (!counted) { counted = true; recordMatch('rede',{victory}) } }
   if (coop) {
     // Os dois jogadores comandam o time 1; quem é dono de cada unidade vem no estado da partida.
     return showMatch(data,started.board,1,{
       listen:(receive,disconnect) => matchUpdates(room,slot,state => {
         // Vitória na dupla conta como capítulo concluído nos dois computadores.
         if (state.result?.victory && state.coop) saveVictory(state.coop.chapter,state.result,state.coop.group)
+        if (state.result) count(Boolean(state.result.victory))
         receive(state)
       },disconnect),
       send:command => request('command/' + room + '/' + slot,{
@@ -349,8 +367,12 @@ async function start(data,room,slot,side,invites = []) {
     })
   }
   const board = generated ? generateMap(data,generated) : data.maps[maps[map][0]]
-  return showMatch(data,board,you ?? side,{
-    listen:(receive,disconnect) => matchUpdates(room,slot,receive,disconnect),
+  const mine = you ?? side
+  return showMatch(data,board,mine,{
+    listen:(receive,disconnect) => matchUpdates(room,slot,state => {
+      if (state.winner && mine > 0) count(state.winner === mine || Boolean(state.alliances?.[mine-1]?.includes(state.winner)))
+      receive(state)
+    },disconnect),
     fastAI,
     chat:text => request('chat/' + room + '/' + slot,{method:'POST',body:text}),
     send(command) {
@@ -397,8 +419,10 @@ async function playMission(data,{mission,ghosts,list,difficulty,seconds,resume})
   const onSave = engine => engine ?
     saveMatch({kind:'campaign',title:mission.title,ghosts,list,chapter:mission.number,difficulty,seconds,engine}) :
     clearSavedMatch()
+  const practice = developerMode()
+  const onFinish = practice ? undefined : result => recordMatch('campanha',result)
   return showMatch(data,mission.board,1,campaignTransport(data,{...mission,teams},difficulty,
-    {group,back,aiTime:seconds,resume,onSave,practice:developerMode(),fastAI,turnLimit:aiTurnLimit()}))
+    {group,back,aiTime:seconds,resume,onSave,practice,fastAI,turnLimit:aiTurnLimit(),onFinish}))
 }
 
 // "Continuar partida": reabre a última partida local salva automaticamente.
@@ -538,7 +562,14 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume} = {}) {
   // Vitória contra a IA num mapa do jogo libera o multiplayer e o modo assistir nesse mapa.
   const practice = developerMode() && mode !== 'spectator'
-  onFinish ??= mapId && mode === 'ai' && !practice ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
+  const unlock = mapId && mode === 'ai' && !practice ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
+  const counted = !practice && mode !== 'spectator' && !back.startsWith('/?editor')
+  const finished = onFinish
+  onFinish = result => {
+    finished?.(result)
+    unlock?.(result)
+    if (counted) recordMatch(mode === 'hotseat' ? 'local' : 'ia',result)
+  }
   // Salvamento automático a cada turno do jogador (não vale para o modo assistir nem para o teste do editor).
   const onSave = mode === 'spectator' || back.startsWith('/?editor') ? undefined : engine => engine ?
     saveMatch({kind:'local',title:board.title,board,mode,difficulty,colors,back,humans,coalitions,seconds,
@@ -968,6 +999,21 @@ async function openSkirmish(data) {
   for (const tab of document.querySelectorAll('[data-mode]')) tab.onclick = () => { mode.value = tab.dataset.mode; render() }
   humans.onchange = showDifficulty
   coalitions.onchange = () => { $('coalition-teams').hidden = !coalitions.checked }
+  // Assistir um replay salvo no fim de uma partida avulsa.
+  $('open-replay').onchange = async event => {
+    const file = event.target.files[0]
+    event.target.value = ''
+    if (!file) return
+    try {
+      if (file.size > 60_000_000) throw Error('Arquivo grande demais para um replay.')
+      const replay = JSON.parse(await file.text())
+      if (!validReplay(replay)) throw Error('Este arquivo não é um replay do Battalion.')
+      $('scenario-view').hidden = true
+      $('player-view').querySelector('header a').href = '/?partida=ias'
+      $('player-view').querySelector('header a').textContent = t('← Partida avulsa')
+      await showMatch(data,replay.board,0,replayTransport(data,replay,{speed:() => fastAI() ? 3 : 1}))
+    } catch (error) { $('import-status').textContent = t(error.message) }
+  }
   $('import-map').onchange = async event => {
     const file = event.target.files[0]
     event.target.value = ''

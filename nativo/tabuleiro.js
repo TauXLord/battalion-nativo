@@ -7,6 +7,7 @@ import { showWarmachineMenu, unitStatDetails } from './construcao.js'
 import { matchAudio } from './audio.js'
 import { classicBoard, reconHeight, viewport } from './visao.js'
 import { t } from './idioma.js'
+import { downloadReplay } from './replay.js'
 
 const TILE = 56
 const angles = {right:0,down:90,left:180,up:270}
@@ -1650,6 +1651,14 @@ export async function play(data, base, side, transport) {
   function receive(next) {
     connected = true
     updateMatchChat(next.chat)
+    // Fim de partida avulsa: botão para baixar o replay.
+    if (next.result && !next.result.replay && transport.replay && $('match-replay').hidden) {
+      const replay = transport.replay()
+      if (replay) {
+        $('match-replay').hidden = false
+        $('match-replay').onclick = () => downloadReplay(replay)
+      }
+    }
     if (state && next.version < state.version) return
     if (next.viewer != null && next.viewer !== side) {
       side = next.viewer

@@ -59,6 +59,10 @@ export function campaignTransport(data, mission, difficulty, {
     for (const index of resume.completed ?? []) if (mission.events[index]) completed.add(mission.events[index])
     viewing = resume.viewing ?? viewing
   }
+  // Replay (só partidas avulsas: a campanha tem eventos que mudam o jogo fora das jogadas).
+  // Grava o estado inicial e cada jogada; como o motor é determinístico, reaplicar reproduz a partida.
+  const replayStart = mission.events?.length ? null : resume?.replay?.initial ?? structuredClone(state)
+  const replayLog = resume?.replay?.actions?.slice() ?? []
   const viewer = () => viewing
   const computerSide = () => activeSides(state).find(side=>side>humans && canTakeTurn(state,side))
   // Salvamento automático: só quando é a vez de um jogador humano e nada está acontecendo (falas, IA, fim).
@@ -68,7 +72,8 @@ export function campaignTransport(data, mission, difficulty, {
     if (!activeSides(state).some(side=>side <= humans && canTakeTurn(state,side))) return
     clearTimeout(saveTimer)
     saveTimer = setTimeout(() => onSave({state:structuredClone(state),killed,lost,disabled,morale,viewing,
-      highlights:[...highlights],completed:[...completed].map(event=>mission.events.indexOf(event))}),250)
+      highlights:[...highlights],completed:[...completed].map(event=>mission.events.indexOf(event)),
+      replay:replayStart ? {initial:replayStart,actions:replayLog.slice()} : undefined}),250)
   }
   const publish = () => {
     if (!cancelled && receive) receive({...snapshot(state,viewer()),teams:mission.teams,dialog,result,focus,
@@ -161,7 +166,9 @@ export function campaignTransport(data, mission, difficulty, {
 
   function apply(action, announce = true, side = state.turn) {
     const previous = state.units.slice()
-    order(rules,map,state,side,{version:state.version,...action})
+    const version = state.version
+    order(rules,map,state,side,{version,...action})
+    if (replayStart) replayLog.push({side,action:{...action,version}})
     const deaths = previous.filter(unit=>!state.units.includes(unit))
     for (const unit of deaths) {
       if (unit.side === 1) lost++
@@ -189,7 +196,7 @@ export function campaignTransport(data, mission, difficulty, {
     const victory = allied(state,state.winner,1)
     const score = campaign ? Math.max(0,Math.trunc((killed*1000-lost*100+(victory ? 5000 : 0)) / state.round)) : null
     const medal = !campaign || !victory ? 0 : score >= mission.medals[1] ? 3 : score >= mission.medals[0] ? 2 : 1
-    result = {winner:state.winner,score,medal,victory,campaign}
+    result = {winner:state.winner,score,medal,victory,campaign,killed,lost}
     if (campaign && victory && !practice) saveVictory(mission.number,result,group)
     if (practice) result.practice = true
     clearTimeout(saveTimer)
@@ -260,6 +267,10 @@ export function campaignTransport(data, mission, difficulty, {
 
   return {
     back,hotseat,practice,fastAI,
+    // Arquivo de replay da partida (null na campanha).
+    replay:() => replayStart && {format:'battalion-replay',version:1,title:map.title,board:map,
+      teams:mission.teams.map(({name,color,avatar,allies})=>({name,color,avatar,allies})),
+      initial:replayStart,actions:replayLog.slice(),savedAt:Date.now()},
     listen(onState) {
       receive = onState
       if (resume) {

@@ -498,5 +498,17 @@
  "Espectadores só assistem.": "Spectators can only watch.",
  "A campanha em dupla não aceita espectadores.": "The co-op campaign does not accept spectators.",
  "A sala já tem espectadores demais.": "The room already has too many spectators.",
- "A partida ainda não começou.": "The match has not started yet."
+ "A partida ainda não começou.": "The match has not started yet.",
+ "{v} vitórias em {n} partidas": "{v} wins in {n} matches",
+ "Partidas": "Matches",
+ "Vitórias": "Wins",
+ "Derrotas": "Losses",
+ "Unidades inimigas destruídas": "Enemy units destroyed",
+ "Unidades perdidas": "Units lost",
+ "Capítulos de campanha concluídos": "Campaign chapters completed",
+ "{v} vitórias, {d} derrotas": "{v} wins, {d} losses",
+ "Salvar replay": "Save replay",
+ "Assistir replay (.json)": "Watch replay (.json)",
+ "Arquivo grande demais para um replay.": "File too large for a replay.",
+ "Este arquivo não é um replay do Battalion.": "This file is not a Battalion replay."
 }

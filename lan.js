@@ -115,7 +115,7 @@ export function lobby({room,slot,invites=[],maps,palette,t = (text,values) => va
         const id = ['lobby-host','lobby-guest'][index] ?? 'lobby-seat-' + (index+1)
         const computer = t(next.coalitions && next.slots === 4 && players.length === 2 ? 'IA · turno conjunto no leste' : 'IA')
         $(id).textContent = !seat ? computer : seat.connected
-          ? `${seat.name ? seat.name + ' · ' : ''}${t('Conectado')} · ${t(seat.ready ? 'Pronto' : 'Aguardando')} · ${colorNames.get(seat.color)} · ${maps[seat.vote][1]}`
+          ? `${seat.name ? seat.name + ' · ' : ''}${seat.stats ? t('{v} vitórias em {n} partidas',{v:seat.stats.vitorias,n:seat.stats.partidas}) + ' · ' : ''}${t('Conectado')} · ${t(seat.ready ? 'Pronto' : 'Aguardando')} · ${colorNames.get(seat.color)} · ${maps[seat.vote][1]}`
           : t('Desconectado')
       }
       renderTeams(next)

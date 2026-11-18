@@ -118,6 +118,7 @@
         <div class="map-actions">
           <button type="button" id="open-generator">Gerar mapa procedural</button>
           <label class="button-like">Importar mapa (.json)<input type="file" id="import-map" class="visually-hidden" accept=".json,application/json"></label>
+          <label class="button-like">Assistir replay (.json)<input type="file" id="open-replay" class="visually-hidden" accept=".json,application/json"></label>
           <a class="button-like" href="/?editor">Abrir o editor</a>
         </div>
         <p id="import-status" class="muted" role="status"></p>
@@ -263,7 +264,7 @@
   </main>
   <main id="player-view" hidden>
     <header><a href="/">← Menu</a><h1 id="player-title">Battalion</h1>
-      <div class="player-tools"><button id="game-settings" class="settings-button" aria-label="Configurações" title="Configurações">⚙</button>
+      <div class="player-tools"><button id="match-replay" hidden>Salvar replay</button><button id="game-settings" class="settings-button" aria-label="Configurações" title="Configurações">⚙</button>
         <button id="fullscreen">Tela cheia</button></div></header>
     <p id="lan-status" role="status">Carregando partida…</p>
     <div id="player-camera" class="camera-controls" hidden>
@@ -332,6 +333,7 @@
           </div>
         </div>
         <p class="muted" id="profile-status" role="status">O nome e a foto aparecem nas partidas, inclusive para os outros jogadores na rede.</p>
+        <dl id="profile-stats" class="profile-stats"></dl>
       </fieldset>
       <fieldset>
         <legend>Idioma</legend>
