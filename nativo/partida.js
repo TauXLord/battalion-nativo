@@ -30,13 +30,17 @@ export const distance = (width, a, b) => Math.abs(a % width - b % width) +
   Math.abs(Math.floor(a / width) - Math.floor(b / width))
 
 const JAM_RADIUS = 2
+// Jammer em cima de uma colina: o bloqueio alcança 1 casa a mais em todas as direções.
+export const onHill = (map,cell) => map.tiles[cell]?.[0] === 'Hill'
+export const jamRadius = (map,cell) => JAM_RADIUS + (onHill(map,cell) ? 1 : 0)
 export function jammingZone(map, origin) {
+  const radius = jamRadius(map,origin)
   const centerX = origin % map.width, centerY = Math.floor(origin / map.width)
   const result = []
-  for (let dy = -JAM_RADIUS; dy <= JAM_RADIUS; dy++) {
+  for (let dy = -radius; dy <= radius; dy++) {
     const y = centerY + dy
     if (y < 0 || y >= map.height) continue
-    const reach = JAM_RADIUS - Math.abs(dy)
+    const reach = radius - Math.abs(dy)
     for (let x = Math.max(0,centerX-reach); x <= Math.min(map.width-1,centerX+reach); x++) {
       result.push(y * map.width + x)
     }
@@ -91,7 +95,7 @@ export function terrainAt(rules, map, state, cell) {
 
 export function moveCost(rules, map, state, spec, cell, side) {
   if (spec.movementType === 'wings' &&
-      enemyJammers(rules,state,side).some(unit => distance(map.width,unit.cell,cell) <= JAM_RADIUS)) return Infinity
+      enemyJammers(rules,state,side).some(unit => distance(map.width,unit.cell,cell) <= jamRadius(map,unit.cell))) return Infinity
   const [,terrain] = terrainAt(rules,map,state,cell)
   return terrainMoveCost(rules,spec,terrain)
 }
@@ -339,7 +343,10 @@ export function createGame(rules, map, colors, {attackScale, incomeScale, campai
   // Neblina de guerra (opcional): cada equipe só vê o que está no alcance de visão das suas unidades e prédios.
   if (fog) result.fog = {width:map.width,
     air:Object.keys(rules.units).filter(name=>rules.units[name].unitType === 'air'),
-    radar:Object.keys(rules.units).filter(name=>has(rules.units[name],'Radar'))}
+    radar:Object.keys(rules.units).filter(name=>has(rules.units[name],'Radar')),
+    jammers:Object.keys(rules.units).filter(name=>has(rules.units[name],'Jamming')),
+    hills:map.tiles.flatMap(([name],cell)=>name === 'Hill' ? [cell] : []),
+    forests:map.tiles.flatMap(([name],cell)=>name === 'Forest' ? [cell] : [])}
   // Modo de vitória de teste (mapas procedurais): segurar a refinaria central ou pontos ao fim de N rodadas.
   if (victory?.mode === 'rei' && Number.isInteger(victory.cell)) {
     result.victory = {mode:'rei',cell:victory.cell,rounds:victory.rounds ?? 5,holder:0,count:0}
@@ -357,7 +364,11 @@ export function createGame(rules, map, colors, {attackScale, incomeScale, campai
 export const visibleTo = (unit, side) => side === 0 || unit.side === side || !unit.cloaked
 
 // Alcance de visão na neblina: terrestres e navios 3 casas, aeronaves 4, Radar +2; prédios da equipe 2.
-const visionRange = (fog,unit) => (fog.air.includes(unit.name) ? 4 : 3) + (fog.radar.includes(unit.name) ? 2 : 0)
+// Jammer em cima de uma colina enxerga 1 casa a mais (fog.hills: casas de colina do mapa);
+// quem está numa floresta enxerga 1 casa a menos (fog.forests). Aeronaves voam por cima e não perdem visão.
+const visionRange = (fog,unit) => (fog.air.includes(unit.name) ? 4 : 3) + (fog.radar.includes(unit.name) ? 2 : 0) +
+  (fog.jammers?.includes(unit.name) && fog.hills?.includes(unit.cell) ? 1 : 0) -
+  (!fog.air.includes(unit.name) && fog.forests?.includes(unit.cell) ? 1 : 0)
 export function fogVision(state,side) {
   if (!state.fog || side === 0) return null
   const {width} = state.fog
@@ -598,7 +609,7 @@ function moveUnit(rules,map,state,unit,path) {
   unit.moved = true
   const stealth = has(rules.units[unit.name],'Cloaking')
   const jammed = stealth && enemyJammers(rules,state,side).some(jammer =>
-    positions.some(cell => distance(map.width,jammer.cell,cell) <= JAM_RADIUS))
+    positions.some(cell => distance(map.width,jammer.cell,cell) <= jamRadius(map,jammer.cell)))
   if (stealth && positions.length) unit.cloaked = !jammed && !detectedAt(rules,map,state,unit)
   if (cloaked && !unit.cloaked) revealed = true
   revealed = detect(rules,map,state,unit) || revealed
@@ -737,13 +748,13 @@ export function order(rules, map, state, side, action) {
       requireOrder(transportOptions(rules,map,state,unit).includes(action.name))
       const leaving = Boolean(unit.transported)
       const changed = leaving ? unit.transported : action.name
-      const flight = [unit.name,changed].includes('Albatross Transport')
       unit.hp = Math.max(1,Math.round(unit.hp * rules.units[changed].health / rules.units[unit.name].health))
       unit.transported = leaving ? undefined : unit.name
       unit.name = changed
       unit.cloaked = false
-      if (flight) unit.transformed = true
-      else unit.moved = unit.fired = true
+      // Transformar não gasta o turno: só vale para quem ainda não se moveu (começou o turno ali),
+      // e a unidade não pode se transformar de novo no mesmo turno. A Albatross pode pousar depois de voar.
+      unit.transformed = true
       state.undo = null
       break
     }

@@ -60,6 +60,8 @@ export async function play(data, base, side, transport) {
     const rect = canvas.getBoundingClientRect()
     return [(clientX-rect.left)*view.screenWidth/rect.width,(clientY-rect.top)*view.screenHeight/rect.height]
   }
+  // terrainUnder: casa da unidade clicada duas vezes; a barra de baixo mostra o terreno embaixo dela.
+  let terrainUnder = -1
   let state, selected = null, hover = -1, pinnedTerrain = -1, commands = [], openActions = false, building = null
   let panX = 0, panY = 0, zoom = 1, previous = null, requested = false
   let pending = false, pendingTarget, connected = false, motion, strike, error = ''
@@ -1173,7 +1175,9 @@ export async function play(data, base, side, transport) {
     ctx.save()
     ctx.translate(0,extraHeight)
     const inspectedCell = pinnedTerrain >= 0 ? pinnedTerrain : hover >= 0 ? hover : unit?.cell
-    const inspected = visibleUnits.find(item => item.id === unit?.id) ?? visibleUnits.find(item => item.cell === inspectedCell)
+    const showGround = terrainUnder >= 0 && inspectedCell === terrainUnder
+    const inspected = showGround ? null :
+      visibleUnits.find(item => item.id === unit?.id) ?? visibleUnits.find(item => item.cell === inspectedCell)
     const ground = inspectedCell !== undefined ? terrainAt(rules,map,state,inspectedCell) : null
     const info = inspected ? rules.units[inspected.name] : ground?.[1]
     const label = inspected?.name ?? ground?.[0]
@@ -1430,6 +1434,8 @@ export async function play(data, base, side, transport) {
     building = null
     traced = undefined
     const sameUnit = target?.id === selected
+    // Segundo clique na mesma unidade: além do menu, a barra de baixo mostra o terreno embaixo dela.
+    terrainUnder = target && sameUnit ? cell : -1
     openActions = Boolean(sameUnit && mine(target))
     selected = sameUnit && target?.side !== side ? null : target?.id ?? null
     schedule()
@@ -1504,7 +1510,7 @@ export async function play(data, base, side, transport) {
         normalize()
         schedule()
       },
-      cancel:() => { cancelAction(); selected = null; pinnedTerrain = -1; schedule() },
+      cancel:() => { cancelAction(); selected = null; pinnedTerrain = terrainUnder = -1; schedule() },
       endTurn:endTurnKey,
       next:nextUnit,
       command:shortcutCommand,

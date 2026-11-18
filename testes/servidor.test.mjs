@@ -21,7 +21,7 @@ const post = (path,body = '') => call(path,{method:'POST',body})
 
 before(async () => {
   server = spawn(process.execPath,['nativo/servidor.js'],{cwd:fileURLToPath(new URL('..',import.meta.url)),
-    env:{...process.env,BATTALION_NATIVE_PORT:String(port),BATTALION_RECONNECT_MS:'1000',BATTALION_SAVES_DIR:savesDir},stdio:'ignore'})
+    env:{...process.env,BATTALION_NATIVE_PORT:String(port),BATTALION_RECONNECT_MS:'1000',BATTALION_SAVES_DIR:savesDir,BATTALION_VAULT_DIR:join(savesDir,'cofre')},stdio:'ignore'})
   for (let i=0; i<50; i++) {
     try { if ((await fetch(origin + '/launcher-status')).ok) return } catch {}
     await new Promise(resolve=>setTimeout(resolve,100))
@@ -147,4 +147,16 @@ test('equipes do gerador na sala e salvamento automático retomável',{timeout:3
   assert.equal(resumed.status,200)
   assert.equal((await post('/lan/apagar-salva/' + saves[0].id)).status,204)
   assert.equal((await call('/lan/salvas')).json().length,0)
+})
+
+test('cofre guarda perfil e configurações em disco e exige o cabeçalho do jogo',async () => {
+  const headers = {'X-Battalion-Acao':'1'}
+  assert.equal((await call('/cofre')).status,403,'sem o cabeçalho não lê')
+  assert.equal((await call('/cofre/perfil',{method:'POST',headers,body:JSON.stringify({name:'Dragão',avatar:''})})).status,204)
+  assert.equal((await call('/cofre/local',{method:'POST',headers,body:JSON.stringify({'battalion-nativo-idioma':'pt'})})).status,204)
+  const vault = (await call('/cofre',{headers})).json()
+  assert.equal(vault.perfil.name,'Dragão')
+  assert.equal(vault.local['battalion-nativo-idioma'],'pt')
+  assert.equal((await call('/sistema/excluir',{method:'POST',headers,body:'{}'})).status,204)
+  assert.deepEqual((await call('/cofre',{headers})).json(),{},'excluir dados apaga o cofre')
 })

@@ -49,7 +49,7 @@ const files = new Map([
   ['/visao.js','./visao.js'],
   ['/campanha.js','./campanha.js'], ['/ia.js','./ia.js'], ['/editor.js','./editor.js'], ['/cooperativo.js','./cooperativo.js'],
   ['/versao.json','./versao.json'], ['/versao.js','./versao.js'],
-  ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'], ['/retomar.js','./retomar.js'],
+  ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'], ['/retomar.js','./retomar.js'], ['/cofre.js','./cofre.js'],
   ['/estatisticas.js','./estatisticas.js'], ['/replay.js','./replay.js'], ['/graficos.js','./graficos.js'],
   ['/chat.js','./chat.js'], ['/atalhos.js','./atalhos.js'],
   ['/ia-worker.js','./ia-worker.js'], ['/planejador.js','./planejador.js'], ['/procedural.js','./procedural.js'],
@@ -204,6 +204,33 @@ async function readSave(id) {
   if (!savePattern.test(id ?? '')) throw Error('Salvamento inexistente.')
   try { return JSON.parse(await readFile(join(savesDirectory,id + '.json'),'utf8')) }
   catch { throw Error('Salvamento inexistente.') }
+}
+
+// Cofre: cópia em disco do perfil (nome e foto), do progresso e das configurações do navegador.
+// O navegador separa os dados por endereço; se a porta mudar (8770 ocupada → 8771), o cofre devolve tudo.
+const vaultDirectory = process.env.BATTALION_VAULT_DIR ?? join(profileDirectory,'dados-navegador')
+const vaultFiles = {perfil:['perfil.json',profileLimit],local:['local.json',4_000_000]}
+async function vaultAction(req,res,method,name) {
+  if (method === 'GET' && !name) {
+    const result = {}
+    for (const [key,[file]] of Object.entries(vaultFiles)) {
+      try { result[key] = JSON.parse(await readFile(join(vaultDirectory,file),'utf8')) } catch {}
+    }
+    return json(res,result)
+  }
+  const entry = vaultFiles[name]
+  if (method !== 'POST' || !entry) return fail(res,404,'Dado inexistente.')
+  const text = await body(req,entry[1])
+  const value = JSON.parse(text || 'null')
+  const file = join(vaultDirectory,entry[0])
+  if (value === null) await rm(file,{force:true})
+  else {
+    if (typeof value !== 'object') return fail(res,400,'Dado inválido.')
+    await mkdir(vaultDirectory,{recursive:true})
+    await writeFile(file + '.tmp',JSON.stringify(value))
+    await rename(file + '.tmp',file)
+  }
+  return reply(res,204)
 }
 
 function pushMatch(room) {
@@ -730,6 +757,7 @@ async function systemAction(req,res,action) {
   if (action === 'excluir') {
     // Os dados do navegador (perfil, progresso, configurações) a própria página apaga; aqui só a IA, se pedido.
     const {ia} = JSON.parse((await body(req)) || '{}')
+    await rm(vaultDirectory,{recursive:true,force:true})
     if (ia === true) await rm(profileDirectory,{recursive:true,force:true})
     return reply(res,204)
   }
@@ -777,6 +805,11 @@ function handler(address,throughInternet = false) {
         // Fechar, excluir dados e desinstalar: só neste computador e só a partir da própria página do jogo.
         if (!local || req.method !== 'POST' || req.headers['x-battalion-acao'] !== '1') return fail(res,403,'Acesso indisponível.')
         return await systemAction(req,res,path.slice(9))
+      }
+      if (path === '/cofre' || path.startsWith('/cofre/')) {
+        // Só o próprio jogo, neste computador (o cabeçalho impede outro site de ler ou gravar).
+        if (!local || req.headers['x-battalion-acao'] !== '1') return fail(res,403,'Acesso indisponível.')
+        return await vaultAction(req,res,req.method,path.slice(7))
       }
       if (path.startsWith('/lan/') && ['POST','GET'].includes(req.method)) {
         return await api(req,res,path.slice(5).split('/'),local,throughInternet)

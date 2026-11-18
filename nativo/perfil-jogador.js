@@ -1,5 +1,6 @@
 // Perfil do jogador: nome e foto (PNG, JPG ou GIF) guardados neste computador e mostrados nas partidas.
 // A foto fica no IndexedDB (aceita arquivos grandes); o localStorage tem só uns 5 MB por site.
+import { backupProfile } from './cofre.js'
 const key = 'battalion-nativo-perfil'
 const database = 'battalion-nativo', store = 'perfil'
 export const maxNameLength = 24
@@ -53,6 +54,8 @@ export async function saveProfile(profile) {
     if (!profile) await transaction('readwrite',objects=>objects.delete(key))
     else await transaction('readwrite',objects=>objects.put({name:profile.name ?? '',avatar:profile.avatar ?? ''},key))
   } catch { throw Error('Sem espaço no computador para guardar esta foto. Escolha uma imagem menor.') }
+  // Cópia em disco: o perfil continua lá mesmo se o jogo abrir em outro endereço (outra porta).
+  void backupProfile(profile)
 }
 
 // Apaga o perfil guardado (usado por "Excluir meus dados" e "Desinstalar").

@@ -4,6 +4,7 @@ import { colorize, frame, loadImages, play, terrainArt, terrainVariant } from '.
 import { campaignProgress, campaignTransport, saveVictory } from './campanha.js'
 import { coopEligible } from './cooperativo.js'
 import { deleteProfileStorage, loadProfile, maxNameLength, profilePhoto, saveProfile } from './perfil-jogador.js'
+import { syncVault } from './cofre.js'
 import { clearNetworkMatch, clearSavedMatch, deleteSavesStorage, loadNetworkMatch, loadSavedMatch, saveMatch,
   saveNetworkMatch } from './salvamento.js'
 import { loadStats, recordMatch, statsSummary } from './estatisticas.js'
@@ -275,6 +276,7 @@ const tutorialSteps = [
   ['Campanha em dupla','Nas missões com pelo menos duas Warmachines, "Jogar em dupla pela rede" divide as unidades entre você e um amigo; o turno passa quando os dois encerram.'],
   ['Perfil','Em Configurações → Perfil, escolha seu nome e uma foto (PNG, JPG ou GIF até 20 MB). Eles aparecem nas partidas, também para os outros jogadores, junto com suas estatísticas.'],
   ['Replay, neblina e modos de teste','No fim de uma partida avulsa, "Salvar replay" guarda a partida para assistir depois. A partida avulsa tem neblina de guerra opcional, e o gerador de mapas tem modos de vitória de teste. O modo desenvolvedor (prévia de dano) fica nas Configurações e não conta progresso.'],
+  ['Terreno e transformações','Jammer Truck em cima de uma colina bloqueia e enxerga 1 casa a mais. Na neblina, quem está numa floresta enxerga 1 casa a menos. Virar Leviathan, virar Albatross ou desembarcar da Leviathan não gasta o turno, mas só para quem começou o turno ali. Clique duas vezes numa unidade para ver o terreno embaixo dela na barra de baixo.'],
 ]
 function setupTutorial(automatic) {
   const dialog = $('tutorial')
@@ -856,6 +858,8 @@ async function openQuickMatch(data) {
 }
 
 async function open() {
+  // Perfil, progresso e configurações: o que faltar neste endereço volta da cópia em disco (cofre).
+  await syncVault({currentProfile:loadProfile,restoreProfile:saveProfile})
   edition = await loadEdition()
   await loadLanguage()
   translatePage()
