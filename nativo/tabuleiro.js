@@ -1,5 +1,5 @@
 import { bindCamera } from './camera.js'
-import { activeSides, allied, attackPath, attackRating, attackThreats, buildCells, buildCost, canRepair, canTakeTurn, enemyJammers, factoryAt, firingRange,
+import { activeSides, allied, attackPath, attackRating, attackThreats, buildCells, buildCost, canCounter, canRepair, canTakeTurn, damageAmount, enemyJammers, factoryAt, firingRange,
   isRanged, jammingZone, legalMovePath, neighbors, reachable, repairPrice, terrainAt, transportOptions, unitFor } from './partida.js'
 import { movementDirection, movementDuration, movementPose } from './movimento.js'
 import { combatTimeline, destructionFade } from './combate.js'
@@ -875,6 +875,42 @@ export async function play(data, base, side, transport) {
     ctx.restore()
   }
 
+  // Modo desenvolvedor (só partidas locais): aviso fixo e, ao mirar um inimigo, o dano previsto e o revide.
+  function paintDamagePreview(unit,targets,cursorCell,cursor) {
+    ctx.save()
+    ctx.font = 'bold 10px Tahoma'
+    ctx.textAlign = 'left'
+    ctx.fillStyle = 'rgba(28,26,19,.8)'
+    ctx.fillRect(6,6,150,16)
+    ctx.fillStyle = '#ffcf6a'
+    ctx.fillText(t('MODO DESENVOLVEDOR'),12,18)
+    ctx.restore()
+    if (!unit || !cursor || !targets.has(cursorCell)) return
+    const target = state.units.find(item=>item.cell === cursorCell)
+    if (!target) return
+    const route = targets.get(cursorCell)
+    const attacker = {...unit,cell:route?.length ? route.at(-1) : unit.cell}
+    const dealt = Math.min(target.hp,damageAmount(rules,map,state,attacker,target))
+    const survivor = {...target,hp:target.hp-dealt}
+    const returned = survivor.hp > 0 && canCounter(rules,map,state,attacker,survivor) ?
+      Math.min(attacker.hp,damageAmount(rules,map,state,survivor,attacker,true)) : 0
+    const lines = [t('Dano previsto: {n}',{n:dealt}) + (survivor.hp <= 0 ? ' · ' + t('destrói') : ''),
+      returned ? t('Revide: {n}',{n:returned}) + (returned >= attacker.hp ? ' · ' + t('sua unidade cai') : '') : t('Sem revide')]
+    const [x,y] = cursor
+    const left = Math.min(view.width-170,x+18), top = Math.max(4,y-40)
+    ctx.save()
+    ctx.fillStyle = 'rgba(28,26,19,.92)'
+    ctx.strokeStyle = '#ffcf6a'
+    ctx.fillRect(left,top,164,36)
+    ctx.strokeRect(left+.5,top+.5,163,35)
+    ctx.font = '11px Tahoma'
+    ctx.fillStyle = '#fff1c8'
+    ctx.fillText(lines[0],left+7,top+15)
+    ctx.fillStyle = returned ? '#ffb4a4' : '#cfe8c4'
+    ctx.fillText(lines[1],left+7,top+29)
+    ctx.restore()
+  }
+
   // Dica no estilo do Flash: título em negrito e texto quebrado em linhas.
   function tooltipBox(title,body,centerX,top) {
     const width = 210
@@ -1251,6 +1287,7 @@ export async function play(data, base, side, transport) {
     paintActions(unit,cursorPosition)
     paintTurnAnimation(now)
     if (transport.advance) campaignLayer(now)
+    if (transport.practice) paintDamagePreview(unit,targets,cursorCell,cursorPosition)
     if (targets.has(cursorCell) && pointer.buttons === 0 && pointer.pointerType !== 'touch') {
       const {image,frame:index,width,height} = data.attackCursor
       const [x,y] = cursorPosition
@@ -1317,6 +1354,30 @@ export async function play(data, base, side, transport) {
     traced = undefined
     schedule()
   }
+  // Executa um botão do menu da unidade (clique ou atalho de teclado).
+  function performCommand(unit,menu) {
+    if (!menu.enabled) cancelAction()
+    else if (menu.type === 'build') chooseConstruction(unit)
+    else if (transportOptions(rules,map,state,unit).includes(menu.type)) {
+      void send({type:'transport',unit:unit.id,name:menu.type})
+    }
+    else if (menu.type !== 'cancel') void send({type:menu.type,unit:unit.id})
+    cancelAction()
+  }
+  // Atalho de teclado para um botão do menu da unidade selecionada (R reparar, B construir, E extrair…).
+  function shortcutCommand(types) {
+    const unit = chosen()
+    if (!unit || !mine(unit) || !canAct()) return false
+    const wasOpen = openActions
+    openActions = true
+    const menu = updateActions(unit).find(command=>types.includes(command.type))
+    openActions = wasOpen
+    if (!menu) return false
+    if (!menu.enabled) { error = menu.text; updateStatus(); setTimeout(()=>{ if (error === menu.text) { error = ''; updateStatus() } },2500); return true }
+    performCommand(unit,menu)
+    return true
+  }
+
   function chooseConstruction(unit) {
     // Fábrica e Warmachine usam o mesmo catálogo com atributos, alvos bons e ruins (BuildMenu do Flash).
     return showWarmachineMenu({dialog:$('wm-construct'),data,images,map,state,builder:unit,teamImage,frame,choose:name=>{
@@ -1381,13 +1442,7 @@ export async function play(data, base, side, transport) {
     pinnedTerrain = hover = cell
     const menu = commands.find(button => x >= button.x && y >= button.y && x < button.x+button.w && y < button.y+button.h)
     if (unit && menu) {
-      if (!menu.enabled) cancelAction()
-      else if (menu.type === 'build') chooseConstruction(unit)
-      else if (transportOptions(rules,map,state,unit).includes(menu.type)) {
-        void send({type:'transport',unit:unit.id,name:menu.type})
-      }
-      else if (menu.type !== 'cancel') void send({type:menu.type,unit:unit.id})
-      cancelAction()
+      performCommand(unit,menu)
       return
     }
     const target = state.units.find(item => item.cell === cell)
@@ -1456,9 +1511,39 @@ export async function play(data, base, side, transport) {
     pinnedTerrain = hover = cell
     canvas.focus({preventScroll:true})
   })
-  canvas.addEventListener('keydown',event => {
-    if (event.key === 'Escape') {cancelAction(); selected = null; pinnedTerrain = -1; schedule(); return}
-    const direction = {ArrowLeft:[-64,0],ArrowRight:[64,0],ArrowUp:[0,-64],ArrowDown:[0,64]}[event.key]
+  // Atalhos de teclado (lista em Configurações → Atalhos de teclado).
+  let endArmed = 0
+  const nextUnit = (step = 1) => {
+    const units = state?.units.filter(item => mine(item) && !item.fired && !item.disabled)
+    if (!units?.length) return
+    const index = units.findIndex(item => item.id === selected)
+    const unit = units[((index < 0 ? (step > 0 ? -1 : 0) : index) + step + units.length) % units.length]
+    selected = unit.id
+    cancelAction()
+    center(cellX(unit.cell) + TILE/2,cellY(unit.cell) + TILE/2)
+    schedule()
+  }
+  // Espaço/Enter encerra o turno; se ainda há unidades suas para agir, pede para apertar de novo.
+  function endTurnKey() {
+    if (!canAct()) return
+    const idle = state.units.some(item => mine(item) && !item.fired && !item.disabled)
+    if (idle && performance.now() - endArmed > 1800) {
+      endArmed = performance.now()
+      error = t('Ainda há unidades para agir. Aperte de novo para encerrar o turno.')
+      updateStatus()
+      setTimeout(()=>{ if (error.startsWith(t('Ainda há'))) { error = ''; updateStatus() } },1800)
+      return
+    }
+    endArmed = 0
+    error = ''
+    void send({type:'end'})
+  }
+  document.addEventListener('keydown',event => {
+    if (player.hidden || !state || document.querySelector('dialog[open]')) return
+    if (event.target.closest?.('input,select,textarea,[contenteditable]')) return
+    if (event.altKey || event.metaKey) return
+    const key = event.key
+    const direction = {ArrowLeft:[-64,0],ArrowRight:[64,0],ArrowUp:[0,-64],ArrowDown:[0,64]}[key]
     if (direction) {
       event.preventDefault()
       if (motion?.camera) return
@@ -1466,22 +1551,41 @@ export async function play(data, base, side, transport) {
       panY += direction[1]/zoom
       normalize()
       schedule()
+      return
     }
+    if (key === 'Escape') { cancelAction(); selected = null; pinnedTerrain = -1; schedule(); return }
+    if (state.dialog || state.result) return
+    const lower = key.toLowerCase()
+    let handled = true
+    if (event.ctrlKey) {
+      if (lower === 'z' && !cssButton('undo').disabled) void send({type:'undo'})
+      else handled = false
+    }
+    else if (key === ' ' || key === 'Enter') endTurnKey()
+    else if (key === 'Tab') nextUnit(event.shiftKey ? -1 : 1)
+    else if (lower === 'r') shortcutCommand(['repair'])
+    else if (lower === 'b') shortcutCommand(['build'])
+    else if (lower === 'e') shortcutCommand(['extract'])
+    else if (lower === 'c') shortcutCommand(['capture'])
+    else if (lower === 't') shortcutCommand(['unload','Leviathan Barge','Albatross Transport'])
+    else if (lower === 'u' && !cssButton('undo').disabled) void send({type:'undo'})
+    else if (key === '+' || key === '=' || key === '-' || key === '_') {
+      // Usa os botões da barra de zoom para a porcentagem mostrada acompanhar.
+      const label = key === '+' || key === '=' ? '+' : '−'
+      const button = [...$('player-camera').querySelectorAll('button')].find(item=>item.textContent.trim() === label)
+      if (button) button.click(); else setZoom(label === '+' ? 1 : -1)
+    }
+    else if (lower === 'f') $('fullscreen')?.click()
+    else if (key === '?' || lower === 'h') { $('options').showModal(); $('settings-shortcuts')?.scrollIntoView({block:'start'}) }
+    else handled = false
+    if (handled) event.preventDefault()
   })
   music.bind($('audio'),$('music'),$('game-volume'),$('game-volume-value'))
   $('game-settings').onclick = () => $('options').showModal()
   cssButton('options').onclick = () => $('options').showModal()
   cssButton('end').onclick = () => void send({type:'end'})
   cssButton('undo').onclick = () => void send({type:'undo'})
-  cssButton('next').onclick = () => {
-    const units = state?.units.filter(item => mine(item) && !item.fired && !item.disabled)
-    if (!units?.length) return
-    const unit = units[(units.findIndex(item => item.id === selected) + 1) % units.length]
-    selected = unit.id
-    cancelAction()
-    center(cellX(unit.cell) + TILE/2,cellY(unit.cell) + TILE/2)
-    schedule()
-  }
+  cssButton('next').onclick = () => nextUnit(1)
   for (const type of Object.keys(buttons)) for (const event of ['pointerenter','pointerleave','pointerdown','pointerup']) {
     cssButton(type).addEventListener(event,schedule)
   }

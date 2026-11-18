@@ -24,6 +24,9 @@ const aiTimeKey = 'battalion-nativo-ai-time'
 const difficultyKey = 'battalion-nativo-difficulty'
 const stored = key => { try { return localStorage.getItem(key) } catch { return null } }
 const store = (key,value) => { try { localStorage.setItem(key,value) } catch {} }
+// Modo desenvolvedor: prévia de dano nas partidas locais, sem contar progresso.
+const developerKey = 'battalion-nativo-dev'
+const developerMode = () => stored(developerKey) === '1'
 const aiTime = value => validAiTime(Number(value)) ? Number(value) : defaultAiTime
 const storedAiTime = () => aiTime(stored(aiTimeKey) ?? defaultAiTime)
 const storedDifficulty = () => {
@@ -61,6 +64,9 @@ function setupSettings(data,{inGame = false} = {}) {
   $('settings-ai-info').textContent = t('Fácil usa a IA clássica do jogo, com dano e renda reduzidos na campanha.') + ' ' +
     (data.aiProfile?.params ? generation != null ? t('Normal e Difícil usam a IA treinada (geração {n}).',{n:generation}) :
       t('Normal e Difícil usam a IA treinada.') : t('Normal e Difícil usam a IA tática com os pesos padrão.'))
+  const developer = $('settings-dev')
+  developer.checked = developerMode()
+  developer.onchange = () => store(developerKey,developer.checked ? '1' : '0')
   setupProfile(dialog).catch(()=>{})
   setupSystem(dialog)
   for (const button of document.querySelectorAll('[data-settings]')) button.onclick = () => {
@@ -380,7 +386,7 @@ async function playMission(data,{mission,ghosts,list,difficulty,seconds,resume})
     saveMatch({kind:'campaign',title:mission.title,ghosts,list,chapter:mission.number,difficulty,seconds,engine}) :
     clearSavedMatch()
   return showMatch(data,mission.board,1,campaignTransport(data,{...mission,teams},difficulty,
-    {group,back,aiTime:seconds,resume,onSave}))
+    {group,back,aiTime:seconds,resume,onSave,practice:developerMode()}))
 }
 
 // "Continuar partida": reabre a última partida local salva automaticamente.
@@ -519,7 +525,8 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   humans = mode === 'spectator' ? 0 : mode === 'hotseat' ? colors.length : 1, coalitions = Boolean(board.coalitions),
   seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume} = {}) {
   // Vitória contra a IA num mapa do jogo libera o multiplayer e o modo assistir nesse mapa.
-  onFinish ??= mapId && mode === 'ai' ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
+  const practice = developerMode() && mode !== 'spectator'
+  onFinish ??= mapId && mode === 'ai' && !practice ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
   // Salvamento automático a cada turno do jogador (não vale para o modo assistir nem para o teste do editor).
   const onSave = mode === 'spectator' || back.startsWith('/?editor') ? undefined : engine => engine ?
     saveMatch({kind:'local',title:board.title,board,mode,difficulty,colors,back,humans,coalitions,seconds,
@@ -539,7 +546,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   link.textContent = t(back.startsWith('/?editor') ? '← Editor de mapas' :
     back.startsWith('/?partida') ? '← Partida avulsa' : '← Menu')
   const transport = campaignTransport(data,mission,difficulty,
-    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume})
+    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume,practice})
   await showMatch(data,setup.board,mode === 'spectator' ? 0 : 1,transport)
 }
 

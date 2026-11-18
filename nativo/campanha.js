@@ -24,6 +24,8 @@ export function campaignTransport(data, mission, difficulty, {
   aiTime = defaultAiTime, sideDifficulty, onFinish, WorkerType = globalThis.Worker,
   // resume: partida salva para continuar; onSave(dados | null): chamado a cada turno do jogador (null no fim).
   resume, onSave,
+  // practice: modo desenvolvedor (prévia de dano); a vitória não conta progresso nem medalha.
+  practice = false,
 } = {}) {
   // sideDifficulty: dificuldade de cada equipe da IA (ex.: assistir IA x IA com níveis diferentes).
   const levelOf = side => sideDifficulty?.[side-1] ?? difficulty
@@ -186,7 +188,8 @@ export function campaignTransport(data, mission, difficulty, {
     const score = campaign ? Math.max(0,Math.trunc((killed*1000-lost*100+(victory ? 5000 : 0)) / state.round)) : null
     const medal = !campaign || !victory ? 0 : score >= mission.medals[1] ? 3 : score >= mission.medals[0] ? 2 : 1
     result = {winner:state.winner,score,medal,victory,campaign}
-    if (campaign && victory) saveVictory(mission.number,result,group)
+    if (campaign && victory && !practice) saveVictory(mission.number,result,group)
+    if (practice) result.practice = true
     clearTimeout(saveTimer)
     onSave?.(null)
     onFinish?.(result)
@@ -246,7 +249,7 @@ export function campaignTransport(data, mission, difficulty, {
   }
 
   return {
-    back,hotseat,
+    back,hotseat,practice,
     listen(onState) {
       receive = onState
       if (resume) {

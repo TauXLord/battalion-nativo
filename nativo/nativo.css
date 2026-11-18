@@ -258,3 +258,7 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
 .home-continue strong { font-size:1.15rem; }
 .home-continue span { color:#cfd8c4; }
 .home-continue:hover { background:#2e4128; }
+
+.shortcut-list { display:grid; grid-template-columns:max-content 1fr; gap:.25rem .9rem; margin:0; }
+.shortcut-list dt { font-weight:bold; color:#f3d994; }
+.shortcut-list dd { margin:0; }
