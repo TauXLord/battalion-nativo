@@ -4,6 +4,7 @@ import { colorize, frame, loadImages, play, terrainArt, terrainVariant } from '.
 import { campaignProgress, campaignTransport, saveVictory } from './campanha.js'
 import { coopEligible } from './cooperativo.js'
 import { deleteProfileStorage, loadProfile, maxNameLength, profilePhoto, saveProfile } from './perfil-jogador.js'
+import { clearSavedMatch, deleteSavesStorage, loadSavedMatch, saveMatch } from './salvamento.js'
 import { matchAudio } from './audio.js'
 import { scenarioMatch, scenarioSlots } from './partida.js'
 import { defaultAiTime, validAiTime } from './ia.js'
@@ -124,6 +125,7 @@ function setupSystem(settings) {
     run:async ai => {
       await system('excluir',{ia:ai})
       await deleteProfileStorage()
+      await deleteSavesStorage()
       clearBrowser()
       location.href = '/'
     },
@@ -137,6 +139,7 @@ function setupSystem(settings) {
     run:async () => {
       await system('desinstalar')
       await deleteProfileStorage()
+      await deleteSavesStorage()
       clearBrowser()
       closed()
     },
@@ -232,6 +235,17 @@ async function openHome(data) {
   $('home-view').hidden = false
   setupSettings(data)
   menuAudio(data)
+  // Cartão "Continuar partida" com a última partida salva automaticamente.
+  void loadSavedMatch().then(save => {
+    if (!save) return
+    const card = $('home-continue')
+    card.href = '/?continuar' + (save.ghosts ? '=ghosts' : '')
+    const when = new Date(save.savedAt).toLocaleString(language() === 'en' ? 'en-US' : 'pt-BR',
+      {dateStyle:'short',timeStyle:'short'})
+    $('home-continue-info').textContent = t(save.title || 'Partida') + ' · ' +
+      t('Rodada {n}',{n:save.engine?.state?.round ?? 1}) + ' · ' + when
+    card.hidden = false
+  })
   const generation = data.aiProfile?.generation
   $('home-ai').textContent = data.aiProfile?.params ?
     t('IA treinada ativa: geração {n} (Normal e Difícil). Fácil usa a IA clássica do jogo.',{n:generation ?? '?'}) :
@@ -352,6 +366,38 @@ function showError(error) {
   $('error').hidden = false
 }
 
+// Missão de campanha (nova ou continuada do salvamento automático).
+async function playMission(data,{mission,ghosts,list,difficulty,seconds,resume}) {
+  const base = ghosts ? '/?campanha=ghosts' : '/?campanha'
+  const back = base + (list === 'campanha' ? '' : '&group='+list)
+  const group = (ghosts ? 'ghosts' : 'vengeance') + (list === 'campanha' ? '' : '-'+list)
+  $('player-view').querySelector('header a').href = back
+  $('player-view').querySelector('header a').textContent = t('← Campanha')
+  const profile = await loadProfile()
+  const teams = profile ? mission.teams.map((team,index)=>index ? team :
+    {...team,name:profile.name || team.name,photo:profile.avatar || undefined}) : mission.teams
+  const onSave = engine => engine ?
+    saveMatch({kind:'campaign',title:mission.title,ghosts,list,chapter:mission.number,difficulty,seconds,engine}) :
+    clearSavedMatch()
+  return showMatch(data,mission.board,1,campaignTransport(data,{...mission,teams},difficulty,
+    {group,back,aiTime:seconds,resume,onSave}))
+}
+
+// "Continuar partida": reabre a última partida local salva automaticamente.
+async function openSaved(data) {
+  const save = await loadSavedMatch()
+  if (!save) return openHome(data)
+  if (save.kind === 'campaign') {
+    const response = await fetch('/'+save.list+(save.ghosts ? '-ghosts' : '')+'.json')
+    if (!response.ok) throw Error('Abra a campanha pelo endereço local do anfitrião.')
+    const mission = (await response.json()).find(chapter=>chapter.number === save.chapter)
+    if (!mission?.board) throw Error('Esta missão não está mais disponível.')
+    return playMission(data,{...save,mission,resume:save.engine})
+  }
+  return playLocal(data,save.board,save.mode,save.difficulty,save.colors,save.back,save.humans,save.coalitions,
+    save.seconds,{sideDifficulty:save.sideDifficulty,mapId:save.mapId,resume:save.engine})
+}
+
 async function openCampaign(data) {
   const ghosts = query.get('campanha') === 'ghosts'
   const list = ['bootcamp','bonus'].includes(query.get('group')) ? query.get('group') : 'campanha'
@@ -370,13 +416,8 @@ async function openCampaign(data) {
     const mission = chapters.find(chapter => String(chapter.number) === query.get('chapter'))
     if (!mission?.board) throw Error('Este capítulo ainda não está disponível na edição nativa.')
     if (!unlocked(mission)) throw Error('Conclua o capítulo anterior para abrir este mapa.')
-    $('player-view').querySelector('header a').href = back
-    $('player-view').querySelector('header a').textContent = t('← Campanha')
     const seconds = aiTime(query.get('aiTime') ?? storedAiTime())
-    const profile = await loadProfile()
-    const teams = profile ? mission.teams.map((team,index)=>index ? team :
-      {...team,name:profile.name || team.name,photo:profile.avatar || undefined}) : mission.teams
-    return showMatch(data,mission.board,1,campaignTransport(data,{...mission,teams},selected,{group,back,aiTime:seconds}))
+    return playMission(data,{mission,ghosts,list,difficulty:selected,seconds})
   }
   $('campaign-title').textContent = ghosts ? 'Ghosts' : 'Vengeance'
   const screen = document.querySelector('.campaign-screen')
@@ -476,7 +517,13 @@ function recordVictory(id,difficulty) {
 
 async function playLocal(data,board,mode,difficulty,colors,back,
   humans = mode === 'spectator' ? 0 : mode === 'hotseat' ? colors.length : 1, coalitions = Boolean(board.coalitions),
-  seconds = storedAiTime(), {sideDifficulty, onFinish} = {}) {
+  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume} = {}) {
+  // Vitória contra a IA num mapa do jogo libera o multiplayer e o modo assistir nesse mapa.
+  onFinish ??= mapId && mode === 'ai' ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
+  // Salvamento automático a cada turno do jogador (não vale para o modo assistir nem para o teste do editor).
+  const onSave = mode === 'spectator' || back.startsWith('/?editor') ? undefined : engine => engine ?
+    saveMatch({kind:'local',title:board.title,board,mode,difficulty,colors,back,humans,coalitions,seconds,
+      sideDifficulty,mapId,engine}) : clearSavedMatch()
   const setup = scenarioMatch(board,colors,humans,coalitions)
   const profile = humans > 0 ? await loadProfile() : null
   const teams = setup.colors.map((color,index)=>({name:data.aiSides?.[index+1]?.label ?? t('Equipe {n}',{n:index+1}),color,
@@ -491,7 +538,8 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   link.href = back
   link.textContent = t(back.startsWith('/?editor') ? '← Editor de mapas' :
     back.startsWith('/?partida') ? '← Partida avulsa' : '← Menu')
-  const transport = campaignTransport(data,mission,difficulty,{mode,back,humans,aiTime:seconds,sideDifficulty,onFinish})
+  const transport = campaignTransport(data,mission,difficulty,
+    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume})
   await showMatch(data,setup.board,mode === 'spectator' ? 0 : 1,transport)
 }
 
@@ -643,7 +691,7 @@ async function openQuickMatch(data) {
 async function open() {
   await loadLanguage()
   translatePage()
-  const ghosts = query.get('campanha') === 'ghosts' || query.get('editor') === 'ghosts'
+  const ghosts = query.get('campanha') === 'ghosts' || query.get('editor') === 'ghosts' || query.get('continuar') === 'ghosts'
   const resource = await fetch(ghosts ? '/dados-ghosts.json' : '/dados.json')
   if (!resource.ok) throw Error('Os recursos do Battalion estão indisponíveis.')
   const data = await resource.json()
@@ -672,6 +720,7 @@ async function open() {
   } catch {}
   if (query.has('avaliacao')) return openEvaluation(data)
   if (query.has('jogar')) return openQuickMatch(data)
+  if (query.has('continuar')) return openSaved(data)
   if (query.has('campanha')) return openCampaign(data)
   if (query.has('editor')) {
     const {openEditor} = await import('./editor.js')
@@ -938,9 +987,7 @@ async function openSkirmish(data) {
         const level = Number(difficulty.value)
         const extra = {
           sideDifficulty:mode.value === 'spectator' ? teamLevels.slice(0,teams.length) : undefined,
-          // Vitória contra a IA num mapa do jogo libera o multiplayer e o modo assistir nesse mapa.
-          onFinish:mode.value === 'ai' && entry.kind === 'game' ?
-            result => { if (result.victory) recordVictory(entry.id,level) } : undefined,
+          mapId:entry.kind === 'game' ? entry.id : undefined,
         }
         if (entry.kind === 'game' || entry.kind === 'arena') {
           if (!localMaps[entry.id]) throw Error('Abra o cenário pelo endereço local do anfitrião.')

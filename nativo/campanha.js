@@ -22,6 +22,8 @@ export function saveVictory(number, result, group) {
 export function campaignTransport(data, mission, difficulty, {
   group = 'vengeance', mode = 'campaign', back = '/?campanha', humans = mode === 'hotseat' ? 2 : Number(mode !== 'spectator'),
   aiTime = defaultAiTime, sideDifficulty, onFinish, WorkerType = globalThis.Worker,
+  // resume: partida salva para continuar; onSave(dados | null): chamado a cada turno do jogador (null no fim).
+  resume, onSave,
 } = {}) {
   // sideDifficulty: dificuldade de cada equipe da IA (ex.: assistir IA x IA com níveis diferentes).
   const levelOf = side => sideDifficulty?.[side-1] ?? difficulty
@@ -31,7 +33,7 @@ export function campaignTransport(data, mission, difficulty, {
   const campaign = mode === 'campaign'
   const spectator = mode === 'spectator'
   const hotseat = mode === 'hotseat'
-  const state = createGame(rules,map,mission.teams.map(team=>team.color),{
+  const state = resume ? structuredClone(resume.state) : createGame(rules,map,mission.teams.map(team=>team.color),{
     campaign, attackScale:sideDifficulty ?
       mission.teams.map((_,index)=>index < humans ? 1 : [.7,1,1.4][levelOf(index+1)] ?? 1) :
       teamAttackScale(mission.teams.length,humans,spectator ? 1 : difficulty),
@@ -47,11 +49,27 @@ export function campaignTransport(data, mission, difficulty, {
   const cellAt = node => Number(node.y)*map.width + Number(node.x)
   const teamOf = node => node.player != null ? Number(node.player) : Number(node.controller)+1
   let viewing = spectator ? 0 : 1
+  if (resume) {
+    ({disabled,morale,killed,lost} = resume)
+    for (const cell of resume.highlights ?? []) highlights.add(cell)
+    for (const index of resume.completed ?? []) if (mission.events[index]) completed.add(mission.events[index])
+    viewing = resume.viewing ?? viewing
+  }
   const viewer = () => viewing
   const computerSide = () => activeSides(state).find(side=>side>humans && canTakeTurn(state,side))
+  // Salvamento automático: só quando é a vez de um jogador humano e nada está acontecendo (falas, IA, fim).
+  let saveTimer
+  function autosave() {
+    if (!onSave || spectator || !playing || dialog || result || computerRunning || cancelled || state.winner) return
+    if (!activeSides(state).some(side=>side <= humans && canTakeTurn(state,side))) return
+    clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => onSave({state:structuredClone(state),killed,lost,disabled,morale,viewing,
+      highlights:[...highlights],completed:[...completed].map(event=>mission.events.indexOf(event))}),250)
+  }
   const publish = () => {
     if (!cancelled && receive) receive({...snapshot(state,viewer()),teams:mission.teams,dialog,result,focus,
       blocked:disabled,morale,objective:mission.objective,highlights:[...highlights],viewer:viewer()})
+    autosave()
   }
 
   function showDialog(contents) {
@@ -169,6 +187,8 @@ export function campaignTransport(data, mission, difficulty, {
     const medal = !campaign || !victory ? 0 : score >= mission.medals[1] ? 3 : score >= mission.medals[0] ? 2 : 1
     result = {winner:state.winner,score,medal,victory,campaign}
     if (campaign && victory) saveVictory(mission.number,result,group)
+    clearTimeout(saveTimer)
+    onSave?.(null)
     onFinish?.(result)
     publish()
   }
@@ -213,6 +233,7 @@ export function campaignTransport(data, mission, difficulty, {
       computerRunning = false
     }
     if (!cancelled && state.winner) await finish()
+    else autosave()
   }
 
   async function passControl() {
@@ -228,6 +249,13 @@ export function campaignTransport(data, mission, difficulty, {
     back,hotseat,
     listen(onState) {
       receive = onState
+      if (resume) {
+        // Partida continuada: os eventos de início já aconteceram.
+        playing = true
+        publish()
+        if (computerSide()) void enemyTurn()
+        return () => {cancelled = true; planner.close(); nextLine?.()}
+      }
       void runEvents('startGame').then(()=>{
         playing = true
         if (computerSide()) return enemyTurn()

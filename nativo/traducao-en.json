@@ -450,5 +450,8 @@
  "Isto apaga do computador os itens abaixo e fecha o jogo. Não dá para desfazer.": "This deletes the items below from this computer and closes the game. It cannot be undone.",
  "GIF grande demais. Use um de até 20 MB.": "GIF too large. Use one up to 20 MB.",
  "Sem espaço no computador para guardar esta foto. Escolha uma imagem menor.": "Not enough space on this computer to store this photo. Choose a smaller image.",
- "Falha ao acessar os dados do perfil.": "Could not access the profile data."
+ "Falha ao acessar os dados do perfil.": "Could not access the profile data.",
+ "▶ Continuar partida": "▶ Continue match",
+ "Partida": "Match",
+ "Esta missão não está mais disponível.": "This mission is no longer available."
 }

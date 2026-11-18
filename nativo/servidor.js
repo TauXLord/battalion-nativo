@@ -45,7 +45,7 @@ const files = new Map([
   ['/movimento.js','./movimento.js'], ['/audio.js','./audio.js'],
   ['/visao.js','./visao.js'],
   ['/campanha.js','./campanha.js'], ['/ia.js','./ia.js'], ['/editor.js','./editor.js'], ['/cooperativo.js','./cooperativo.js'],
-  ['/perfil-jogador.js','./perfil-jogador.js'],
+  ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'],
   ['/ia-worker.js','./ia-worker.js'], ['/planejador.js','./planejador.js'], ['/procedural.js','./procedural.js'],
   ['/rede-ia.js','./rede-ia.js'], ['/ia-tatica.js','./ia-tatica.js'],
   ['/idioma.js','./idioma.js'], ['/traducao-en.json','./traducao-en.json'], ['/traducao-pt.json','./traducao-pt.json'],
