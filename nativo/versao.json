@@ -1,6 +1,6 @@
 {
- "versao": "1.2.0",
- "data": "2026-11-18",
+ "versao": "1.3.0",
+ "data": "2026-11-19",
  "edicao": "Battalion Nativo",
  "verificar": "https://raw.githubusercontent.com/TauXLord/battalion-nativo-versao/main/versao.json",
  "notas": "Para uma atualização, aumente o número (1.0.1 correção, 1.1.0 novidades, 2.0.0 mudanças grandes) e a data, faça o commit e rode: node tools/publicar-versao.mjs --notas notas.md. 'verificar' aponta para o versao.json público (só número, data e link) que o jogo consulta para avisar sobre atualizações."
