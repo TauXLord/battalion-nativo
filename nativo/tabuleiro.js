@@ -1725,6 +1725,19 @@ export async function play(data, base, side, transport) {
     send:text => transport.chat(text),onError:message => { error = message; updateStatus() },onMessage:() => makeSound('Capture')})
   const updateMatchChat = messages => chatUpdate?.(messages,side)
 
+  // Mesmo dispositivo (todas as equipes de jogadores): botão para avançar uma rodada inteira de uma vez.
+  const skipButton = $('match-skip-round')
+  skipButton.hidden = !transport.skipRound
+  if (transport.skipRound) skipButton.onclick = async () => {
+    if (pending || !state || state.dialog || state.result) return
+    pending = true
+    skipButton.disabled = true
+    cancelAction()
+    selected = null
+    try { await transport.skipRound() } catch (failure) { error = failure.message }
+    finally { pending = false; skipButton.disabled = false; updateStatus(); schedule() }
+  }
+
   // Replay: linha do tempo para voltar/avançar turnos, pular para qualquer jogada e mudar a velocidade.
   const timeline = transport.timeline
   const timelineBar = $('replay-timeline')

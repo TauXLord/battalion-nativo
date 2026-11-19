@@ -318,6 +318,19 @@ export function campaignTransport(data, mission, difficulty, {
         await passControl()
       }
     },
+    // Mesmo dispositivo: encerra o turno de todas as equipes até a próxima rodada, sem a tela de passar o controle
+    // (bom para testar o clima e avançar rápido). Só quando todas as equipes são de jogadores.
+    skipRound:hotseat && humans >= mission.teams.length ? async () => {
+      if (!playing || dialog || result || state.winner) throw Error('Ação indisponível.')
+      const round = state.round
+      for (let guard = 0; guard < 40 && !state.winner && state.round === round; guard++) {
+        const deaths = apply({type:'end'},false,state.turn)
+        await resolveDeaths(deaths)
+      }
+      viewing = state.turn
+      publish()
+      if (state.winner) await finish()
+    } : undefined,
     advance() {
       const resume = nextLine
       nextLine = null

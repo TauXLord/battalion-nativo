@@ -686,5 +686,7 @@
  "chuva": "rain",
  "Clima: nuvens e chuva de vez em quando (na chuva, -1 de visão e de alcance da artilharia)": "Weather: clouds and rain from time to time (in the rain, -1 vision and artillery range)",
  "Clima": "Weather",
- "Com a opção Clima ligada, nuvens chegam por um canto do mapa e, duas rodadas depois, vem o aviso de chuva. Na chuva, todos enxergam 1 casa a menos e a artilharia alcança 1 casa a menos. A cada 5 jogadas, um raio cai num lugar aleatório e causa 100 de dano na unidade atingida.": "With the Weather option on, clouds come in from a corner of the map and, two rounds later, the rain warning appears. In the rain, everyone sees 1 tile less and artillery reaches 1 tile less. Every 5 moves, lightning strikes a random spot and deals 100 damage to the unit hit."
+ "Com a opção Clima ligada, nuvens chegam por um canto do mapa e, duas rodadas depois, vem o aviso de chuva. Na chuva, todos enxergam 1 casa a menos e a artilharia alcança 1 casa a menos. A cada 5 jogadas, um raio cai num lugar aleatório e causa 100 de dano na unidade atingida.": "With the Weather option on, clouds come in from a corner of the map and, two rounds later, the rain warning appears. In the rain, everyone sees 1 tile less and artillery reaches 1 tile less. Every 5 moves, lightning strikes a random spot and deals 100 damage to the unit hit.",
+ "⏭ Avançar rodada": "⏭ Next round",
+ "Encerra o turno de todas as equipes até a próxima rodada": "Ends every team's turn until the next round"
 }
