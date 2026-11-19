@@ -35,10 +35,12 @@ export function analyzeReplay(rules,replay) {
     const {round,turn} = state
     try { order(rules,map,state,side,action) }
     catch (failure) { error = failure.message; break }
+    // Unidade morta por raio (clima) conta como perda, mas não como abate de ninguém.
+    const struck = state.lightning?.version === state.version ? state.lightning.unit : undefined
     for (const [id,owner] of before) {
       if (!state.units.some(unit=>unit.id === id)) {
         losses[owner-1]++
-        if (owner !== side) kills[side-1]++
+        if (owner !== side && id !== struck) kills[side-1]++
       }
     }
     for (const unit of state.units) if (!before.has(unit.id) && unit.side === side) built[side-1]++

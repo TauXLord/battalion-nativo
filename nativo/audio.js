@@ -21,6 +21,7 @@ export function matchAudio(assets) {
   volume = Number.isFinite(volume) ? Math.max(0,Math.min(1,volume)) : 1
   player.volume = .5 * volume
   let current = ''
+  let audioContext = null
   function resume() {
     if (current && music.enabled && player.paused) player.play().catch(() => {})
   }
@@ -40,6 +41,36 @@ export function matchAudio(assets) {
         player.src = '/recursos/' + assets[name]
         resume()
       }
+    },
+    // Trovão sintetizado (o jogo original não tem esse som): estalo seco e um ronco grave que vai sumindo.
+    thunder() {
+      if (!effects.enabled || !volume) return
+      try {
+        audioContext ??= new AudioContext()
+        const ctx = audioContext, now = ctx.currentTime, seconds = 2.8
+        const buffer = ctx.createBuffer(1,Math.floor(ctx.sampleRate*seconds),ctx.sampleRate)
+        const data = buffer.getChannelData(0)
+        let brown = 0
+        for (let index = 0; index < data.length; index++) {
+          brown = (brown + .02*(Math.random()*2 - 1)) / 1.02
+          data[index] = brown * 3.5
+        }
+        const source = ctx.createBufferSource()
+        source.buffer = buffer
+        const filter = ctx.createBiquadFilter()
+        filter.type = 'lowpass'
+        filter.frequency.setValueAtTime(1600,now)
+        filter.frequency.exponentialRampToValueAtTime(120,now + 1.2)
+        const gain = ctx.createGain()
+        const level = .9 * volume
+        gain.gain.setValueAtTime(0,now)
+        gain.gain.linearRampToValueAtTime(level,now + .03)
+        gain.gain.exponentialRampToValueAtTime(level*.35,now + .5)
+        gain.gain.linearRampToValueAtTime(level*.5,now + .9)
+        gain.gain.exponentialRampToValueAtTime(.001,now + seconds)
+        source.connect(filter).connect(gain).connect(ctx.destination)
+        source.start(now)
+      } catch {}
     },
     effect(name) {
       if (!effects.enabled || !assets[name]) return

@@ -90,6 +90,8 @@ export function restoreMatch(rules,file,{mine = 1,credits = []} = {}) {
   } else if (saved.victory?.mode === 'pontos') state.victory = {mode:'pontos',limit:saved.victory.limit ?? 20}
   // Neblina de guerra: só o salvamento completo traz a configuração (a visão de espectador traz só as casas vistas).
   if (saved.fog && !Array.isArray(saved.fog) && Number.isInteger(saved.fog.width)) state.fog = saved.fog
+  // Clima: continua do ponto em que estava (fase, rodadas que faltam e semente).
+  if (saved.weather && typeof saved.weather.phase === 'string' && Number.isInteger(saved.weather.seed)) state.weather = {...saved.weather}
   const board = {...map,slots:count,coalitions:undefined,
     units:(map.units ?? []).filter(unit=>integer(unit.side,1,count)).map(unit=>({...unit,side:sideOf(unit.side)})),
     structures:(map.structures ?? []).map(tile=>({...tile,side:sideOf(tile.side ?? 0)}))}

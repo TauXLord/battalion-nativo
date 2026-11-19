@@ -105,3 +105,49 @@ test('na neblina, unidade dentro da floresta só é vista pelo inimigo 1 casa ma
   game.units[0].cell = at(8,6)
   assert.ok(snapshot(game,1).units.some(unit=>unit.id === enemy.id),'fora da floresta, a 3 casas, aparece')
 })
+
+test('clima: nuvens 2 rodadas antes do aviso, chuva tira 1 de alcance da artilharia e 1 de visão',async () => {
+  const {firingRange} = await import('../nativo/partida.js')
+  const map = board([{name:'Warmachine',side:1,cell:at(0,0)},{name:'Warmachine',side:2,cell:at(9,9)}])
+  const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:12345,fog:true})
+  const phases = []
+  for (let i = 0; i < 40; i++) {
+    phases.push(game.weather.phase)
+    order(rules,map,game,game.turn,{type:'end',version:game.version})
+  }
+  const byRound = phases.filter((_,index)=>index % 2 === 0)
+  const firstRain = byRound.indexOf('chuva')
+  assert.ok(firstRain > 0,'choveu em algum momento')
+  assert.deepEqual(byRound.slice(firstRain-3,firstRain),['nuvens','nuvens','aviso'],'nuvens 2 rodadas, depois o aviso, depois chuva')
+  // Mesma semente = mesmo clima (o replay repete igual).
+  const again = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:12345})
+  const repeat = []
+  for (let i = 0; i < 40; i++) { repeat.push(again.weather.phase); order(rules,map,again,again.turn,{type:'end',version:again.version}) }
+  assert.deepEqual(repeat,phases)
+  // Na chuva: artilharia alcança 1 casa a menos.
+  const artillery = Object.keys(rules.units).find(name=>rules.units[name].weaponRangeMax > 2 && rules.units[name].weaponRangeMax > rules.units[name].weaponRangeMin)
+  const unit = {name:artillery,side:1,cell:at(4,4)}
+  game.weather.phase = 'limpo'
+  const [,dry] = firingRange(rules,map,game,unit,unit.cell)
+  game.weather.phase = 'chuva'
+  const [,wet] = firingRange(rules,map,game,unit,unit.cell)
+  assert.equal(wet,dry - 1)
+})
+
+test('raio: na chuva, a cada 5 jogadas cai numa casa e tira 100 de vida de quem estiver lá',() => {
+  const map = board([{name:'Warmachine',side:1,cell:at(0,0)},{name:'Warmachine',side:2,cell:at(9,9)}])
+  const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:777})
+  game.weather.phase = 'chuva'
+  game.weather.left = 99
+  for (let i = 0; i < 4; i++) order(rules,map,game,game.turn,{type:'end',version:game.version})
+  assert.equal(game.lightning,undefined,'4 jogadas: ainda nada')
+  // A 5ª jogada chama o raio; ponho uma unidade exatamente onde ele vai cair (mesma semente = mesmo lugar).
+  const preview = structuredClone(game)
+  order(rules,map,preview,preview.turn,{type:'end',version:preview.version})
+  const cell = preview.lightning.cell
+  game.units.push({id:500,name:'Lancer Tank',side:1,cell,hp:rules.units['Lancer Tank'].health,credits:-1})
+  order(rules,map,game,game.turn,{type:'end',version:game.version})
+  assert.equal(game.lightning.cell,cell)
+  assert.equal(game.lightning.unit,500)
+  assert.ok(!game.units.some(unit=>unit.id === 500),'100 de dano destruiu o tanque')
+})

@@ -22,7 +22,7 @@ async function playDaily(data) {
   const daily = dailyChallenge(data)
   const colors = palette.slice(0,daily.teams).map(([,value])=>value)
   return playLocal(data,daily.board,'ai',daily.level,colors,'/',1,false,storedAiTime(),
-    {sideDifficulty:daily.levels,alliances:daily.alliances,fog:daily.fog,statsMode:'desafio',
+    {sideDifficulty:daily.levels,alliances:daily.alliances,fog:daily.fog,weather:daily.weather,statsMode:'desafio',
       // Modo desenvolvedor (prévia de dano) não conta como resultado do desafio.
       onFinish:result => { if (!result.practice) recordDaily(daily.day,result) }})
 }
@@ -33,7 +33,7 @@ function showDaily(data) {
   $('daily-rules').textContent = [t('Mapa {w} × {h}',{w:daily.size,h:daily.size}),
     daily.teams === 2 ? t('você contra 1 IA') : daily.together ? t('você contra {n} IAs aliadas',{n:daily.teams-1}) :
       t('todos contra todos com {n} IAs',{n:daily.teams-1}),
-    t(['IA Fácil','IA Normal','IA Difícil'][daily.level]),daily.islands && t('ilhas'),daily.fog && t('neblina de guerra')]
+    t(['IA Fácil','IA Normal','IA Difícil'][daily.level]),daily.islands && t('ilhas'),daily.fog && t('neblina de guerra'),daily.weather && t('chuva')]
     .filter(Boolean).join(' · ')
   $('daily-best').textContent = result?.victory ? t('Seu melhor hoje: vitória em {time} ({n} rodadas)',{time:formatClock(result.elapsed),n:result.rounds}) :
     result ? t('Hoje: derrota. Tente de novo!') : t('Mesmo mapa para todo mundo hoje. Vença no menor tempo.')
@@ -326,6 +326,7 @@ const tutorialSteps = [
   ['Perfil','Em Configurações → Perfil, escolha seu nome e uma foto (PNG, JPG ou GIF até 20 MB). Eles aparecem nas partidas, também para os outros jogadores, junto com suas estatísticas.'],
   ['Replay, neblina e modos de teste','No fim de uma partida avulsa, "Salvar replay" guarda a partida para assistir depois. A partida avulsa tem neblina de guerra opcional, e o gerador de mapas tem modos de vitória de teste. O modo desenvolvedor (prévia de dano) fica nas Configurações e não conta progresso.'],
   ['Terreno e transformações','Jammer Truck em cima de uma colina bloqueia e enxerga 1 casa a mais. Na neblina, quem está numa floresta enxerga 1 casa a menos e só é visto pelo inimigo 1 casa mais perto. Virar Leviathan, virar Albatross ou desembarcar da Leviathan não gasta o turno, mas só para quem começou o turno ali. Clique duas vezes numa unidade para ver o terreno embaixo dela na barra de baixo.'],
+  ['Clima','Com a opção Clima ligada, nuvens chegam por um canto do mapa e, duas rodadas depois, vem o aviso de chuva. Na chuva, todos enxergam 1 casa a menos e a artilharia alcança 1 casa a menos. A cada 5 jogadas, um raio cai num lugar aleatório e causa 100 de dano na unidade atingida.'],
 ]
 function setupTutorial(automatic) {
   const dialog = $('tutorial')
@@ -562,7 +563,7 @@ async function openSaved(data) {
   }
   return playLocal(data,save.board,save.mode,save.difficulty,save.colors,save.back,save.humans,save.coalitions,
     save.seconds,{sideDifficulty:save.sideDifficulty,mapId:save.mapId,resume:save.engine,fog:save.fog,
-      alliances:save.alliances,statsMode:save.statsMode,
+      alliances:save.alliances,statsMode:save.statsMode,weather:save.weather,
       // Desafio diário continuado: o resultado ainda vale para o dia em que ele foi começado.
       onFinish:save.statsMode === 'desafio' ? result => { if (!result.practice) recordDaily(save.board.title.replace('Desafio ',''),result) } : undefined})
 }
@@ -686,7 +687,7 @@ function recordVictory(id,difficulty) {
 
 async function playLocal(data,board,mode,difficulty,colors,back,
   humans = mode === 'spectator' ? 0 : mode === 'hotseat' ? colors.length : 1, coalitions = Boolean(board.coalitions),
-  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume, fog = false, alliances, statsMode} = {}) {
+  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume, fog = false, weather = false, alliances, statsMode} = {}) {
   // Vitória contra a IA num mapa do jogo libera o multiplayer e o modo assistir nesse mapa.
   const practice = developerMode() && mode !== 'spectator'
   const unlock = mapId && mode === 'ai' && !practice ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
@@ -700,7 +701,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   // Salvamento automático a cada turno do jogador (não vale para o modo assistir nem para o teste do editor).
   const onSave = mode === 'spectator' || back.startsWith('/?editor') ? undefined : engine => engine ?
     saveMatch({kind:'local',title:board.title,board,mode,difficulty,colors,back,humans,coalitions,seconds,
-      sideDifficulty,mapId,fog,alliances,statsMode,engine,edition:edition.versao}) : clearSavedMatch()
+      sideDifficulty,mapId,fog,weather,alliances,statsMode,engine,edition:edition.versao}) : clearSavedMatch()
   const setup = scenarioMatch(board,colors,humans,coalitions)
   const profile = humans > 0 ? await loadProfile() : null
   const teams = setup.colors.map((color,index)=>({name:data.aiSides?.[index+1]?.label ?? t('Equipe {n}',{n:index+1}),color,
@@ -716,7 +717,7 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   link.textContent = t(back.startsWith('/?editor') ? '← Editor de mapas' :
     back.startsWith('/?partida') ? '← Partida avulsa' : '← Menu')
   const transport = campaignTransport(data,mission,difficulty,
-    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume,practice,fastAI,turnLimit:aiTurnLimit(),fog})
+    {mode,back,humans,aiTime:seconds,sideDifficulty,onFinish,onSave,resume,practice,fastAI,turnLimit:aiTurnLimit(),fog,weather})
   await showMatch(data,setup.board,mode === 'spectator' ? 0 : 1,transport)
 }
 
@@ -1387,10 +1388,11 @@ async function openSkirmish(data) {
     const board = reorderSides(entry.board,plan.order)
     const colorsOf = plan.order.map(side=>palette[side-1][1])
     const fog = mode.value !== 'spectator' && $('scenario-fog').checked
+    const weather = $('scenario-weather').checked
     if (mode.value === 'lan') {
       if (plan.humans < 2) throw Error('Para a sala multiplayer, marque pelo menos 2 equipes como Jogador no gerador.')
       const settings = {map:Object.keys(data.maps).length,humans:plan.humans,difficulty:1,aiTime:seconds,fog,
-        generated,sideOrder:plan.order,sideLevels:plan.levels,groups:plan.groups}
+        generated,sideOrder:plan.order,sideLevels:plan.levels,groups:plan.groups,weather}
       const {room,slot,invites} = await (await request('create',{method:'POST',body:JSON.stringify(settings)})).json()
       sessionStorage.setItem('battalion-nativo-host-' + room,JSON.stringify({slot,invites}))
       history.replaceState(null,'','/?host=' + room)
@@ -1398,7 +1400,7 @@ async function openSkirmish(data) {
     }
     const how = plan.humans === 0 ? 'spectator' : plan.humans === 1 ? 'ai' : 'hotseat'
     return playLocal(data,board,how,1,colorsOf,'/?partida='+modeNames[how],plan.humans,false,seconds,
-      {sideDifficulty:plan.levels,alliances:plan.alliances,fog})
+      {sideDifficulty:plan.levels,alliances:plan.alliances,fog,weather})
   }
   $('scenario-play').onclick = async () => {
     $('scenario-play').disabled = true
@@ -1415,6 +1417,7 @@ async function openSkirmish(data) {
           sideDifficulty:mode.value === 'spectator' ? teamLevels.slice(0,teams.length) : undefined,
           mapId:entry.kind === 'game' ? entry.id : undefined,
           fog:mode.value !== 'spectator' && $('scenario-fog').checked,
+          weather:$('scenario-weather').checked,
         }
         if (entry.kind === 'game' || entry.kind === 'arena') {
           if (!localMaps[entry.id]) throw Error('Abra o cenário pelo endereço local do anfitrião.')
@@ -1425,7 +1428,7 @@ async function openSkirmish(data) {
       const procedural = entry.kind === 'procedural'
       const settings = {map:procedural ? Object.keys(data.maps).length : Object.keys(data.maps).indexOf(entry.id),
         humans:humanCount(),coalitions:coalitions.checked,difficulty:Number(difficulty.value),aiTime:seconds,
-        fog:$('scenario-fog').checked,
+        fog:$('scenario-fog').checked,weather:$('scenario-weather').checked,
         generated:procedural ? generated : undefined}
       const {room,slot,invites} = await (await request('create',{method:'POST',body:JSON.stringify(settings)})).json()
       sessionStorage.setItem('battalion-nativo-host-' + room,JSON.stringify({slot,invites}))

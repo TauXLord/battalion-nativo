@@ -674,5 +674,17 @@
  "Velocidade do replay": "Replay speed",
  "Voltar ao início": "Back to start",
  "Ir para o fim": "Go to the end",
- "No Android não dá para criar sala. Para jogar em rede, abra no navegador do celular o convite que o anfitrião mandar.": "Rooms can't be created on Android. To play online, open the host's invite link in your phone's browser."
+ "No Android não dá para criar sala. Para jogar em rede, abra no navegador do celular o convite que o anfitrião mandar.": "Rooms can't be created on Android. To play online, open the host's invite link in your phone's browser.",
+ "Nuvens se aproximando": "Clouds approaching",
+ "Chuva na próxima rodada": "Rain next round",
+ "Chovendo: -1 de visão e de alcance da artilharia ({n} rodadas)": "Raining: -1 vision and artillery range ({n} rounds)",
+ "A chuva está passando": "The rain is passing",
+ "Chuva chegando": "Rain incoming",
+ "Começou a chover": "It started raining",
+ "Na próxima rodada: -1 de visão e de alcance da artilharia": "Next round: -1 vision and artillery range",
+ "Por {n} rodadas: -1 de visão e de alcance da artilharia": "For {n} rounds: -1 vision and artillery range",
+ "chuva": "rain",
+ "Clima: nuvens e chuva de vez em quando (na chuva, -1 de visão e de alcance da artilharia)": "Weather: clouds and rain from time to time (in the rain, -1 vision and artillery range)",
+ "Clima": "Weather",
+ "Com a opção Clima ligada, nuvens chegam por um canto do mapa e, duas rodadas depois, vem o aviso de chuva. Na chuva, todos enxergam 1 casa a menos e a artilharia alcança 1 casa a menos. A cada 5 jogadas, um raio cai num lugar aleatório e causa 100 de dano na unidade atingida.": "With the Weather option on, clouds come in from a corner of the map and, two rounds later, the rain warning appears. In the rain, everyone sees 1 tile less and artillery reaches 1 tile less. Every 5 moves, lightning strikes a random spot and deals 100 damage to the unit hit."
 }

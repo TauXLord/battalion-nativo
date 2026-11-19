@@ -9,6 +9,7 @@ import { classicBoard, reconHeight, viewport } from './visao.js'
 import { t } from './idioma.js'
 import { downloadReplay } from './replay.js'
 import { showReport } from './relatorio.js'
+import { createWeatherPainter, weatherText } from './clima-tela.js'
 import { saveLastReplay } from './salvamento.js'
 import { TILE, canvasBuffer, colorize, drawTooltip, frame, loadImages, terrainArt, terrainVariant } from './graficos.js'
 export { colorize, frame, loadImages, terrainArt, terrainVariant }
@@ -64,6 +65,9 @@ export async function play(data, base, side, transport) {
   }
   // terrainUnder: casa da unidade clicada duas vezes; a barra de baixo mostra o terreno embaixo dela.
   let terrainUnder = -1
+  // Clima (chuva, respingos, cristas no mar e nuvens), desenhado em pixel art no ritmo do mapa.
+  const weatherPainter = createWeatherPainter()
+  let weatherMoving = false, lightningVersion = -1
   let replayOffered = false
   // Barra da partida (cronômetro e tropas): declarada no começo porque updateStatus pode rodar cedo.
   const hud = $('match-hud')
@@ -76,7 +80,7 @@ export async function play(data, base, side, transport) {
   let shownResourceVersion = -1
   let turnBannerTimer, resultTimer
   // Animação de início de turno do Flash (StartTurnAnimation): faixa na cor da equipe, nome e rodada deslizando.
-  let turnAnimation = null
+  let turnAnimation = null, weatherAnimation = null
   // Fotos de perfil dos jogadores (data URL local ou endereço da sala na rede), carregadas uma vez.
   // GIF: os quadros são decodificados um a um (ImageDecoder), porque o navegador não anima um GIF desenhado no canvas.
   const photoCache = new Map()
@@ -308,10 +312,19 @@ export async function play(data, base, side, transport) {
     return dangerPreview.threats
   }
 
+  // Faixa animada (estilo do Flash): troca de turno e, depois dela, os avisos de clima com a mesma animação.
   function paintTurnAnimation(now) {
-    if (!turnAnimation) return
+    if (turnAnimation) {
+      if (!paintBanner(turnAnimation,now)) turnAnimation = null
+      return
+    }
+    if (weatherAnimation && now >= weatherAnimation.start) {
+      if (!paintBanner(weatherAnimation,now)) weatherAnimation = null
+    } else if (weatherAnimation) schedule()
+  }
+  function paintBanner(turnAnimation,now) {
     const elapsed = (now - turnAnimation.start)/1000
-    if (elapsed >= 4.6 || state.dialog || state.result) { turnAnimation = null; return }
+    if (elapsed >= 4.6 || state.dialog || state.result) return false
     // Tweener usa easeOutExpo por padrão.
     const ease = t => t >= 1 ? 1 : 1 - Math.pow(2,-10*t)
     const tween = (from,to,start,duration) => elapsed <= start ? from : from + (to-from)*ease((elapsed-start)/duration)
@@ -340,6 +353,7 @@ export async function play(data, base, side, transport) {
     ctx.fillText(turnAnimation.round,dx+roundX,dy+302)
     ctx.restore()
     schedule()
+    return true
   }
 
   function text(value,x,y,font = '10px Tahoma',color = '#000',align = 'left') {
@@ -1102,6 +1116,7 @@ export async function play(data, base, side, transport) {
     ctx.scale(zoom,zoom)
     ctx.translate(-panX,-panY)
     const right = panX + view.width/zoom, bottom = panY + view.height/zoom
+    weatherPainter.paintGround(ctx,{weather:state.weather,map,tiles,idle,left:panX,top:panY,right,bottom})
     const visible = (x,y,width,height) => x < right && x + width > panX &&
       y + TILE - height < bottom && y + TILE > panY
     for (const tile of state.structures) {
@@ -1175,7 +1190,10 @@ export async function play(data, base, side, transport) {
       const facing = movementDirection(map.width,builder.cell,cell)
       unitFrame(preview,cellX(cell),cellY(cell),now,facing+'_idle',.5)
     }
+    weatherMoving = weatherPainter.paintSky(ctx,{weather:state.weather,map,idle,now,left:panX,top:panY,right,bottom})
     paintFog(right,bottom)
+    // Raio por cima da neblina (o clarão é visto por todos).
+    if (weatherPainter.paintLightning(ctx,{map,now,top:panY,left:panX,right,bottom,explosions:data.explosions,images})) weatherMoving = true
     if (warmachine) paintDeployment(builder,moves)
     else directionBar.hidden = true
     const options = optionsButton(unit)
@@ -1321,7 +1339,7 @@ export async function play(data, base, side, transport) {
       const [x,y] = cursorPosition
       frame(ctx,images[image],index,Math.round(x),Math.round(y),width,height)
     }
-    if (motion || strike || wipeout || showResources) schedule()
+    if (motion || strike || wipeout || showResources || weatherMoving) schedule()
     // GIF de perfil: redesenha em ritmo leve para a animação aparecer.
     if (animatedPhoto) { animatedPhoto = false; clearTimeout(photoTimer); photoTimer = setTimeout(schedule,90) }
   }
@@ -1354,6 +1372,8 @@ export async function play(data, base, side, transport) {
       return span
     }
     const parts = [item('⏱',clockText(ms)),item(t('Rodada'),String(state.round ?? 1))]
+    const weather = weatherText(state.weather,t)
+    if (weather) parts.push(Object.assign(document.createElement('span'),{className:'hud-weather',textContent:weather}))
     if (side === 0) {
       state.colors.forEach((_,index)=>{
         const team = index+1
@@ -1806,6 +1826,31 @@ export async function play(data, base, side, transport) {
         name:teams.map(teamName).join(' & '),round:t('Rodada {n}',{n:next.round})}
       schedule()
       if (state && canTakeTurn(next,side)) makeSound('StartTurn')
+    }
+    // Raio (a cada 5 jogadas na chuva): cai depois da animação da jogada que o provocou, com trovão.
+    if (next.lightning && next.lightning.version > lightningVersion) {
+      // Ao abrir a partida (sem estado anterior) não repete um raio antigo.
+      const fresh = Boolean(state)
+      lightningVersion = next.lightning.version
+      if (fresh && !next.seek) {
+        const action = next.last
+        const delay = transport.fastAI?.() && action?.side !== side ? 0 :
+          action?.type === 'attack' ? combatTimeline(data,action).duration + movementDuration(action.movement?.path.length ?? 0) :
+          action?.type === 'move' ? movementDuration(action.path.length) : 0
+        const hit = state.units.some(unit => unit.cell === next.lightning.cell)
+        const start = weatherPainter.strike(next.lightning.cell,{delay,hit,seed:next.lightning.version})
+        setTimeout(() => music.thunder?.(),Math.max(0,start - performance.now()) + 120)
+        schedule()
+      }
+    }
+    // Clima: aviso de chuva e começo da chuva com a animação da troca de turno (logo depois dela).
+    const phase = next.weather?.phase
+    if (state && phase !== state.weather?.phase && (phase === 'aviso' || phase === 'chuva') && !next.winner && !next.dialog) {
+      const start = turnAnimation ? turnAnimation.start + 4700 : performance.now()
+      weatherAnimation = phase === 'aviso' ?
+        {start,color:'#7d9cc0',name:'⚠ ' + t('Chuva chegando'),round:t('Na próxima rodada: -1 de visão e de alcance da artilharia')} :
+        {start,color:'#4f6f96',name:'🌧 ' + t('Começou a chover'),round:t('Por {n} rodadas: -1 de visão e de alcance da artilharia',{n:next.weather.left})}
+      schedule()
     }
     const resourceGains = next.last?.resourceGains
     if ((!next.dialog && !next.result) && resourceGains?.length && next.version > shownResourceVersion &&

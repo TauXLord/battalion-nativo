@@ -30,13 +30,15 @@ export function dailyChallenge(data,day = todayKey()) {
   // Com 3 ou 4 equipes, às vezes as IAs se juntam contra você.
   const together = teams > 2 && roll() < .5
   const recipe = mapRecipe({seed:hash('mapa-' + day),width:size,height:size,teams,islands,veins:pick([1,2])})
+  // Sorteado por último, para não mudar os outros sorteios do dia.
+  const weather = roll() < .35
   let board
   const makeBoard = () => board ??= {...generateMap(data,recipe),title:'Desafio ' + day}
   const levels = Array.from({length:teams},(_,index)=>index ? level : 1)
   const alliances = Array.from({length:teams},(_,index)=>together && index ?
     Array.from({length:teams-1},(_,j)=>j+2).filter(side=>side !== index+1) : [])
   // O mapa só é gerado quando alguém for jogar (o menu mostra só as regras).
-  return {day,get board() { return makeBoard() },teams,size,islands,fog,level,together,levels,alliances}
+  return {day,get board() { return makeBoard() },teams,size,islands,fog,weather,level,together,levels,alliances}
 }
 
 export function dailyResults() {

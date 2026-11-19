@@ -50,7 +50,7 @@ const files = new Map([
   ['/campanha.js','./campanha.js'], ['/ia.js','./ia.js'], ['/editor.js','./editor.js'], ['/cooperativo.js','./cooperativo.js'],
   ['/versao.json','./versao.json'], ['/versao.js','./versao.js'],
   ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'], ['/retomar.js','./retomar.js'], ['/cofre.js','./cofre.js'], ['/analise.js','./analise.js'], ['/relatorio.js','./relatorio.js'],
-  ['/conquistas.js','./conquistas.js'], ['/desafio.js','./desafio.js'],
+  ['/conquistas.js','./conquistas.js'], ['/desafio.js','./desafio.js'], ['/clima-tela.js','./clima-tela.js'],
   ['/estatisticas.js','./estatisticas.js'], ['/replay.js','./replay.js'], ['/graficos.js','./graficos.js'],
   ['/chat.js','./chat.js'], ['/atalhos.js','./atalhos.js'],
   ['/ia-worker.js','./ia-worker.js'], ['/planejador.js','./planejador.js'], ['/procedural.js','./procedural.js'],
@@ -389,7 +389,7 @@ async function api(req,res,parts,local,throughInternet) {
     const room = {id,code:roomCode(),seats,slots,choices,difficulty,aiTime,generated,generatedBoard:generated ? board : undefined,
       sideOrder,sideLevels,
       coalitions:Boolean(settings.coalitions && board.coalitions),
-      teams:groups ?? Array.from({length:slots},(_,index)=>index+1),allowRequests:false,requests:[],fog:settings.fog === true,
+      teams:groups ?? Array.from({length:slots},(_,index)=>index+1),allowRequests:false,requests:[],fog:settings.fog === true,weather:settings.weather === true,
       internet:Boolean(publicOrigin),viewers:new Map(),updated:Date.now()}
     rooms.set(id,room)
     return json(res,{room:id,slot:host.token,invites:inviteList(id,room)})
@@ -564,7 +564,7 @@ async function api(req,res,parts,local,throughInternet) {
       room.map = setup.board
       room.profile = profile
       room.game = createGame(data.rules,room.map,setup.colors,{
-        alliances,simultaneous:room.coalitions,fog:Boolean(room.fog),victory:room.map.victory,
+        alliances,simultaneous:room.coalitions,fog:Boolean(room.fog),weather:Boolean(room.weather),victory:room.map.victory,
         attackScale:room.sideLevels ? room.sideLevels.map((level,index)=>index < room.seats.length ? 1 : [.7,1,1.4][level]) :
           teamAttackScale(setup.colors.length,room.seats.length,room.difficulty),
       })

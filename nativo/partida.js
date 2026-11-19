@@ -155,9 +155,58 @@ export const isRanged = spec => spec.weaponRangeMax > 1 || spec.weaponRangeMin >
 export function firingRange(rules, map, state, unit, from) {
   const spec = rules.units[unit.name]
   const [,terrain] = terrainAt(rules,map,state,from)
-  const max = isRanged(spec) ?
+  let max = isRanged(spec) ?
     modify(rules.terrainEffects,terrain.mods,'attackRange',spec,spec.weaponRangeMax) : spec.weaponRangeMax
+  // Chuva: artilharia (ataque a distância) alcança 1 casa a menos.
+  if (raining(state) && isRanged(spec)) max = Math.max(spec.weaponRangeMin,max - 1)
   return [spec.weaponRangeMin,max]
+}
+
+// Clima (opcional): ciclo guardado no estado, sorteado com uma semente própria (o replay repete igual).
+// limpo → nuvens chegando por um canto (2 rodadas) → aviso de chuva (1) → chuva (2 a 4) → nuvens indo embora (1) → limpo.
+// Na chuva: 1 casa a menos de visão na neblina e de alcance da artilharia.
+export const raining = state => state?.weather?.phase === 'chuva'
+export function newWeather(seed) {
+  return {seed:(seed >>> 0) || 1,phase:'limpo',left:2,from:0,cycle:0}
+}
+function weatherRandom(weather) {
+  let value = weather.seed
+  value ^= value << 13; value >>>= 0
+  value ^= value >>> 17
+  value ^= value << 5; value >>>= 0
+  weather.seed = value || 1
+  return weather.seed / 4294967296
+}
+// Raio: durante a chuva, a cada 5 jogadas cai um raio numa casa sorteada (pela semente do clima, então o replay
+// e o multiplayer veem o mesmo). A unidade que estiver lá leva 100 de dano. state.lightning guarda o último raio.
+const LIGHTNING_EVERY = 5, LIGHTNING_DAMAGE = 100
+function lightningStrike(state,map,action) {
+  const weather = state.weather
+  if (!raining(state) || action.type === 'undo') return
+  weather.moves = (weather.moves ?? 0) + 1
+  if (weather.moves % LIGHTNING_EVERY) return
+  const cell = Math.floor(weatherRandom(weather) * map.width * map.height)
+  const strike = {cell,version:state.version + 1}
+  const target = state.units.find(unit => unit.cell === cell)
+  if (target) {
+    target.hp = Math.max(0,target.hp - LIGHTNING_DAMAGE)
+    Object.assign(strike,{unit:target.id,side:target.side,hp:target.hp})
+    if (target.hp <= 0) {
+      for (const tile of state.structures.filter(item => item.capturer === target.id)) { tile.capturer = 0; tile.strength = 8 }
+      state.units = state.units.filter(unit => unit !== target)
+    }
+  }
+  state.lightning = strike
+  state.undo = null
+}
+function advanceWeather(state) {
+  const weather = state.weather
+  if (!weather || --weather.left > 0) return
+  if (weather.phase === 'limpo') Object.assign(weather,{phase:'nuvens',left:2,from:Math.floor(weatherRandom(weather)*4),cycle:weather.cycle+1})
+  else if (weather.phase === 'nuvens') Object.assign(weather,{phase:'aviso',left:1})
+  else if (weather.phase === 'aviso') Object.assign(weather,{phase:'chuva',left:2 + Math.floor(weatherRandom(weather)*3)})
+  else if (weather.phase === 'chuva') Object.assign(weather,{phase:'dispersando',left:1})
+  else Object.assign(weather,{phase:'limpo',left:3 + Math.floor(weatherRandom(weather)*4)})
 }
 
 function canTarget(attacker, defender) {
@@ -327,7 +376,7 @@ export function unitFor(rules, info, id) {
 export const scenarioStructure = name => name === 'Factory' ? 'Oil Refinery' : name
 
 export function createGame(rules, map, colors, {attackScale, incomeScale, campaign = false, credits = 0,
-  alliances = [], simultaneous = false, fog = false, victory = null} = {}) {
+  alliances = [], simultaneous = false, fog = false, victory = null, weather = false} = {}) {
   const result = {
     version:0, turn:1, round:1, colors, winner:0, ore:{}, nextId:map.units.length + 1,
     structures:map.structures.map(tile => ({
@@ -351,6 +400,7 @@ export function createGame(rules, map, colors, {attackScale, incomeScale, campai
   if (victory?.mode === 'rei' && Number.isInteger(victory.cell)) {
     result.victory = {mode:'rei',cell:victory.cell,rounds:victory.rounds ?? 5,holder:0,count:0}
   } else if (victory?.mode === 'pontos') result.victory = {mode:'pontos',limit:victory.limit ?? 20}
+  if (weather) result.weather = newWeather(typeof weather === 'number' ? weather : Math.floor(Math.random()*4294967296))
   if (simultaneous && alliances.some(team=>team.length)) {
     result.activeSides = colors.flatMap((_,index)=>allied(result,1,index+1) ? [index+1] : [])
     result.turnEnded = []
@@ -367,7 +417,7 @@ export const visibleTo = (unit, side) => side === 0 || unit.side === side || !un
 // Jammer em cima de uma colina enxerga 1 casa a mais (fog.hills: casas de colina do mapa);
 // quem está numa floresta enxerga 1 casa a menos (fog.forests), e quem está nela também é visto 1 casa mais perto
 // (spotted). Aeronaves voam por cima: não perdem visão nem se escondem.
-const visionRange = (fog,unit) => (fog.air.includes(unit.name) ? 4 : 3) + (fog.radar.includes(unit.name) ? 2 : 0) +
+const visionRange = (fog,unit,rain = false) => (fog.air.includes(unit.name) ? 4 : 3) + (fog.radar.includes(unit.name) ? 2 : 0) - (rain ? 1 : 0) +
   (fog.jammers?.includes(unit.name) && fog.hills?.includes(unit.cell) ? 1 : 0) -
   (!fog.air.includes(unit.name) && fog.forests?.includes(unit.cell) ? 1 : 0)
 export function fogVision(state,side) {
@@ -385,7 +435,7 @@ export function fogVision(state,side) {
       if (!(margin.get(target) >= left)) margin.set(target,left)
     }
   }
-  for (const unit of state.units) if (allied(state,unit.side,side)) reveal(unit.cell,visionRange(state.fog,unit))
+  for (const unit of state.units) if (allied(state,unit.side,side)) reveal(unit.cell,visionRange(state.fog,unit,raining(state)))
   for (const tile of state.structures) if (tile.side && allied(state,tile.side,side)) reveal(tile.cell,2)
   seen.margin = margin
   return seen
@@ -430,7 +480,10 @@ export function snapshot(state, side) {
     event = {...event,eliminated:shown.length ? shown : undefined}
   }
   return {version,turn,round,colors,winner,ore,structures,units,last:event,attackScale,alliances,buildable,campaign,
-    activeSides,turnEnded,defeated,victory:state.victory,fog:vision ? [...vision] : undefined,
+    activeSides,turnEnded,defeated,victory:state.victory,weather:state.weather,
+    // Raio: onde caiu é público (todo mundo vê o clarão); a unidade atingida só aparece se estiver à vista.
+    lightning:state.lightning && {cell:state.lightning.cell,version:state.lightning.version},
+    fog:vision ? [...vision] : undefined,
     teamCredits:state.teamCredits?.map((credits,index)=>index+1 === side ? credits : null),
     canUndo:canTakeTurn(state,side) && undo?.side === side}
 }
@@ -610,6 +663,7 @@ function advanceTurn(rules,map,state) {
     if (!group.length) continue
     if (next <= state.turn) {
       state.round++
+      advanceWeather(state)
       roundVictory(rules,state)
       if (state.winner) return []
     }
@@ -811,6 +865,7 @@ export function order(rules, map, state, side, action) {
     }
     default: requireOrder(false)
   }
+  lightningStrike(state,map,action)
   eliminateTeams(rules,map,state,event)
   checkWinner(rules,map,state)
   if (!state.winner && (state.activeSides
