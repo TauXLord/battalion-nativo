@@ -326,7 +326,7 @@ const tutorialSteps = [
   ['Perfil','Em Configurações → Perfil, escolha seu nome e uma foto (PNG, JPG ou GIF até 20 MB). Eles aparecem nas partidas, também para os outros jogadores, junto com suas estatísticas.'],
   ['Replay, neblina e modos de teste','No fim de uma partida avulsa, "Salvar replay" guarda a partida para assistir depois. A partida avulsa tem neblina de guerra opcional, e o gerador de mapas tem modos de vitória de teste. O modo desenvolvedor (prévia de dano) fica nas Configurações e não conta progresso.'],
   ['Terreno e transformações','Jammer Truck em cima de uma colina bloqueia e enxerga 1 casa a mais. Na neblina, quem está numa floresta enxerga 1 casa a menos e só é visto pelo inimigo 1 casa mais perto. Virar Leviathan, virar Albatross ou desembarcar da Leviathan não gasta o turno, mas só para quem começou o turno ali. Clique duas vezes numa unidade para ver o terreno embaixo dela na barra de baixo.'],
-  ['Clima','Com a opção Clima ligada, nuvens chegam por um canto do mapa e, duas rodadas depois, vem o aviso de chuva. Na chuva, todos enxergam 1 casa a menos e a artilharia alcança 1 casa a menos. A cada 5 jogadas, um raio cai num lugar aleatório e causa 100 de dano na unidade atingida.'],
+  ['Clima','Com a opção Clima ligada, nuvens chegam por um canto do mapa e, duas rodadas depois, vem o aviso de chuva. Na chuva, todos enxergam 1 casa a menos e a artilharia alcança 1 casa a menos. A cada 5 jogadas, um raio cai num lugar aleatório e causa 100 de dano na unidade atingida. Também surge um redemoinho no mar: navios não entram nele e perdem 10 de vida se começarem o turno ao lado.'],
 ]
 function setupTutorial(automatic) {
   const dialog = $('tutorial')

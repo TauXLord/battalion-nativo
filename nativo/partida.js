@@ -94,6 +94,7 @@ export function terrainAt(rules, map, state, cell) {
 }
 
 export function moveCost(rules, map, state, spec, cell, side) {
+  if (spec.unitType === 'sea' && cell === whirlpoolAt(state)) return Infinity
   if (spec.movementType === 'wings' &&
       enemyJammers(rules,state,side).some(unit => distance(map.width,unit.cell,cell) <= jamRadius(map,unit.cell))) return Infinity
   const [,terrain] = terrainAt(rules,map,state,cell)
@@ -199,13 +200,27 @@ function lightningStrike(state,map,action) {
   state.lightning = strike
   state.undo = null
 }
-function advanceWeather(state) {
+// Redemoinho: quando a chuva começa, surge num ponto do mar (sorteado pela semente do clima) e some quando ela passa.
+// Navios não entram na casa dele e perdem WHIRLPOOL_DAMAGE de vida se começarem o turno ao lado (nunca abaixo de 1).
+const WHIRLPOOL_DAMAGE = 10
+export const whirlpoolAt = state => state?.weather?.phase === 'chuva' && Number.isInteger(state.weather.whirlpool) ? state.weather.whirlpool : -1
+function placeWhirlpool(state,map) {
+  const weather = state.weather
+  const free = cell => map.tiles[cell][0] === 'Sea' && !state.units.some(unit => unit.cell === cell) &&
+    !state.structures.some(tile => tile.cell === cell)
+  const sea = map.tiles.map((_,cell)=>cell).filter(free)
+  weather.whirlpool = sea.length ? sea[Math.floor(weatherRandom(weather) * sea.length)] : undefined
+}
+function advanceWeather(state,map) {
   const weather = state.weather
   if (!weather || --weather.left > 0) return
   if (weather.phase === 'limpo') Object.assign(weather,{phase:'nuvens',left:2,from:Math.floor(weatherRandom(weather)*4),cycle:weather.cycle+1})
   else if (weather.phase === 'nuvens') Object.assign(weather,{phase:'aviso',left:1})
-  else if (weather.phase === 'aviso') Object.assign(weather,{phase:'chuva',left:2 + Math.floor(weatherRandom(weather)*3)})
-  else if (weather.phase === 'chuva') Object.assign(weather,{phase:'dispersando',left:1})
+  else if (weather.phase === 'aviso') {
+    Object.assign(weather,{phase:'chuva',left:2 + Math.floor(weatherRandom(weather)*3)})
+    if (map) placeWhirlpool(state,map)
+  }
+  else if (weather.phase === 'chuva') Object.assign(weather,{phase:'dispersando',left:1,whirlpool:undefined})
   else Object.assign(weather,{phase:'limpo',left:3 + Math.floor(weatherRandom(weather)*4)})
 }
 
@@ -571,6 +586,10 @@ function beginTurn(rules, map, state) {
     unit.moved = unit.fired = false
     unit.transformed = false
     unit.hp -= turnDamage(rules,spec,terrain)
+    const whirlpool = whirlpoolAt(state)
+    if (whirlpool >= 0 && spec.unitType === 'sea' && distance(map.width,unit.cell,whirlpool) === 1) {
+      unit.hp = Math.max(1,unit.hp - WHIRLPOOL_DAMAGE)
+    }
     if (unit.hp <= 0) continue
     unit.hp = healthAfterTurn(rules,spec,unit,unit.hp)
     unit.repairing = false
@@ -663,7 +682,7 @@ function advanceTurn(rules,map,state) {
     if (!group.length) continue
     if (next <= state.turn) {
       state.round++
-      advanceWeather(state)
+      advanceWeather(state,map)
       roundVictory(rules,state)
       if (state.winner) return []
     }

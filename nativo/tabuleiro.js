@@ -1116,7 +1116,7 @@ export async function play(data, base, side, transport) {
     ctx.scale(zoom,zoom)
     ctx.translate(-panX,-panY)
     const right = panX + view.width/zoom, bottom = panY + view.height/zoom
-    weatherPainter.paintGround(ctx,{weather:state.weather,map,tiles,idle,left:panX,top:panY,right,bottom})
+    const groundMoving = weatherPainter.paintGround(ctx,{weather:state.weather,map,tiles,idle,now,left:panX,top:panY,right,bottom})
     const visible = (x,y,width,height) => x < right && x + width > panX &&
       y + TILE - height < bottom && y + TILE > panY
     for (const tile of state.structures) {
@@ -1190,7 +1190,7 @@ export async function play(data, base, side, transport) {
       const facing = movementDirection(map.width,builder.cell,cell)
       unitFrame(preview,cellX(cell),cellY(cell),now,facing+'_idle',.5)
     }
-    weatherMoving = weatherPainter.paintSky(ctx,{weather:state.weather,map,idle,now,left:panX,top:panY,right,bottom})
+    weatherMoving = weatherPainter.paintSky(ctx,{weather:state.weather,map,idle,now,left:panX,top:panY,right,bottom}) || groundMoving
     paintFog(right,bottom)
     // Raio por cima da neblina (o clarão é visto por todos).
     if (weatherPainter.paintLightning(ctx,{map,now,top:panY,left:panX,right,bottom,explosions:data.explosions,images})) weatherMoving = true
