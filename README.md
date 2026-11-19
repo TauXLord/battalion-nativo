@@ -7,8 +7,9 @@ Baixe a versão mais recente em **[Releases](https://github.com/TauXLord/battali
 - **Windows:** `Battalion-Nativo.exe` — é só abrir, não precisa instalar nada.
 - **Linux x64:** `Battalion-Nativo-Linux-x64.tar.gz` — extraia e siga o `LEIA-ME.txt`.
 - **macOS (Apple Silicon e Intel):** `Battalion-Nativo-macOS.tar.gz` — extraia e siga o `LEIA-ME.txt`.
+- **Android:** `Battalion-Nativo-Android.apk` — abra no celular e permita instalar de fontes desconhecidas. Funciona sem internet (campanha, contra a IA, mesmo dispositivo, editor e desafio diário). Para multiplayer, entre pelo convite no navegador do celular.
 
-Cada versão nova aparece em Releases com a lista de novidades. A versão instalada aparece no rodapé do menu do jogo.
+Cada versão nova aparece em Releases com a lista de novidades. Para publicar uma versão: aumente o número em `nativo/versao.json`, faça o commit e rode `node tools/publicar-versao.mjs --notas notas.md`. A versão instalada aparece no rodapé do menu do jogo.
 
 Para compartilhar a versão atual da edição JavaScript no Windows x64, envie [Battalion-Nativo.exe](Battalion-Nativo.exe). O executável já inclui o Node.js. Consulte as [instruções da edição JavaScript](nativo/README.md) para abrir uma sala LAN ou recompilar o pacote.
 

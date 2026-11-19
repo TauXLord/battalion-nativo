@@ -673,5 +673,6 @@
  "Linha do tempo do replay": "Replay timeline",
  "Velocidade do replay": "Replay speed",
  "Voltar ao início": "Back to start",
- "Ir para o fim": "Go to the end"
+ "Ir para o fim": "Go to the end",
+ "No Android não dá para criar sala. Para jogar em rede, abra no navegador do celular o convite que o anfitrião mandar.": "Rooms can't be created on Android. To play online, open the host's invite link in your phone's browser."
 }

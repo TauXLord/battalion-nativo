@@ -66,6 +66,8 @@ const teamColors = ['ff00ff00','ff0000ff','ffff0000','ff008080','ffffd800','ffff
 const avatarsFor = index => ['yurik','evil_durand','tucker','hayne'][index%4]
 const aiTimeKey = 'battalion-nativo-ai-time'
 const difficultyKey = 'battalion-nativo-difficulty'
+// Rodando dentro do app de Android (os arquivos vêm do próprio APK, sem servidor).
+const androidApp = location.hostname === 'appassets.androidplatform.net'
 const stored = key => { try { return localStorage.getItem(key) } catch { return null } }
 const store = (key,value) => { try { localStorage.setItem(key,value) } catch {} }
 // Modo desenvolvedor: prévia de dano nas partidas locais, sem contar progresso.
@@ -1151,6 +1153,11 @@ async function openSkirmish(data) {
     const play = $('scenario-play')
     play.disabled = !picked
     play.textContent = t(mode.value === 'lan' ? 'Abrir sala multiplayer' : mode.value === 'spectator' ? 'Assistir à partida' : 'Jogar')
+    // App de Android: não há servidor no aparelho, então não dá para abrir sala (dá para entrar pelo convite no navegador).
+    if (mode.value === 'lan' && androidApp) {
+      play.disabled = true
+      $('mode-hint').textContent = t('No Android não dá para criar sala. Para jogar em rede, abra no navegador do celular o convite que o anfitrião mandar.')
+    }
     if (!picked) { $('local-humans').hidden = $('local-coalitions').hidden = $('coalition-teams').hidden = true; colors.hidden = true; drawPreview(); return }
     const board = picked.board, slots = slotsOf(picked)
     const previous = Number(humans.value)
