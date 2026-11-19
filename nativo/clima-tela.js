@@ -50,40 +50,62 @@ function makeSprites() {
   return {rain,splash,waves:makeWaves(random)}
 }
 
-// Ondas: crista curva e fina (azul-clara por cima, azul-escura por baixo, espuma branca irregular na borda),
-// com 4 quadros de vida: nasce pequena, abre, desliza um pouco e some. Cada casa de mar escolhe uma variação.
+// Ondas (como a referência): lâmina comprida e fina, quase na vertical, de espuma branca macia que vai ficando
+// azul-clara e transparente para um lado, borda irregular e uma sombra azul-escura do outro lado. Mede ~1,5 casa
+// de altura; 4 quadros de vida: nasce fraca, abre, desliza um pouco e some.
+const WAVE_HEIGHT = Math.round(TILE*1.5), WAVE_WIDTH = Math.round(TILE*.55)
 function makeWaves(random) {
   return Array.from({length:VARIANTS},() => {
-    const width = TILE*(.45 + random()*.3), bend = TILE*(.1 + random()*.08), tilt = (random()-.5)*.35
-    const foam = Array.from({length:7},() => [random(),random()])
-    const x0 = TILE*(.15 + random()*.2), y0 = TILE*(.35 + random()*.35)
-    return [[.55,.45,0],[.85,.85,0],[1,.75,3],[1,.3,6]].map(([scale,alpha,slide]) => {
-      const canvas = document.createElement('canvas')
-      canvas.width = canvas.height = TILE
-      const ctx = canvas.getContext('2d')
-      ctx.translate(x0 + slide,y0)
+    const tilt = (random()-.5)*.5, bulge = WAVE_WIDTH*(.18 + random()*.12)
+    const bumps = Array.from({length:9},() => random())
+    return [[.45,0],[.85,0],[1,2],[.4,4]].map(([alpha,slide]) => {
+      const raw = document.createElement('canvas')
+      raw.width = WAVE_WIDTH
+      raw.height = WAVE_HEIGHT
+      const ctx = raw.getContext('2d')
+      ctx.translate(WAVE_WIDTH/2 + slide*.5,WAVE_HEIGHT/2)
       ctx.rotate(tilt)
-      ctx.scale(scale,scale)
-      ctx.globalAlpha = alpha
-      ctx.lineCap = 'round'
-      const curve = offset => { ctx.beginPath(); ctx.moveTo(0,offset); ctx.quadraticCurveTo(width/2,-bend + offset,width,offset) }
-      curve(2.2); ctx.strokeStyle = 'rgba(18,58,110,.55)'; ctx.lineWidth = 3; ctx.stroke()
-      curve(0); ctx.strokeStyle = 'rgba(150,205,240,.9)'; ctx.lineWidth = 2.4; ctx.stroke()
-      ctx.fillStyle = 'rgba(255,255,255,.95)'
-      for (const [at,size] of foam) {
-        const t = .12 + at*.76, x = width*t, y = -bend*4*t*(1-t) - 1.2
+      const half = WAVE_HEIGHT*.42, thick = WAVE_WIDTH*.16
+      // Corpo: crescente fino (ponta fina em cima e embaixo), branco no meio indo para azul-claro transparente.
+      const body = () => {
         ctx.beginPath()
-        ctx.arc(x,y,.7 + size*1.1,0,Math.PI*2)
-        ctx.fill()
+        ctx.moveTo(0,-half)
+        ctx.quadraticCurveTo(-bulge - thick,0,0,half)
+        ctx.quadraticCurveTo(-bulge + thick,0,0,-half)
+        ctx.closePath()
       }
-      return canvas
+      const glow = ctx.createLinearGradient(-bulge - thick,0,-bulge + thick*1.6,0)
+      glow.addColorStop(0,'rgba(170,215,245,0)')
+      glow.addColorStop(.45,'rgba(225,242,255,.85)')
+      glow.addColorStop(.75,'rgba(255,255,255,.95)')
+      glow.addColorStop(1,'rgba(255,255,255,.4)')
+      // Sombra azul-escura do lado de fora (deslocada para a direita).
+      ctx.save(); ctx.translate(thick*.9,0); body(); ctx.fillStyle = 'rgba(14,40,92,.45)'; ctx.fill(); ctx.restore()
+      body(); ctx.fillStyle = glow; ctx.fill()
+      // Borda irregular de espuma: bolinhas brancas ao longo do lado convexo.
+      ctx.fillStyle = 'rgba(255,255,255,.9)'
+      bumps.forEach((size,index) => {
+        const t = (index + .5)/bumps.length, y = -half + t*2*half
+        const x = -bulge*4*t*(1-t) + thick*.6
+        ctx.beginPath(); ctx.arc(x,y,.8 + size*2.2*Math.sin(t*Math.PI),0,Math.PI*2); ctx.fill()
+      })
+      // Desfoque leve para ficar macia como espuma.
+      const soft = document.createElement('canvas')
+      soft.width = WAVE_WIDTH
+      soft.height = WAVE_HEIGHT
+      const sctx = soft.getContext('2d')
+      sctx.filter = 'blur(.7px)'
+      sctx.globalAlpha = alpha
+      sctx.drawImage(raw,0,0)
+      return soft
     })
   })
 }
 
 // Redemoinho: braços em espiral azul-claros em volta de um centro escuro (gira no desenho).
 function makeWhirlpool() {
-  const size = Math.round(TILE*1.7)
+  // Ocupa 2×2 casas: diâmetro de 2 casas, com a borda se desfazendo no mar.
+  const size = TILE*2
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = size
   const ctx = canvas.getContext('2d')
@@ -98,12 +120,12 @@ function makeWhirlpool() {
   ctx.lineCap = 'round'
   for (let arm = 0; arm < 5; arm++) {
     const start = arm * Math.PI*2/5
-    for (let step = 0; step < 34; step++) {
-      const t = step/34, angle = start + t*Math.PI*1.6, radius = center*(.92 - t*.78)
+    for (let step = 0; step < 56; step++) {
+      const t = step/56, angle = start + t*Math.PI*1.6, radius = center*(.92 - t*.78)
       const x = center + Math.cos(angle)*radius, y = center + Math.sin(angle)*radius
       ctx.fillStyle = `rgba(${Math.round(170 + 60*(1-t))},${Math.round(215 + 30*(1-t))},255,${(.12 + .5*Math.sin(t*Math.PI)).toFixed(2)})`
       ctx.beginPath()
-      ctx.arc(x,y,1 + 2.2*Math.sin(t*Math.PI),0,Math.PI*2)
+      ctx.arc(x,y,(1 + 2.4*Math.sin(t*Math.PI))*size/95,0,Math.PI*2)
       ctx.fill()
     }
   }
@@ -237,6 +259,8 @@ export function createWeatherPainter() {
     // Sombra deslocada para baixo e para a direita: dá a sensação de que a nuvem está alta.
     if (place) stretch(ctx,place.shadow,place.x + TILE*1.1,place.y + TILE*1.7,place.rain ? .16 : place.dark ? .15 : .14)
     const rain = weather?.phase === 'chuva', windy = rain || weather?.phase === 'aviso'
+    const corner = rain && Number.isInteger(weather.whirlpool) ? weather.whirlpool : -1
+    const whirlpoolArea = new Set(corner < 0 ? [] : [corner,corner+1,corner+map.width,corner+map.width+1])
     if (windy) {
       sprites ??= makeSprites()
       const firstX = Math.max(0,Math.floor(left/TILE)), lastX = Math.min(map.width-1,Math.ceil(right/TILE))
@@ -247,22 +271,26 @@ export function createWeatherPainter() {
         const cell = y*map.width + x, hash = cellHash(cell)
         const name = tiles[cell][0]
         if (name === 'Sea' || name === 'Reef') {
-          if (hash % every) continue
+          // A onda passa da casa (1,5 de altura): só onde há mar em cima e embaixo, para não invadir a terra.
+          if (hash % every || y === 0 || y === map.height-1) continue
+          const up = tiles[cell - map.width][0], down = tiles[cell + map.width][0]
+          if (!['Sea','Reef'].includes(up) || !['Sea','Reef'].includes(down)) continue
+          if (whirlpoolArea.has(cell) || whirlpoolArea.has(cell - map.width) || whirlpoolArea.has(cell + map.width)) continue
           const life = (idle + (hash >>> 3)) % 6
-          if (life < 4) ctx.drawImage(sprites.waves[(hash >>> 5) % VARIANTS][life],x*TILE,y*TILE)
+          if (life < 4) ctx.drawImage(sprites.waves[(hash >>> 5) % VARIANTS][life],
+            x*TILE + (TILE - WAVE_WIDTH)/2,y*TILE + (TILE - WAVE_HEIGHT)/2)
         } else if (rain) ctx.drawImage(sprites.splash[(hash + idle) % VARIANTS],x*TILE,y*TILE)
       }
     }
-    const whirlpool = rain && Number.isInteger(weather.whirlpool) ? weather.whirlpool : -1
-    if (whirlpool >= 0) {
+    if (corner >= 0) {
       whirlpoolImage ??= makeWhirlpool()
-      const cx = (whirlpool % map.width + .5) * TILE, cy = (Math.floor(whirlpool / map.width) + .5) * TILE
+      // Centro no encontro das 4 casas; gira em passos, no mesmo ritmo das animações do mapa.
+      const cx = (corner % map.width + 1) * TILE, cy = (Math.floor(corner / map.width) + 1) * TILE
       ctx.save()
       ctx.translate(cx,cy)
-      ctx.rotate(-now/650)
+      ctx.rotate(-(idle % 12) * Math.PI*2/12)
       ctx.drawImage(whirlpoolImage,-whirlpoolImage.width/2,-whirlpoolImage.height/2)
       ctx.restore()
-      return true
     }
     return false
   }

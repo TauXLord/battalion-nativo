@@ -153,18 +153,24 @@ test('raio: na chuva, a cada 5 jogadas cai numa casa e tira 100 de vida de quem 
 })
 
 test('redemoinho: surge no mar quando a chuva começa, navios não entram e perdem 10 se começarem o turno ao lado',async () => {
-  const {moveCost,whirlpoolAt} = await import('../nativo/partida.js')
+  const {moveCost,whirlpoolCells} = await import('../nativo/partida.js')
   const map = board([{name:'Warmachine',side:1,cell:at(0,0)},{name:'Warmachine',side:2,cell:at(0,9)}])
   const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:4242})
   Object.assign(game.weather,{phase:'aviso',left:1})
   order(rules,map,game,1,{type:'end',version:game.version})
   order(rules,map,game,2,{type:'end',version:game.version})
-  const cell = whirlpoolAt(game)
+  // Mar de 2 colunas (x = 10 e 11): o redemoinho ocupa um bloco 2×2.
+  for (let y = 0; y < 12; y++) map.tiles[y*width + 10] = ['Sea',['single',['plains_1']]]
+  Object.assign(game.weather,{phase:'aviso',left:1})
+  order(rules,map,game,1,{type:'end',version:game.version})
+  order(rules,map,game,2,{type:'end',version:game.version})
+  const cells = whirlpoolCells(game,map)
   assert.equal(game.weather.phase,'chuva')
-  assert.equal(map.tiles[cell][0],'Sea','o redemoinho fica no mar')
+  assert.equal(cells.length,4,'ocupa 4 casas')
+  assert.ok(cells.every(cell => map.tiles[cell][0] === 'Sea'),'todas no mar')
   const ship = rules.units['Battlecruiser']
-  assert.equal(moveCost(rules,map,game,ship,cell,1),Infinity,'navio não entra no redemoinho')
-  const beside = [cell - width,cell + width].find(other => other >= 0 && other < width*12 && map.tiles[other][0] === 'Sea')
+  assert.ok(cells.every(cell => moveCost(rules,map,game,ship,cell,1) === Infinity),'navio não entra no redemoinho')
+  const beside = [cells[0] - width,cells[2] + width].find(other => other >= 0 && other < width*12 && map.tiles[other][0] === 'Sea')
   game.units.push({id:600,name:'Battlecruiser',side:1,cell:beside,hp:ship.health,credits:-1,moved:false,fired:false})
   order(rules,map,game,1,{type:'end',version:game.version})
   order(rules,map,game,2,{type:'end',version:game.version})

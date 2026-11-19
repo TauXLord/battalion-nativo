@@ -94,7 +94,7 @@ export function terrainAt(rules, map, state, cell) {
 }
 
 export function moveCost(rules, map, state, spec, cell, side) {
-  if (spec.unitType === 'sea' && cell === whirlpoolAt(state)) return Infinity
+  if (spec.unitType === 'sea' && whirlpoolAt(state) >= 0 && whirlpoolCells(state,map).includes(cell)) return Infinity
   if (spec.movementType === 'wings' &&
       enemyJammers(rules,state,side).some(unit => distance(map.width,unit.cell,cell) <= jamRadius(map,unit.cell))) return Infinity
   const [,terrain] = terrainAt(rules,map,state,cell)
@@ -200,16 +200,28 @@ function lightningStrike(state,map,action) {
   state.lightning = strike
   state.undo = null
 }
-// Redemoinho: quando a chuva começa, surge num ponto do mar (sorteado pela semente do clima) e some quando ela passa.
-// Navios não entram na casa dele e perdem WHIRLPOOL_DAMAGE de vida se começarem o turno ao lado (nunca abaixo de 1).
+// Redemoinho: quando a chuva começa, surge no mar aberto (sorteado pela semente do clima) e some quando ela passa.
+// Ocupa 2×2 casas (weather.whirlpool = a casa de cima à esquerda) com mar em volta, para não ficar sobre a terra.
+// Navios não entram nele e perdem WHIRLPOOL_DAMAGE de vida se começarem o turno ao lado (nunca abaixo de 1).
 const WHIRLPOOL_DAMAGE = 10
 export const whirlpoolAt = state => state?.weather?.phase === 'chuva' && Number.isInteger(state.weather.whirlpool) ? state.weather.whirlpool : -1
+export function whirlpoolCells(state,map) {
+  const corner = whirlpoolAt(state)
+  return corner < 0 ? [] : [corner,corner + 1,corner + map.width,corner + map.width + 1]
+}
 function placeWhirlpool(state,map) {
-  const weather = state.weather
+  const weather = state.weather, {width,height} = map
+  const sea = (x,y) => x >= 0 && y >= 0 && x < width && y < height && ['Sea','Reef'].includes(map.tiles[y*width + x][0])
   const free = cell => map.tiles[cell][0] === 'Sea' && !state.units.some(unit => unit.cell === cell) &&
     !state.structures.some(tile => tile.cell === cell)
-  const sea = map.tiles.map((_,cell)=>cell).filter(free)
-  weather.whirlpool = sea.length ? sea[Math.floor(weatherRandom(weather) * sea.length)] : undefined
+  const block = (x,y,margin) => {
+    for (let dy = -margin; dy < 2 + margin; dy++) for (let dx = -margin; dx < 2 + margin; dx++) if (!sea(x+dx,y+dy)) return false
+    return [0,1,width,width+1].every(offset => free(y*width + x + offset))
+  }
+  const corners = margin => map.tiles.map((_,cell)=>cell).filter(cell => cell % width < width-1 && block(cell % width,Math.floor(cell/width),margin))
+  // De preferência com 1 casa de mar em volta; se o mar for estreito, basta o 2×2 livre.
+  const options = corners(1).length ? corners(1) : corners(0)
+  weather.whirlpool = options.length ? options[Math.floor(weatherRandom(weather) * options.length)] : undefined
 }
 function advanceWeather(state,map) {
   const weather = state.weather
@@ -586,8 +598,9 @@ function beginTurn(rules, map, state) {
     unit.moved = unit.fired = false
     unit.transformed = false
     unit.hp -= turnDamage(rules,spec,terrain)
-    const whirlpool = whirlpoolAt(state)
-    if (whirlpool >= 0 && spec.unitType === 'sea' && distance(map.width,unit.cell,whirlpool) === 1) {
+    const whirlpool = whirlpoolCells(state,map)
+    if (whirlpool.length && spec.unitType === 'sea' && !whirlpool.includes(unit.cell) &&
+        whirlpool.some(cell => distance(map.width,unit.cell,cell) === 1)) {
       unit.hp = Math.max(1,unit.hp - WHIRLPOOL_DAMAGE)
     }
     if (unit.hp <= 0) continue
