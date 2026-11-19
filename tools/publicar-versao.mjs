@@ -40,7 +40,7 @@ const link = `https://github.com/${repo}/releases/tag/${tag}`
 
 // Arquivo público de versão (só número, data e link; nada do jogo).
 if (run(gh,['repo','view',versionRepo],{capture:true,allowFailure:true}).status === 0) {
-  const published = {versao:edition.versao,data:edition.data,link,notas:fs.readFileSync(notes,'utf8').slice(0,2000)}
+  const published = {versao:edition.versao,data:edition.data,link}
   const current = run(gh,['api',`repos/${versionRepo}/contents/versao.json`],{capture:true,allowFailure:true})
   const sha = current.status === 0 ? JSON.parse(current.stdout).sha : undefined
   const body = {message:`Versão ${edition.versao}`,content:Buffer.from(JSON.stringify(published,null,1)+'\n').toString('base64'),...(sha ? {sha} : {})}
