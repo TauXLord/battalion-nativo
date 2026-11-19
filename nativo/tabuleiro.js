@@ -8,6 +8,8 @@ import { matchAudio } from './audio.js'
 import { classicBoard, reconHeight, viewport } from './visao.js'
 import { t } from './idioma.js'
 import { downloadReplay } from './replay.js'
+import { showReport } from './relatorio.js'
+import { saveLastReplay } from './salvamento.js'
 import { TILE, canvasBuffer, colorize, drawTooltip, frame, loadImages, terrainArt, terrainVariant } from './graficos.js'
 export { colorize, frame, loadImages, terrainArt, terrainVariant }
 import { createMatchChat } from './chat.js'
@@ -62,6 +64,7 @@ export async function play(data, base, side, transport) {
   }
   // terrainUnder: casa da unidade clicada duas vezes; a barra de baixo mostra o terreno embaixo dela.
   let terrainUnder = -1
+  let replayOffered = false
   // Barra da partida (cronômetro e tropas): declarada no começo porque updateStatus pode rodar cedo.
   const hud = $('match-hud')
   const openedAt = performance.now()
@@ -1702,20 +1705,53 @@ export async function play(data, base, side, transport) {
     send:text => transport.chat(text),onError:message => { error = message; updateStatus() },onMessage:() => makeSound('Capture')})
   const updateMatchChat = messages => chatUpdate?.(messages,side)
 
+  // Replay: linha do tempo para voltar/avançar turnos, pular para qualquer jogada e mudar a velocidade.
+  const timeline = transport.timeline
+  const timelineBar = $('replay-timeline')
+  timelineBar.hidden = !timeline
+  if (timeline) {
+    const range = timelineBar.querySelector('input[type=range]')
+    const play = timelineBar.querySelector('[data-replay=play]')
+    const where = timelineBar.querySelector('.replay-where')
+    range.max = String(timeline.total)
+    let dragging = false
+    const refresh = () => {
+      if (!dragging) range.value = String(timeline.index())
+      play.textContent = timeline.playing() ? '⏸' : '▶'
+      where.value = t('Rodada {n}',{n:timeline.round()}) + ' · ' + t('Equipe {n}',{n:timeline.turn()}) +
+        ' · ' + timeline.index() + '/' + timeline.total
+    }
+    const actions = {start:() => timeline.seek(0),back:() => timeline.back(),play:() => timeline.toggle(),
+      forward:() => timeline.forward(),end:() => timeline.seek(timeline.total)}
+    for (const button of timelineBar.querySelectorAll('[data-replay]')) button.onclick = () => actions[button.dataset.replay]()
+    range.oninput = () => { dragging = true; where.value = range.value + '/' + timeline.total }
+    range.onchange = () => { dragging = false; timeline.seek(Number(range.value)) }
+    timelineBar.querySelector('select').onchange = event => timeline.setRate(event.target.value)
+    const stopListening = timeline.onChange(refresh)
+    window.addEventListener('pagehide',stopListening,{once:true})
+    refresh()
+  }
+
   function receive(next) {
     connected = true
     // Cronômetro: o tempo vem do jogo (local ou anfitrião); sem ele (replay), conta desde que a tela abriu.
     if (Number.isFinite(next.elapsed)) clock = {elapsed:next.elapsed,at:performance.now(),running:!next.winner && !next.result}
     updateMatchChat(next.chat)
-    // Fim de partida avulsa: botão para baixar o replay.
-    if (next.result && !next.result.replay && transport.replay && $('match-replay').hidden) {
-      const replay = transport.replay()
-      if (replay) {
-        $('match-replay').hidden = false
+    // Fim de partida: relatório (gráficos e abates), ver o replay com linha do tempo e baixar o replay.
+    if (next.result && !next.result.replay && transport.replay && !replayOffered) {
+      replayOffered = true
+      void Promise.resolve(transport.replay()).then(replay => {
+        if (!replay) return
+        replay.elapsed ??= clock ? clock.elapsed : undefined
+        $('match-replay').hidden = $('match-report-open').hidden = $('match-watch').hidden = false
         $('match-replay').onclick = () => downloadReplay(replay)
-      }
+        const watch = async () => { await saveLastReplay(replay); location.href = '/?replay' }
+        $('match-watch').onclick = watch
+        $('match-report-open').onclick = () => showReport({data,replay,t,onReplay:watch})
+      }).catch(()=>{})
     }
-    if (state && next.version < state.version) return
+    // Replay: pular na linha do tempo pode voltar a versão (next.seek); aí o estado é trocado sem animação.
+    if (state && next.version < state.version && !next.seek) return
     if (next.viewer != null && next.viewer !== side) {
       side = next.viewer
       selected = null
@@ -1732,7 +1768,7 @@ export async function play(data, base, side, transport) {
       const partnerActs = next.activeSides && action?.side && action.side !== side &&
         allied(next,side,action.side) && canTakeTurn(next,side)
       // "Acelerar turnos da IA": jogadas dos outros aparecem direto, sem animação.
-      const quick = action?.side && action.side !== side && transport.fastAI?.()
+      const quick = next.seek || action?.side && action.side !== side && transport.fastAI?.()
       if (quick) { pendingTarget = undefined; motion = strike = null }
       if (!partnerActs && !quick) {
         pendingTarget = undefined

@@ -6,8 +6,44 @@ import { coopEligible } from './cooperativo.js'
 import { deleteProfileStorage, loadProfile, maxNameLength, profilePhoto, saveProfile } from './perfil-jogador.js'
 import { syncVault } from './cofre.js'
 import { clearNetworkMatch, clearSavedMatch, deleteSavesStorage, loadNetworkMatch, loadSavedMatch, saveMatch,
-  saveNetworkMatch } from './salvamento.js'
+  saveNetworkMatch, loadLastReplay } from './salvamento.js'
 import { loadStats, recordMatch, statsSummary } from './estatisticas.js'
+import { achievements, announceAchievements, checkAchievements, unlockedAchievements } from './conquistas.js'
+import { dailyChallenge, dailyResults, dailyWins, formatClock, recordDaily, shareText, todayKey } from './desafio.js'
+
+// Fim de partida: conta nas estatísticas e confere as conquistas (avisa na tela as que desbloquear).
+function finishMatch(mode,result) {
+  const stats = recordMatch(mode,result)
+  announceAchievements(checkAchievements(mode,result,stats,{desafios:dailyWins()}),t)
+}
+
+// Desafio diário: o mapa do dia contra a IA; o resultado (melhor tempo de vitória) fica guardado.
+async function playDaily(data) {
+  const daily = dailyChallenge(data)
+  const colors = palette.slice(0,daily.teams).map(([,value])=>value)
+  return playLocal(data,daily.board,'ai',daily.level,colors,'/',1,false,storedAiTime(),
+    {sideDifficulty:daily.levels,alliances:daily.alliances,fog:daily.fog,statsMode:'desafio',
+      // Modo desenvolvedor (prévia de dano) não conta como resultado do desafio.
+      onFinish:result => { if (!result.practice) recordDaily(daily.day,result) }})
+}
+function showDaily(data) {
+  const daily = dailyChallenge(data)
+  const result = dailyResults()[daily.day]
+  $('daily-title').textContent = t('Desafio de {day}',{day:new Date().toLocaleDateString(language() === 'en' ? 'en-US' : 'pt-BR')})
+  $('daily-rules').textContent = [t('Mapa {w} × {h}',{w:daily.size,h:daily.size}),
+    daily.teams === 2 ? t('você contra 1 IA') : daily.together ? t('você contra {n} IAs aliadas',{n:daily.teams-1}) :
+      t('todos contra todos com {n} IAs',{n:daily.teams-1}),
+    t(['IA Fácil','IA Normal','IA Difícil'][daily.level]),daily.islands && t('ilhas'),daily.fog && t('neblina de guerra')]
+    .filter(Boolean).join(' · ')
+  $('daily-best').textContent = result?.victory ? t('Seu melhor hoje: vitória em {time} ({n} rodadas)',{time:formatClock(result.elapsed),n:result.rounds}) :
+    result ? t('Hoje: derrota. Tente de novo!') : t('Mesmo mapa para todo mundo hoje. Vença no menor tempo.')
+  const share = $('daily-share')
+  share.hidden = !result
+  share.onclick = async () => {
+    try { await navigator.clipboard.writeText(shareText(daily.day,result,t)); share.textContent = t('Copiado!') }
+    catch { share.textContent = shareText(daily.day,result,t) }
+  }
+}
 import { replayTransport, validReplay } from './replay.js'
 import { describeSaved, restoreMatch } from './retomar.js'
 import { compareVersions, loadEdition } from './versao.js'
@@ -189,7 +225,7 @@ async function setupProfile(dialog) {
   // Estatísticas deste computador (partidas no modo desenvolvedor e como espectador não contam).
   const stats = loadStats()
   const chapters = ['vengeance','ghosts'].reduce((sum,group)=>sum+Object.keys(campaignProgress(group)).length,0)
-  const modeNames = {ia:'Contra a IA',local:'Mesmo dispositivo',campanha:'Campanha',rede:'Multiplayer'}
+  const modeNames = {ia:'Contra a IA',local:'Mesmo dispositivo',campanha:'Campanha',rede:'Multiplayer',desafio:'Desafio diário'}
   const rows = [['Partidas',stats.partidas],['Vitórias',stats.vitorias],['Derrotas',stats.derrotas],
     ['Unidades inimigas destruídas',stats.destruidas],['Unidades perdidas',stats.perdidas],['Capítulos de campanha concluídos',chapters],
     ...Object.entries(stats.modos).map(([mode,{vitorias,derrotas}])=>[modeNames[mode] ?? mode,
@@ -197,6 +233,17 @@ async function setupProfile(dialog) {
   $('profile-stats').replaceChildren(...rows.flatMap(([label,value])=>[
     Object.assign(document.createElement('dt'),{textContent:t(label)}),
     Object.assign(document.createElement('dd'),{textContent:String(value)})]))
+  // Conquistas: desbloqueadas em destaque, as outras em cinza com o que falta fazer.
+  const unlocked = unlockedAchievements()
+  $('profile-achievements-count').textContent = `${Object.keys(unlocked).length}/${achievements.length}`
+  $('profile-achievements').replaceChildren(...achievements.map(item => {
+    const entry = document.createElement('li')
+    entry.className = unlocked[item.id] ? 'achieved' : 'locked'
+    entry.append(Object.assign(document.createElement('strong'),{textContent:(unlocked[item.id] ? '🏆 ' : '🔒 ') + t(item.title)}),
+      Object.assign(document.createElement('span'),{textContent:t(item.description)}))
+    if (unlocked[item.id]) entry.title = new Date(unlocked[item.id]).toLocaleDateString(language() === 'en' ? 'en-US' : 'pt-BR')
+    return entry
+  }))
   file.onchange = async () => {
     const chosen = file.files[0]
     file.value = ''
@@ -306,6 +353,7 @@ async function openHome(data) {
   setupSettings(data)
   menuAudio(data)
   setupTutorial(true)
+  showDaily(data)
   // Versão da edição e aviso de atualização (só quando há endereço de verificação em versao.json).
   $('home-version').textContent = t('{name} · versão {v}',{name:edition.edicao ?? 'Battalion Nativo',v:edition.versao})
   if (location.hostname === '127.0.0.1') {
@@ -406,14 +454,15 @@ async function start(data,room,slot,side,invites = []) {
   const {map,you,coop:started} = await lobby({room,slot:side === 1 ? undefined : slot,invites,maps,palette,t})
   // Estatísticas: cada partida em rede conta uma vez, como vitória ou derrota (espectador não conta).
   let counted = false
-  const count = victory => { if (!counted) { counted = true; recordMatch('rede',{victory}) } }
+  const count = (victory,state) => { if (!counted) { counted = true; finishMatch('rede',{victory,
+    fog:Boolean(state?.fog),teams:state?.colors?.length,rounds:state?.round,elapsed:state?.elapsed}) } }
   if (coop) {
     // Os dois jogadores comandam o time 1; quem é dono de cada unidade vem no estado da partida.
     return showMatch(data,started.board,1,{
       listen:(receive,disconnect) => matchUpdates(room,slot,state => {
         // Vitória na dupla conta como capítulo concluído nos dois computadores.
         if (state.result?.victory && state.coop) saveVictory(state.coop.chapter,state.result,state.coop.group)
-        if (state.result) count(Boolean(state.result.victory))
+        if (state.result) count(Boolean(state.result.victory),state)
         receive(state)
       },disconnect),
       send:command => request('command/' + room + '/' + slot,{
@@ -439,12 +488,14 @@ async function start(data,room,slot,side,invites = []) {
   }
   return showMatch(data,board,mine,{
     listen:(receive,disconnect) => matchUpdates(room,slot,state => {
-      if (state.winner && mine > 0) count(state.winner === mine || Boolean(state.alliances?.[mine-1]?.includes(state.winner)))
+      if (state.winner && mine > 0) count(state.winner === mine || Boolean(state.alliances?.[mine-1]?.includes(state.winner)),state)
       keepNetworkMatch(state)
       receive(state)
     },disconnect),
     fastAI,
     chat:text => request('chat/' + room + '/' + slot,{method:'POST',body:text}),
+    // Replay da partida (o anfitrião libera no fim): relatório, linha do tempo e download.
+    replay:async () => (await request('replay/' + room + '/' + slot)).json(),
     send(command) {
       return request('command/' + room + '/' + slot,{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(command),
@@ -491,7 +542,7 @@ async function playMission(data,{mission,ghosts,list,difficulty,seconds,resume})
       edition:edition.versao}) :
     clearSavedMatch()
   const practice = developerMode()
-  const onFinish = practice ? undefined : result => recordMatch('campanha',result)
+  const onFinish = practice ? undefined : result => finishMatch('campanha',result)
   return showMatch(data,mission.board,1,campaignTransport(data,{...mission,teams},difficulty,
     {group,back,aiTime:seconds,resume,onSave,practice,fastAI,turnLimit:aiTurnLimit(),onFinish}))
 }
@@ -508,7 +559,10 @@ async function openSaved(data) {
     return playMission(data,{...save,mission,resume:save.engine})
   }
   return playLocal(data,save.board,save.mode,save.difficulty,save.colors,save.back,save.humans,save.coalitions,
-    save.seconds,{sideDifficulty:save.sideDifficulty,mapId:save.mapId,resume:save.engine,fog:save.fog})
+    save.seconds,{sideDifficulty:save.sideDifficulty,mapId:save.mapId,resume:save.engine,fog:save.fog,
+      alliances:save.alliances,statsMode:save.statsMode,
+      // Desafio diário continuado: o resultado ainda vale para o dia em que ele foi começado.
+      onFinish:save.statsMode === 'desafio' ? result => { if (!result.practice) recordDaily(save.board.title.replace('Desafio ',''),result) } : undefined})
 }
 
 async function openCampaign(data) {
@@ -630,7 +684,7 @@ function recordVictory(id,difficulty) {
 
 async function playLocal(data,board,mode,difficulty,colors,back,
   humans = mode === 'spectator' ? 0 : mode === 'hotseat' ? colors.length : 1, coalitions = Boolean(board.coalitions),
-  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume, fog = false, alliances} = {}) {
+  seconds = storedAiTime(), {sideDifficulty, onFinish, mapId, resume, fog = false, alliances, statsMode} = {}) {
   // Vitória contra a IA num mapa do jogo libera o multiplayer e o modo assistir nesse mapa.
   const practice = developerMode() && mode !== 'spectator'
   const unlock = mapId && mode === 'ai' && !practice ? result => { if (result.victory) recordVictory(mapId,difficulty) } : undefined
@@ -639,12 +693,12 @@ async function playLocal(data,board,mode,difficulty,colors,back,
   onFinish = result => {
     finished?.(result)
     unlock?.(result)
-    if (counted) recordMatch(mode === 'hotseat' ? 'local' : 'ia',result)
+    if (counted) finishMatch(statsMode ?? (mode === 'hotseat' ? 'local' : 'ia'),result)
   }
   // Salvamento automático a cada turno do jogador (não vale para o modo assistir nem para o teste do editor).
   const onSave = mode === 'spectator' || back.startsWith('/?editor') ? undefined : engine => engine ?
     saveMatch({kind:'local',title:board.title,board,mode,difficulty,colors,back,humans,coalitions,seconds,
-      sideDifficulty,mapId,fog,engine,edition:edition.versao}) : clearSavedMatch()
+      sideDifficulty,mapId,fog,alliances,statsMode,engine,edition:edition.versao}) : clearSavedMatch()
   const setup = scenarioMatch(board,colors,humans,coalitions)
   const profile = humans > 0 ? await loadProfile() : null
   const teams = setup.colors.map((color,index)=>({name:data.aiSides?.[index+1]?.label ?? t('Equipe {n}',{n:index+1}),color,
@@ -902,6 +956,15 @@ async function open() {
   if (query.has('avaliacao')) return openEvaluation(data)
   if (query.has('jogar')) return openQuickMatch(data)
   if (query.has('continuar')) return openSaved(data)
+  if (query.has('desafio')) return playDaily(data)
+  if (query.has('replay')) {
+    // "Ver replay" do fim de partida: o replay foi guardado no navegador antes de recarregar a página.
+    const replay = await loadLastReplay()
+    if (!validReplay(replay)) return openHome(data)
+    $('player-view').querySelector('header a').href = '/'
+    $('player-view').querySelector('header a').textContent = t('← Menu')
+    return showMatch(data,replay.board,0,replayTransport(data,replay,{back:'/',speed:() => fastAI() ? 3 : 1}))
+  }
   if (query.has('campanha')) return openCampaign(data)
   if (query.has('editor')) {
     const {openEditor} = await import('./editor.js')

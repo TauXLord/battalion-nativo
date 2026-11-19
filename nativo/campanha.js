@@ -48,7 +48,7 @@ export function campaignTransport(data, mission, difficulty, {
     simultaneous:mode === 'ai',fog,victory:map.victory,
   })
   let receive, cancelled = false, disabled = false, morale = true, dialog = null, nextLine, result, focus
-  let killed = 0, lost = 0, dialogId = 0, focusId = 0, playing = false
+  let killed = 0, lost = 0, machinesLost = 0, dialogId = 0, focusId = 0, playing = false
   let computerRunning = false, finishing = false
   // Cronômetro da partida: continua do tempo salvo e para quando a partida acaba.
   const clockBase = Number.isFinite(resume?.elapsed) ? resume.elapsed : Number.isFinite(resume?.state?.elapsed) ? resume.state.elapsed : 0
@@ -181,7 +181,10 @@ export function campaignTransport(data, mission, difficulty, {
     if (replayStart) replayLog.push({side,action:{...action,version}})
     const deaths = previous.filter(unit=>!state.units.includes(unit))
     for (const unit of deaths) {
-      if (unit.side === 1) lost++
+      if (unit.side === 1) {
+        lost++
+        if (rules.units[unit.name].mods.includes('Linchpin')) machinesLost++
+      }
       else if (!allied(state,1,unit.side) && state.last.hits?.some(hit=>hit.target === unit.id && hit.hp === 0 &&
           previous.some(shooter=>shooter.id === hit.unit && shooter.side === 1))) killed++
     }
@@ -207,7 +210,10 @@ export function campaignTransport(data, mission, difficulty, {
     const victory = allied(state,state.winner,1)
     const score = campaign ? Math.max(0,Math.trunc((killed*1000-lost*100+(victory ? 5000 : 0)) / state.round)) : null
     const medal = !campaign || !victory ? 0 : score >= mission.medals[1] ? 3 : score >= mission.medals[0] ? 2 : 1
-    result = {winner:state.winner,score,medal,victory,campaign,killed,lost}
+    // Dados extras para as conquistas: rodadas, tempo, Warmachines perdidas, nível da IA, neblina e nº de equipes.
+    const aiLevel = sideDifficulty ? Math.max(0,...sideDifficulty.slice(humans)) : difficulty
+    result = {winner:state.winner,score,medal,victory,campaign,killed,lost,machinesLost,rounds:state.round,
+      elapsed:elapsed(),difficulty:aiLevel,fog:Boolean(state.fog),teams:state.colors.length}
     if (campaign && victory && !practice) saveVictory(mission.number,result,group)
     if (practice) result.practice = true
     clearTimeout(saveTimer)

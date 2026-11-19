@@ -160,3 +160,16 @@ test('cofre guarda perfil e configurações em disco e exige o cabeçalho do jog
   assert.equal((await call('/sistema/excluir',{method:'POST',headers,body:'{}'})).status,204)
   assert.deepEqual((await call('/cofre',{headers})).json(),{},'excluir dados apaga o cofre')
 })
+
+test('todos os módulos que a página importa são servidos (nenhum arquivo esquecido)',async () => {
+  const pending = ['/pagina.js'], seen = new Set()
+  while (pending.length) {
+    const path = pending.pop()
+    if (seen.has(path)) continue
+    seen.add(path)
+    const response = await call(path)
+    assert.equal(response.status,200,'servido: ' + path)
+    for (const [,name] of response.text.matchAll(/(?:from|import)\s*\(?\s*'\.\/([\w-]+\.js)'/g)) pending.push('/' + name)
+  }
+  assert.ok(seen.size > 20)
+})

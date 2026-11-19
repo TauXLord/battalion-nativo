@@ -49,7 +49,8 @@ const files = new Map([
   ['/visao.js','./visao.js'],
   ['/campanha.js','./campanha.js'], ['/ia.js','./ia.js'], ['/editor.js','./editor.js'], ['/cooperativo.js','./cooperativo.js'],
   ['/versao.json','./versao.json'], ['/versao.js','./versao.js'],
-  ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'], ['/retomar.js','./retomar.js'], ['/cofre.js','./cofre.js'],
+  ['/perfil-jogador.js','./perfil-jogador.js'], ['/salvamento.js','./salvamento.js'], ['/retomar.js','./retomar.js'], ['/cofre.js','./cofre.js'], ['/analise.js','./analise.js'], ['/relatorio.js','./relatorio.js'],
+  ['/conquistas.js','./conquistas.js'], ['/desafio.js','./desafio.js'],
   ['/estatisticas.js','./estatisticas.js'], ['/replay.js','./replay.js'], ['/graficos.js','./graficos.js'],
   ['/chat.js','./chat.js'], ['/atalhos.js','./atalhos.js'],
   ['/ia-worker.js','./ia-worker.js'], ['/planejador.js','./planejador.js'], ['/procedural.js','./procedural.js'],
@@ -76,7 +77,7 @@ if (process.argv.includes('--lan')) {
 }
 
 const rooms = new Map()
-const publicActions = new Set(['join','lobby','prefs','update','command','advance','dados','ask','answer','profile','avatar','chat','watch','tabuleiro'])
+const publicActions = new Set(['join','lobby','prefs','update','command','advance','dados','ask','answer','profile','avatar','chat','watch','tabuleiro','replay'])
 const token = length => randomBytes(length).toString('hex')
 const newSeat = (color,vote) => ({token:token(18),color,vote,seen:0,ready:false})
 const connected = seat => Boolean(seat) && Date.now() - seat.seen < 12000
@@ -233,6 +234,19 @@ async function vaultAction(req,res,method,name) {
   return reply(res,204)
 }
 
+// Replay da partida em rede: estado inicial + cada jogada aceita (o motor é determinístico).
+function playOrder(room,side,action) {
+  const logged = {...action,version:room.game.version}
+  order(data.rules,room.map,room.game,side,action)
+  room.replayLog?.actions.push({side,action:logged})
+}
+function roomReplay(room) {
+  return {format:'battalion-replay',version:1,title:room.map.title,board:room.map,
+    teams:seatTeams(room,0).map((team,index)=>({name:team.name ?? (index < room.seats.length ? 'Equipe ' + (index+1) : 'IA')})),
+    initial:room.replayLog.initial,actions:room.replayLog.actions,savedAt:Date.now(),edition:edition.versao,
+    elapsed:matchElapsed(room)}
+}
+
 function pushMatch(room) {
   scheduleSave(room)
   for (const [response,side] of room.viewers) {
@@ -262,11 +276,11 @@ async function playComputer(room) {
       const action = await room.planner.choose(game,{side,difficulty:room.sideLevels?.[side-1] ?? room.difficulty,seconds:room.aiTime})
       if (room.closed || !canTakeTurn(game,side)) continue
       try {
-        order(data.rules,map,game,side,{...action,version})
+        playOrder(room,side,{...action,version})
       } catch (error) {
         if (version !== game.version && retries++ < 2) continue
         console.error('Jogada da IA:',error.message)
-        order(data.rules,map,game,side,{type:'end',version:game.version})
+        playOrder(room,side,{type:'end',version:game.version})
       }
       retries = 0
       pushMatch(room)
@@ -556,6 +570,7 @@ async function api(req,res,parts,local,throughInternet) {
       })
     }
     room.clockStart ??= Date.now()
+    room.replayLog ??= {initial:structuredClone(room.game),actions:[]}
     scheduleSave(room)
     void playComputer(room).catch(error=>console.error('Turno da IA:',error.message))
     return json(res,preferences(room))
@@ -582,7 +597,11 @@ async function api(req,res,parts,local,throughInternet) {
       res.on('close',() => room.viewers.delete(res))
       return
     }
-    if (post && action === 'command') {
+    // Replay da partida (só depois do fim, para não revelar o que a neblina esconde).
+  if (!post && action === 'replay') {
+    return room.game.winner && room.replayLog ? json(res,roomReplay(room)) : fail(res,409,'O replay fica disponível no fim da partida.')
+  }
+  if (post && action === 'command') {
       const command = JSON.parse(await body(req))
       try {
         await coop.command(side,command,room.seats.filter(connected).length)
@@ -609,7 +628,7 @@ async function api(req,res,parts,local,throughInternet) {
   }
   if (post && action === 'command') {
     const command = JSON.parse(await body(req))
-    order(data.rules,room.map,room.game,side,command)
+    playOrder(room,side,command)
     pushMatch(room)
     void playComputer(room).catch(error=>console.error('Turno da IA:',error.message))
     return reply(res,204)
@@ -638,6 +657,9 @@ async function spectatorAction(req,res,room,watcher,action,after) {
     return json(res,{chat:room.chat.slice(-30)})
   }
   if (!post && action === 'tabuleiro' && room.resumed) return json(res,room.resumed.board)
+  if (!post && action === 'replay') {
+    return !room.coop && room.game?.winner && room.replayLog ? json(res,roomReplay(room)) : fail(res,409,'O replay fica disponível no fim da partida.')
+  }
   if (post || !['update','state','avatar'].includes(action)) return fail(res,403,'Espectadores só assistem.')
   if (!room.game) return fail(res,404,'A partida ainda não começou.')
   if (!post && action === 'update') {

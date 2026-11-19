@@ -50,3 +50,11 @@ export async function saveNetworkMatch(match) {
 export async function clearNetworkMatch() {
   try { await run('readwrite',objects=>objects.delete(networkKey)) } catch {}
 }
+
+// Replay aberto pelo botão "Ver replay" do fim de partida (a página recarrega em /?replay e lê daqui).
+export async function saveLastReplay(replay) {
+  try { await run('readwrite',objects=>objects.put(replay,'replay')) } catch {}
+}
+export async function loadLastReplay() {
+  try { return await run('readonly',objects=>objects.get('replay')) ?? null } catch { return null }
+}

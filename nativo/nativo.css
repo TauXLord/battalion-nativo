@@ -329,3 +329,40 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
 .match-hud b { color:#f3d994; font-weight:600; }
 .match-hud .hud-enemy b { color:#f0a08f; }
 .match-hud .hud-ally b { color:#a8e09a; }
+
+/* Relatório da partida */
+dialog.report { width:min(600px,calc(100vw - 16px)); }
+.report-chart { width:100%; height:auto; background:#141b16; border:1px solid #3c4a3a; border-radius:6px; margin:.4rem 0; }
+.report-chart-title { fill:#f3d994; font:bold 12px Tahoma,sans-serif; }
+.report-axis { fill:#9aa69a; font:10px Tahoma,sans-serif; }
+.report-grid { stroke:#2c3a2f; stroke-width:1; }
+.report-legend { display:flex; flex-wrap:wrap; gap:.3rem 1rem; font-size:.9rem; }
+.report-legend i { display:inline-block; width:.8rem; height:.8rem; border-radius:50%; margin-right:.35rem; vertical-align:-1px; }
+.report-table { width:100%; border-collapse:collapse; margin-top:.4rem; font-size:.9rem; }
+.report-table th, .report-table td { padding:.25rem .4rem; border-bottom:1px solid #2c3a2f; text-align:right; }
+.report-table th:first-child, .report-table td:first-child { text-align:left; }
+/* Linha do tempo do replay */
+.replay-timeline { display:flex; flex-wrap:wrap; align-items:center; gap:.35rem; margin:.3rem 0; }
+.replay-timeline input[type=range] { flex:1 1 180px; min-width:120px; }
+.replay-timeline .replay-where { font-size:.85rem; color:#d6dccf; min-width:11rem; font-variant-numeric:tabular-nums; }
+
+/* Conquistas */
+.achievements-title { margin:.8rem 0 .3rem; font-size:1rem; }
+.achievements { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:.4rem; }
+.achievements li { padding:.4rem .5rem; border:1px solid #3c4a3a; border-radius:6px; background:#18211b; display:grid; gap:.15rem; font-size:.85rem; }
+.achievements li strong { font-size:.9rem; }
+.achievements li.locked { opacity:.55; }
+.achievements li.achieved { border-color:#b8963c; background:#2a2614; }
+.achievement-toast { position:fixed; z-index:60; left:50%; top:16px; transform:translateX(-50%); display:grid; gap:.1rem; text-align:center;
+  padding:.6rem 1.1rem; background:rgba(30,26,12,.95); border:1px solid #d6b354; border-radius:8px; color:#f6ecd0;
+  box-shadow:0 6px 20px rgba(0,0,0,.5); animation:achievement-in .35s ease-out; }
+.achievement-toast small { color:#d6b354; text-transform:uppercase; letter-spacing:.05em; font-size:.7rem; }
+@keyframes achievement-in { from { opacity:0; transform:translate(-50%,-12px); } to { opacity:1; transform:translate(-50%,0); } }
+
+/* Desafio diário */
+.daily-card { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.8rem; padding:.8rem 1rem;
+  background:linear-gradient(135deg,#2a2614,#18211b); border:1px solid #b8963c; border-radius:8px; }
+.daily-text { display:grid; gap:.2rem; min-width:0; flex:1 1 260px; }
+.daily-text strong { font-size:1.05rem; color:#f3d994; }
+.daily-text small { color:#cfd8cc; }
+.daily-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
