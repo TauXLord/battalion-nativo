@@ -129,7 +129,7 @@ try {
       '-alias','battalion','-keyalg','RSA','-keysize','2048','-validity','10000','-dname','CN=Battalion Nativo'])
   }
   const output = join(root,'Battalion-Nativo-Android.apk')
-  run(tool('apksigner'),['sign','--ks',keystore,'--ks-pass','pass:battalion-nativo','--ks-key-alias','battalion',
+  run(tool('apksigner'),['sign','--v4-signing-enabled','false','--ks',keystore,'--ks-pass','pass:battalion-nativo','--ks-key-alias','battalion',
     '--out',output,aligned])
   run(tool('apksigner'),['verify',output])
   console.log(`${output} · versão ${edition.versao} · ${(fs.statSync(output).size/1048576).toFixed(1)} MB`)
