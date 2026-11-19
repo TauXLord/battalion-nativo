@@ -43,8 +43,14 @@ export async function play(data, base, side, transport) {
   ctx.imageSmoothingEnabled = false
   const images = await loadImages(data.assets)
   const teamImages = new Map(), spentImages = new WeakMap()
-  const terrainLayer = canvasBuffer(1,1), terrainCtx = terrainLayer.getContext('2d',{alpha:false})
-  let terrainView, oreSignature
+  // Terreno pronto da área visível. As casas animadas (mar, arquipélago…) têm 4 quadros, então guardamos as 4
+  // versões: o terreno só é redesenhado quando a câmera ou o minério mudam, e não a cada troca de quadro (meio segundo).
+  const TERRAIN_FRAMES = 4
+  const terrainLayers = Array.from({length:TERRAIN_FRAMES},() => {
+    const canvas = canvasBuffer(1,1)
+    return {canvas,ctx:canvas.getContext('2d',{alpha:false}),key:null}
+  })
+  let oreSignature
   const cellX = cell => cell % map.width * TILE
   const cellY = cell => Math.floor(cell / map.width) * TILE
   const mini = canvasBuffer(map.width * 4,map.height * 4)
@@ -65,8 +71,9 @@ export async function play(data, base, side, transport) {
   }
   // terrainUnder: casa da unidade clicada duas vezes; a barra de baixo mostra o terreno embaixo dela.
   let terrainUnder = -1
+  let pinchStart = null
   // Clima (chuva, respingos, cristas no mar e nuvens), desenhado em pixel art no ritmo do mapa.
-  const weatherPainter = createWeatherPainter()
+  const weatherPainter = createWeatherPainter(images)
   let weatherMoving = false, lightningVersion = -1
   let replayOffered = false
   // Barra da partida (cronômetro e tropas): declarada no começo porque updateStatus pode rodar cedo.
@@ -196,10 +203,20 @@ export async function play(data, base, side, transport) {
     })
   }
 
+  // Modo compacto: em tela cheia, no app de Android ou com a tela baixa (celular deitado), o título, o status, o
+  // cronômetro e o zoom vão para uma faixa por cima do mapa, e o mapa usa a altura toda da tela.
+  const androidApp = location.hostname === 'appassets.androidplatform.net'
+  const matchTop = $('match-top')
+  if (androidApp) $('fullscreen').hidden = true
   function resizeView() {
     const full = document.fullscreenElement === player
-    const margin = full ? 0 : 32
-    const chromeHeight = stage.getBoundingClientRect().top - player.getBoundingClientRect().top
+    const compact = full || androidApp || window.innerHeight < 620
+    player.classList.toggle('compact-match',compact)
+    document.body.classList.toggle('match-compact',compact)
+    if (compact && matchTop.parentElement !== stage) stage.append(matchTop)
+    else if (!compact && matchTop.parentElement === stage) player.insertBefore(matchTop,stage)
+    const margin = compact ? 0 : 32
+    const chromeHeight = compact ? 0 : stage.getBoundingClientRect().top - player.getBoundingClientRect().top
     const target = viewport(worldWidth,worldHeight,Math.max(1,window.innerWidth-margin),
       Math.max(1,window.innerHeight-margin-chromeHeight),Boolean(previous))
     const oldX = panX + view.width/zoom/2, oldY = panY + view.height/zoom/2
@@ -221,6 +238,7 @@ export async function play(data, base, side, transport) {
     place(modifierBar,0,578+dy,view.width,20)
     tooltip.style.right = (1-view.width/view.screenWidth)*100 + '%'
     tooltip.style.bottom = reconHeight/view.screenHeight*100 + '%'
+    matchTop.style.right = compact ? (1-view.width/view.screenWidth)*100 + '%' : ''
     schedule()
   }
 
@@ -256,20 +274,33 @@ export async function play(data, base, side, transport) {
     return spentImages.get(image)
   }
 
+  // Com o zoom afastado, o mapa inteiro cabe numa imagem razoável (até TERRAIN_FULL_AREA pixels): ela é desenhada
+  // uma vez e arrastar a câmera só muda a posição. Com zoom próximo, guarda só a área visível (poucas casas).
+  const TERRAIN_FULL_AREA = 3_200_000
   function paintTerrain(idle) {
-    if (terrainView?.view !== view || terrainView.idle !== idle || terrainView.ore !== oreSignature ||
-        terrainView.zoom !== zoom || terrainView.x !== panX || terrainView.y !== panY) {
-      if (terrainLayer.width !== view.width || terrainLayer.height !== view.height) {
-        terrainLayer.width = view.width
-        terrainLayer.height = view.height
+    const slot = idle % TERRAIN_FRAMES
+    const layer = terrainLayers[slot]
+    // Margem de 1 casa em cima: montanhas e outros sprites altos passam da própria casa.
+    const pad = TILE
+    const fullWidth = Math.ceil(map.width*TILE*zoom), fullHeight = Math.ceil((map.height*TILE + pad)*zoom)
+    const full = fullWidth*fullHeight <= TERRAIN_FULL_AREA
+    const key = full ? 'mapa|' + zoom + '|' + oreSignature :
+      view.width + 'x' + view.height + '|' + zoom + '|' + panX + '|' + panY + '|' + oreSignature
+    if (layer.key !== key || layer.view !== view) {
+      const terrainLayer = layer.canvas, terrainCtx = layer.ctx
+      const width = full ? fullWidth : view.width, height = full ? fullHeight : view.height
+      if (terrainLayer.width !== width || terrainLayer.height !== height) {
+        terrainLayer.width = width
+        terrainLayer.height = height
       }
       terrainCtx.setTransform(1,0,0,1,0,0)
       terrainCtx.imageSmoothingEnabled = false
       terrainCtx.fillStyle = '#000'
-      terrainCtx.fillRect(0,0,view.width,view.height)
-      terrainCtx.setTransform(zoom,0,0,zoom,-panX*zoom,-panY*zoom)
-      const x0 = Math.floor(panX/TILE), x1 = Math.min(map.width,Math.ceil((panX+view.width/zoom)/TILE))
-      const y0 = Math.floor(panY/TILE), y1 = Math.min(map.height,Math.ceil((panY+view.height/zoom)/TILE)+1)
+      terrainCtx.fillRect(0,0,width,height)
+      if (full) terrainCtx.setTransform(zoom,0,0,zoom,0,pad*zoom)
+      else terrainCtx.setTransform(zoom,0,0,zoom,-panX*zoom,-panY*zoom)
+      const x0 = full ? 0 : Math.floor(panX/TILE), x1 = full ? map.width : Math.min(map.width,Math.ceil((panX+view.width/zoom)/TILE))
+      const y0 = full ? 0 : Math.floor(panY/TILE), y1 = full ? map.height : Math.min(map.height,Math.ceil((panY+view.height/zoom)/TILE)+1)
       for (let y=y0; y<y1; y++) for (let x=x0; x<x1; x++) {
         const cell = y * map.width + x
         const ore = state.ore[cell]
@@ -279,10 +310,19 @@ export async function play(data, base, side, transport) {
         if (x === 0) terrainCtx.drawImage(images.border_left,x*TILE,y*TILE)
         else if (x === map.width-1) terrainCtx.drawImage(images.border_right,x*TILE,y*TILE)
       }
-      terrainView = {view,idle,ore:oreSignature,zoom,x:panX,y:panY}
+      layer.key = key
+      layer.view = view
     }
-    ctx.drawImage(terrainLayer,0,0)
+    if (!full) { ctx.drawImage(layer.canvas,0,0); return }
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(0,0,view.width,view.height)
+    ctx.clip()
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(layer.canvas,-panX*zoom,(-panY - pad)*zoom)
+    ctx.restore()
   }
+
 
   function movesFor(unit,inspect = false) {
     if (movementPreview?.state !== state || movementPreview.unit !== unit || movementPreview.inspect !== inspect) {
@@ -1116,7 +1156,7 @@ export async function play(data, base, side, transport) {
     ctx.scale(zoom,zoom)
     ctx.translate(-panX,-panY)
     const right = panX + view.width/zoom, bottom = panY + view.height/zoom
-    const groundMoving = weatherPainter.paintGround(ctx,{weather:state.weather,map,tiles,idle,now,left:panX,top:panY,right,bottom})
+    const groundMoving = weatherPainter.paintGround(ctx,{weather:state.weather,map,tiles,idle,now,left:panX,top:panY,right,bottom,zoom})
     const visible = (x,y,width,height) => x < right && x + width > panX &&
       y + TILE - height < bottom && y + TILE > panY
     for (const tile of state.structures) {
@@ -1619,6 +1659,21 @@ export async function play(data, base, side, transport) {
     point, bounds:() => [view.width,view.height],
     canPan:() => worldWidth*zoom-view.width > 1 || worldHeight*zoom-view.height > 1,
     pan:(x,y) => {panX -= x/zoom; panY -= y/zoom; normalize(); schedule()},
+    // Pinça: o ponto do mapa que estava entre os dedos continua entre os dedos enquanto o zoom muda.
+    pinch:(phase,scale,[x,y]) => {
+      if (phase === 'start') {
+        // Saindo do "Mapa inteiro": volta ao tamanho normal da área do mapa antes de começar.
+        if (previous) { previous = null; resizeView() }
+        pinchStart = {zoom,worldX:panX + x/zoom,worldY:panY + y/zoom}
+        return
+      }
+      if (phase === 'end' || !pinchStart) { pinchStart = null; return }
+      zoom = Math.max(view.fit,Math.min(2,pinchStart.zoom*scale))
+      panX = pinchStart.worldX - x/zoom
+      panY = pinchStart.worldY - y/zoom
+      normalize()
+      schedule()
+    },
   })
   canvas.addEventListener('pointerup',event => { if (event.button === 0) click(...point(event)) })
   canvas.addEventListener('contextmenu',event => {
@@ -1840,7 +1895,7 @@ export async function play(data, base, side, transport) {
       schedule()
       if (state && canTakeTurn(next,side)) makeSound('StartTurn')
     }
-    // Raio (a cada 5 jogadas na chuva): cai depois da animação da jogada que o provocou, com trovão.
+    // Raio: o intervalo depende da área do mapa; cai depois da animação da jogada, com trovão.
     if (next.lightning && next.lightning.version > lightningVersion) {
       // Ao abrir a partida (sem estado anterior) não repete um raio antigo.
       const fresh = Boolean(state)

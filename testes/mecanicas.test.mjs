@@ -152,27 +152,131 @@ test('raio: na chuva, a cada 5 jogadas cai numa casa e tira 100 de vida de quem 
   assert.ok(!game.units.some(unit=>unit.id === 500),'100 de dano destruiu o tanque')
 })
 
-test('redemoinho: surge no mar quando a chuva começa, navios não entram e perdem 10 se começarem o turno ao lado',async () => {
-  const {moveCost,whirlpoolCells} = await import('../nativo/partida.js')
+test('raios: intervalo cai de 5 para 2 jogadas conforme a área do mapa',async () => {
+  const {lightningInterval} = await import('../nativo/partida.js')
+  assert.equal(lightningInterval({width:12,height:12}),5)
+  assert.equal(lightningInterval({width:24,height:24}),5)
+  assert.equal(lightningInterval({width:36,height:34}),3)
+  assert.equal(lightningInterval({width:40,height:40}),2)
+  assert.equal(lightningInterval({width:100,height:100}),2)
+  const map = {...board([{name:'Warmachine',side:1,cell:0},{name:'Warmachine',side:2,cell:1599}]),width:40,height:40,
+    tiles:Array.from({length:1600},()=>['Plains',['single',['plains_1']]])}
+  const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:777})
+  Object.assign(game.weather,{phase:'chuva',left:99})
+  order(rules,map,game,1,{type:'end',version:game.version})
+  assert.equal(game.lightning,undefined)
+  order(rules,map,game,2,{type:'end',version:game.version})
+  assert.equal(game.lightning.version,2)
+  assert.ok(game.lightning.cell >= 0 && game.lightning.cell < 1600)
+})
+
+function seaBoard(units = []) {
+  const map = board([{name:'Warmachine',side:1,cell:at(0,0)},{name:'Warmachine',side:2,cell:at(0,9)},...units])
+  for (let cell=0;cell<map.tiles.length;cell++) if (cell%width >= 5) map.tiles[cell] = ['Sea',['single',['plains_1']]]
+  return map
+}
+
+test('redemoinho: sorteio por rodada chuvosa, nove casas no mar e reprodução determinística',async () => {
+  const {whirlpoolCells} = await import('../nativo/partida.js')
+  let appeared = 0, absent = 0, later = 0
+  for (let seed=1;seed<=40;seed++) {
+    const map = seaBoard()
+    const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:seed})
+    Object.assign(game.weather,{phase:'aviso',left:1})
+    const repeat = structuredClone(game)
+    for (const side of [1,2]) {
+      order(rules,map,game,side,{type:'end',version:game.version})
+      order(rules,map,repeat,side,{type:'end',version:repeat.version})
+    }
+    assert.deepEqual(game,repeat)
+    const cells = whirlpoolCells(game,map)
+    assert.equal(game.weather.phase,'chuva')
+    if (cells.length) {
+      appeared++
+      assert.equal(cells.length,9)
+      assert.ok(cells.every(cell=>cell>=0 && cell<map.tiles.length && map.tiles[cell][0]==='Sea'))
+    } else {
+      absent++
+      Object.assign(game.weather,{phase:'chuva',left:5})
+      order(rules,map,game,1,{type:'end',version:game.version})
+      order(rules,map,game,2,{type:'end',version:game.version})
+      if (whirlpoolCells(game,map).length) later++
+    }
+  }
+  assert.ok(appeared > 0 && absent > 0,'o redemoinho não surge em toda chuva')
+  assert.ok(later > 0,'pode aparecer depois de a chuva começar')
+})
+
+test('redemoinho: atravessar tira 30 uma vez, fim e início do turno tiram mais 30',async () => {
+  const {whirlpoolCells,terrainTurnDamage} = await import('../nativo/partida.js')
+  const map = seaBoard([{name:'Battlecruiser',side:1,cell:at(6,5)}])
+  const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:777})
+  Object.assign(game.weather,{phase:'chuva',left:99,whirlpool:at(7,4)})
+  const ship = game.units.find(unit=>unit.name==='Battlecruiser')
+  const hp = ship.hp
+  assert.equal(whirlpoolCells(game,map).length,9)
+  assert.ok(Number.isFinite(moveCost(rules,map,game,rules.units[ship.name],at(7,5),1)))
+  assert.equal(terrainTurnDamage(rules,map,game,ship,at(8,5)),30,'IA percebe o terreno perigoso')
+  order(rules,map,game,1,{type:'move',unit:ship.id,cell:at(9,5),path:[at(7,5),at(8,5),at(9,5)],version:game.version})
+  assert.equal(ship.hp,hp-30,'três casas no mesmo movimento causam 30')
+  assert.equal(game.undo,null,'dano não pode ser desfeito')
+  order(rules,map,game,1,{type:'end',version:game.version})
+  assert.equal(ship.hp,hp-60,'30 ao encerrar o turno')
+  order(rules,map,game,2,{type:'end',version:game.version})
+  assert.equal(ship.hp,hp-90,'30 ao começar o turno seguinte')
+})
+
+test('redemoinho: dano letal interrompe movimento, remove a unidade e registra uma explosão',() => {
+  const map = seaBoard([{name:'Battlecruiser',side:1,cell:at(6,5)}])
+  const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:777})
+  Object.assign(game.weather,{phase:'chuva',left:99,whirlpool:at(7,4)})
+  const ship = game.units.find(unit=>unit.name==='Battlecruiser')
+  ship.hp=20
+  order(rules,map,game,1,{type:'move',unit:ship.id,cell:at(9,5),path:[at(7,5),at(8,5),at(9,5)],version:game.version})
+  assert.ok(!game.units.some(unit=>unit.id===ship.id))
+  assert.deepEqual(game.last.path,[at(7,5)])
+  assert.equal(game.last.eliminated.filter(unit=>unit.id===ship.id).length,1)
+  assert.equal(game.last.eliminated[0].cell,at(7,5))
+})
+
+test('redemoinho: mortes no começo e no fim do turno são removidas corretamente',() => {
+  for (const side of [1,2]) {
+    const map = seaBoard([{name:'Battlecruiser',side,cell:at(8,5)}])
+    const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:777})
+    Object.assign(game.weather,{phase:'chuva',left:99,whirlpool:at(7,4)})
+    const ship = game.units.find(unit=>unit.name==='Battlecruiser')
+    ship.hp=30
+    order(rules,map,game,1,{type:'end',version:game.version})
+    assert.ok(!game.units.some(unit=>unit.id===ship.id))
+    assert.equal(game.last.eliminated.filter(unit=>unit.id===ship.id).length,1)
+  }
+})
+
+test('redemoinho: não surge quando o mar não comporta três casas de largura',async () => {
+  const {whirlpoolCells} = await import('../nativo/partida.js')
   const map = board([{name:'Warmachine',side:1,cell:at(0,0)},{name:'Warmachine',side:2,cell:at(0,9)}])
-  const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:4242})
-  Object.assign(game.weather,{phase:'aviso',left:1})
-  order(rules,map,game,1,{type:'end',version:game.version})
-  order(rules,map,game,2,{type:'end',version:game.version})
-  // Mar de 2 colunas (x = 10 e 11): o redemoinho ocupa um bloco 2×2.
-  for (let y = 0; y < 12; y++) map.tiles[y*width + 10] = ['Sea',['single',['plains_1']]]
-  Object.assign(game.weather,{phase:'aviso',left:1})
-  order(rules,map,game,1,{type:'end',version:game.version})
-  order(rules,map,game,2,{type:'end',version:game.version})
-  const cells = whirlpoolCells(game,map)
-  assert.equal(game.weather.phase,'chuva')
-  assert.equal(cells.length,4,'ocupa 4 casas')
-  assert.ok(cells.every(cell => map.tiles[cell][0] === 'Sea'),'todas no mar')
-  const ship = rules.units['Battlecruiser']
-  assert.ok(cells.every(cell => moveCost(rules,map,game,ship,cell,1) === Infinity),'navio não entra no redemoinho')
-  const beside = [cells[0] - width,cells[2] + width].find(other => other >= 0 && other < width*12 && map.tiles[other][0] === 'Sea')
-  game.units.push({id:600,name:'Battlecruiser',side:1,cell:beside,hp:ship.health,credits:-1,moved:false,fired:false})
-  order(rules,map,game,1,{type:'end',version:game.version})
-  order(rules,map,game,2,{type:'end',version:game.version})
-  assert.equal(game.units.find(unit=>unit.id === 600).hp,ship.health - 10,'perdeu 10 de vida no começo do turno')
+  for (let y=0;y<height;y++) map.tiles[at(10,y)] = ['Sea',['single',['plains_1']]]
+  for (let seed=1;seed<=10;seed++) {
+    const game = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:seed})
+    Object.assign(game.weather,{phase:'aviso',left:1})
+    order(rules,map,game,1,{type:'end',version:game.version})
+    order(rules,map,game,2,{type:'end',version:game.version})
+    assert.deepEqual(whirlpoolCells(game,map),[])
+  }
+})
+
+test('redemoinho: destruir a última Warmachine transportada passa a vez numa partida de três equipes',() => {
+  const map = seaBoard([{name:'Warmachine',side:3,cell:at(1,9)}])
+  map.units[0] = {name:'Warmachine',side:1,cell:at(6,5)}
+  map.tiles[at(6,5)] = ['Shore',['single',['plains_1']]]
+  const game = createGame(rules,map,['ff00ff00','ff0000ff','ffff0000'],{weather:777})
+  Object.assign(game.weather,{phase:'chuva',left:99,whirlpool:at(7,4)})
+  const barge = game.units.find(unit=>unit.side===1)
+  order(rules,map,game,1,{type:'transport',unit:barge.id,name:'Leviathan Barge',version:game.version})
+  barge.hp=20
+  order(rules,map,game,1,{type:'move',unit:barge.id,cell:at(7,5),path:[at(7,5)],version:game.version})
+  assert.ok(game.defeated.includes(1))
+  assert.equal(game.turn,2)
+  assert.ok(!game.winner)
+  assert.equal(game.last.eliminated.filter(unit=>unit.id===barge.id).length,1)
 })

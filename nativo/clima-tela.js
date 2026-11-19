@@ -3,6 +3,7 @@
 // que chega por um canto antes do aviso de chuva, escurece quando chove e vai embora pelo canto oposto.
 // O ciclo (fase, rodadas, canto) vem do motor (state.weather); aqui é só o desenho.
 import { TILE, frame } from './graficos.js'
+import { WHIRLPOOL_SIZE, whirlpoolCells } from './partida.js'
 
 const PX = 4
 const VARIANTS = 6
@@ -22,7 +23,7 @@ function tile(paint,size = PX) {
 // Chuva e respingos usam pixels menores (gotas bem finas), ainda em blocos para manter o visual pixelado.
 const FINE = 2, FINE_GRID = TILE / FINE
 
-// Sprites gerados uma vez: variações de chuva, respingo e crista (cada casa usa uma, trocando a cada quadro).
+// Chuva e respingos são preparados uma vez e trocam no ritmo dos quadros do mapa.
 function makeSprites() {
   const random = seeded(20261118)
   const rain = Array.from({length:VARIANTS},() => tile(dot => {
@@ -47,90 +48,23 @@ function makeSprites() {
       dot(x+2,y-2,'rgba(60,95,155,.25)')
     }
   },FINE))
-  return {rain,splash,waves:makeWaves(random)}
-}
-
-// Ondas (como a referência): lâmina comprida e fina, quase na vertical, de espuma branca macia que vai ficando
-// azul-clara e transparente para um lado, borda irregular e uma sombra azul-escura do outro lado. Mede ~1,5 casa
-// de altura; 4 quadros de vida: nasce fraca, abre, desliza um pouco e some.
-const WAVE_HEIGHT = Math.round(TILE*1.5), WAVE_WIDTH = Math.round(TILE*.55)
-function makeWaves(random) {
-  return Array.from({length:VARIANTS},() => {
-    const tilt = (random()-.5)*.5, bulge = WAVE_WIDTH*(.18 + random()*.12)
-    const bumps = Array.from({length:9},() => random())
-    return [[.45,0],[.85,0],[1,2],[.4,4]].map(([alpha,slide]) => {
-      const raw = document.createElement('canvas')
-      raw.width = WAVE_WIDTH
-      raw.height = WAVE_HEIGHT
-      const ctx = raw.getContext('2d')
-      ctx.translate(WAVE_WIDTH/2 + slide*.5,WAVE_HEIGHT/2)
-      ctx.rotate(tilt)
-      const half = WAVE_HEIGHT*.42, thick = WAVE_WIDTH*.16
-      // Corpo: crescente fino (ponta fina em cima e embaixo), branco no meio indo para azul-claro transparente.
-      const body = () => {
-        ctx.beginPath()
-        ctx.moveTo(0,-half)
-        ctx.quadraticCurveTo(-bulge - thick,0,0,half)
-        ctx.quadraticCurveTo(-bulge + thick,0,0,-half)
-        ctx.closePath()
-      }
-      const glow = ctx.createLinearGradient(-bulge - thick,0,-bulge + thick*1.6,0)
-      glow.addColorStop(0,'rgba(170,215,245,0)')
-      glow.addColorStop(.45,'rgba(225,242,255,.85)')
-      glow.addColorStop(.75,'rgba(255,255,255,.95)')
-      glow.addColorStop(1,'rgba(255,255,255,.4)')
-      // Sombra azul-escura do lado de fora (deslocada para a direita).
-      ctx.save(); ctx.translate(thick*.9,0); body(); ctx.fillStyle = 'rgba(14,40,92,.45)'; ctx.fill(); ctx.restore()
-      body(); ctx.fillStyle = glow; ctx.fill()
-      // Borda irregular de espuma: bolinhas brancas ao longo do lado convexo.
-      ctx.fillStyle = 'rgba(255,255,255,.9)'
-      bumps.forEach((size,index) => {
-        const t = (index + .5)/bumps.length, y = -half + t*2*half
-        const x = -bulge*4*t*(1-t) + thick*.6
-        ctx.beginPath(); ctx.arc(x,y,.8 + size*2.2*Math.sin(t*Math.PI),0,Math.PI*2); ctx.fill()
-      })
-      // Desfoque leve para ficar macia como espuma.
-      const soft = document.createElement('canvas')
-      soft.width = WAVE_WIDTH
-      soft.height = WAVE_HEIGHT
-      const sctx = soft.getContext('2d')
-      sctx.filter = 'blur(.7px)'
-      sctx.globalAlpha = alpha
-      sctx.drawImage(raw,0,0)
-      return soft
-    })
-  })
-}
-
-// Redemoinho: braços em espiral azul-claros em volta de um centro escuro (gira no desenho).
-function makeWhirlpool() {
-  // Ocupa 2×2 casas: diâmetro de 2 casas, com a borda se desfazendo no mar.
-  const size = TILE*2
-  const canvas = document.createElement('canvas')
-  canvas.width = canvas.height = size
-  const ctx = canvas.getContext('2d')
-  const center = size/2
-  const dark = ctx.createRadialGradient(center,center,2,center,center,center)
-  dark.addColorStop(0,'rgba(4,10,24,.95)')
-  dark.addColorStop(.35,'rgba(12,32,64,.7)')
-  dark.addColorStop(.75,'rgba(30,70,120,.25)')
-  dark.addColorStop(1,'rgba(30,70,120,0)')
-  ctx.fillStyle = dark
-  ctx.fillRect(0,0,size,size)
-  ctx.lineCap = 'round'
-  for (let arm = 0; arm < 5; arm++) {
-    const start = arm * Math.PI*2/5
-    for (let step = 0; step < 56; step++) {
-      const t = step/56, angle = start + t*Math.PI*1.6, radius = center*(.92 - t*.78)
-      const x = center + Math.cos(angle)*radius, y = center + Math.sin(angle)*radius
-      ctx.fillStyle = `rgba(${Math.round(170 + 60*(1-t))},${Math.round(215 + 30*(1-t))},255,${(.12 + .5*Math.sin(t*Math.PI)).toFixed(2)})`
-      ctx.beginPath()
-      ctx.arc(x,y,(1 + 2.4*Math.sin(t*Math.PI))*size/95,0,Math.PI*2)
-      ctx.fill()
+  // Texturas de chuva prontas (4 × 4 casas com variações misturadas): a chuva cobre a tela com um único
+  // preenchimento em vez de um desenho por casa (num mapa 80 × 80 inteiro seriam milhares por quadro).
+  const RAIN_BLOCK = 4
+  const rainTiles = Array.from({length:VARIANTS},(_,variant) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = canvas.height = TILE*RAIN_BLOCK
+    const ctx = canvas.getContext('2d')
+    for (let y = 0; y < RAIN_BLOCK; y++) for (let x = 0; x < RAIN_BLOCK; x++) {
+      ctx.drawImage(rain[(variant + cellHash(y*RAIN_BLOCK + x)) % VARIANTS],x*TILE,y*TILE)
     }
-  }
-  return canvas
+    return canvas
+  })
+  return {rain,splash,rainTiles}
 }
+
+// As ondas e o redemoinho usam os PNGs transparentes originais, carregados com os recursos do jogo.
+const WAVE_HEIGHT = TILE*1.5
 
 // Massa de nuvens: uma nuvem só, grande e pixelada (1 pixel da imagem = 1 bloco de CLOUD_BLOCK na tela), maior que
 // o mapa: o miolo é fechado (cobre o mapa inteiro) e a borda é irregular, com manchas de dois tons.
@@ -149,7 +83,8 @@ function valueNoise(random,width,height,spacing) {
 function makeCloudMass(seed,map,dark) {
   const random = seeded(seed)
   const span = 1 + 2*CLOUD_MARGIN
-  const width = Math.ceil(map.width*TILE*span/CLOUD_BLOCK), height = Math.ceil(map.height*TILE*span/CLOUD_BLOCK)
+  const block = Math.max(CLOUD_BLOCK,Math.ceil(Math.max(map.width,map.height)*TILE*span/384))
+  const width = Math.ceil(map.width*TILE*span/block), height = Math.ceil(map.height*TILE*span/block)
   const shape = valueNoise(random,width,height,9), detail = valueNoise(random,width,height,3), tone = valueNoise(random,width,height,6)
   const canvas = document.createElement('canvas')
   canvas.width = width
@@ -181,7 +116,7 @@ function makeCloudMass(seed,map,dark) {
     if (tint) { octx.filter = 'none'; octx.globalCompositeOperation = 'source-in'; octx.fillStyle = tint; octx.fillRect(0,0,width,height) }
     return out
   }
-  return {cloud:soften(canvas,1.6),shadow:soften(canvas,2.6,'#06101c')}
+  return {cloud:soften(canvas,1.6),shadow:soften(canvas,2.6,'#06101c'),block}
 }
 
 // Raio em pixel art: zigue-zague do alto da tela até a casa atingida, com galhos curtos.
@@ -207,11 +142,34 @@ function makeBolt(seed,height) {
   return {block,points,branches}
 }
 
-export function createWeatherPainter() {
-  let lightning = null, whirlpoolImage = null
+const WAVES_ZOOM = .55, SPLASH_ZOOM = .7
+export function createWeatherPainter(images) {
+  let lightning = null
   let sprites = null
   let clouds = null, cloudsKey = ''
-  let progress = 0, lastTime = 0
+  let progress = 0, lastTime = null
+  let rainPatterns = null
+  let seaMask = null, waveMask = null, seaTiles = null, seaMap = null
+  const waveImages = [1,2,3].map(index => images['weather_wave_' + index])
+  const whirlpoolImage = images.weather_whirlpool
+
+  // A margem costeira também protege a parte de terra desenhada dentro dos sprites de falésia.
+  function waterMask(map,tiles) {
+    if (seaTiles === tiles && seaMap === map) return seaMask
+    seaMask = new Path2D()
+    waveMask = new Path2D()
+    const waterAt = (x,y) => x < 0 || y < 0 || x >= map.width || y >= map.height ||
+      ['Sea','Reef'].includes(tiles[y*map.width + x][0])
+    for (let cell = 0; cell < tiles.length; cell++) {
+      if (!['Sea','Reef'].includes(tiles[cell][0])) continue
+      const x = cell % map.width, y = Math.floor(cell/map.width)
+      seaMask.rect(x*TILE,y*TILE,TILE,TILE)
+      if ([-1,0,1].every(dy => [-1,0,1].every(dx => waterAt(x+dx,y+dy)))) waveMask.rect(x*TILE,y*TILE,TILE,TILE)
+    }
+    seaTiles = tiles
+    seaMap = map
+    return seaMask
+  }
 
   // Quanto o campo de nuvens já atravessou o mapa: 0 = fora, no canto de origem; 1 = sobre o mapa; 2 = saiu.
   function target(weather) {
@@ -227,13 +185,18 @@ export function createWeatherPainter() {
     if (key === cloudsKey) return clouds
     const seed = weather.cycle * 7919 + 17
     clouds = {light:makeCloudMass(seed,map,false),dark:makeCloudMass(seed,map,true)}
-    whirlpoolImage ??= makeWhirlpool()
     cloudsKey = key
     return clouds
   }
 
   // Onde está a massa de nuvens agora (posição em pixels do mundo e o par nuvem/sombra), ou null se não há nuvem.
   function cloudPlacement(weather,map,now) {
+    const elapsed = lastTime === null ? 500 : Math.max(0,Math.min(500,now - lastTime))
+    lastTime = now
+    const goal = target(weather)
+    progress += (goal - progress) * Math.min(1,elapsed/1400)
+    if (Math.abs(goal - progress) < .002) progress = goal
+    if (progress >= 2.19 && goal >= 2.2) progress = 0
     if (!weather || progress <= 0) return null
     const [dx,dy] = [[1,1],[-1,1],[-1,-1],[1,-1]][weather.from ?? 0]
     const span = 1 + 2*CLOUD_MARGIN
@@ -244,80 +207,96 @@ export function createWeatherPainter() {
     const pair = cloudField(weather,map)
     return {x,y,rain,dark,...(dark ? pair.dark : pair.light)}
   }
-  function stretch(ctx,image,x,y,alpha) {
+  function stretch(ctx,image,x,y,alpha,block) {
     ctx.save()
     ctx.imageSmoothingEnabled = true
     ctx.globalAlpha = alpha
-    ctx.drawImage(image,Math.round(x),Math.round(y),image.width*CLOUD_BLOCK,image.height*CLOUD_BLOCK)
+    ctx.drawImage(image,Math.round(x),Math.round(y),image.width*block,image.height*block)
     ctx.restore()
   }
 
-  // Chão (embaixo das unidades): sombra das nuvens no mar, ondas, respingos na terra e o redemoinho.
-  // Devolve true enquanto algo estiver animando de forma contínua (o redemoinho girando).
-  function paintGround(ctx,{weather,map,tiles,idle,now,left,top,right,bottom}) {
+  // Efeitos no chão usam a mesma máscara de mar, preparada uma vez por mapa.
+  // zoom: com o mapa bem afastado, ondas e respingos ficam minúsculos e custam caro (um desenho por casa),
+  // então só aparecem a partir de certo zoom; a chuva, a sombra, as nuvens e o redemoinho continuam sempre.
+  function paintGround(ctx,{weather,map,tiles,idle,now,left,top,right,bottom,zoom = 1}) {
     const place = cloudPlacement(weather,map,now)
-    // Sombra deslocada para baixo e para a direita: dá a sensação de que a nuvem está alta.
-    if (place) stretch(ctx,place.shadow,place.x + TILE*1.1,place.y + TILE*1.7,place.rain ? .16 : place.dark ? .15 : .14)
-    const rain = weather?.phase === 'chuva', windy = rain || weather?.phase === 'aviso'
-    const corner = rain && Number.isInteger(weather.whirlpool) ? weather.whirlpool : -1
-    const whirlpoolArea = new Set(corner < 0 ? [] : [corner,corner+1,corner+map.width,corner+map.width+1])
-    if (windy) {
-      sprites ??= makeSprites()
-      const firstX = Math.max(0,Math.floor(left/TILE)), lastX = Math.min(map.width-1,Math.ceil(right/TILE))
-      const firstY = Math.max(0,Math.floor(top/TILE)), lastY = Math.min(map.height-1,Math.ceil(bottom/TILE))
-      // Na chuva há mais ondas; no aviso, poucas. Cada onda vive 4 quadros e descansa 2 (ritmo do mapa).
-      const every = rain ? 2 : 4
+    const rain = weather?.phase === 'chuva'
+    if (!place && !rain) return false
+    const firstX = Math.max(0,Math.floor(left/TILE)-2), lastX = Math.min(map.width-1,Math.ceil(right/TILE)+2)
+    const firstY = Math.max(0,Math.floor(top/TILE)-2), lastY = Math.min(map.height-1,Math.ceil(bottom/TILE)+2)
+    const whirlpoolArea = new Set(whirlpoolCells({weather},map))
+    const corner = whirlpoolArea.size ? weather.whirlpool : -1
+    ctx.save()
+    ctx.clip(waterMask(map,tiles))
+    if (place) stretch(ctx,place.shadow,place.x + TILE*1.1,place.y + TILE*1.7,place.rain ? .16 : place.dark ? .15 : .14,place.block)
+    if (rain && zoom >= WAVES_ZOOM) {
+      // Cada crista atravessa quase três casas em nove segundos, aparecendo e desaparecendo aos poucos.
+      // O deslocamento e a rotação avançam a cada 500 ms, junto das animações originais do mapa.
+      ctx.save()
+      ctx.clip(waveMask)
+      const direction = [1,-1,-1,1][weather.from ?? 0]
       for (let y = firstY; y <= lastY; y++) for (let x = firstX; x <= lastX; x++) {
         const cell = y*map.width + x, hash = cellHash(cell)
-        const name = tiles[cell][0]
-        if (name === 'Sea' || name === 'Reef') {
-          // A onda passa da casa (1,5 de altura): só onde há mar em cima e embaixo, para não invadir a terra.
-          if (hash % every || y === 0 || y === map.height-1) continue
-          const up = tiles[cell - map.width][0], down = tiles[cell + map.width][0]
-          if (!['Sea','Reef'].includes(up) || !['Sea','Reef'].includes(down)) continue
-          if (whirlpoolArea.has(cell) || whirlpoolArea.has(cell - map.width) || whirlpoolArea.has(cell + map.width)) continue
-          const life = (idle + (hash >>> 3)) % 6
-          if (life < 4) ctx.drawImage(sprites.waves[(hash >>> 5) % VARIANTS][life],
-            x*TILE + (TILE - WAVE_WIDTH)/2,y*TILE + (TILE - WAVE_HEIGHT)/2)
-        } else if (rain) ctx.drawImage(sprites.splash[(hash + idle) % VARIANTS],x*TILE,y*TILE)
+        if (!['Sea','Reef'].includes(tiles[cell][0]) || hash % 5 || whirlpoolArea.has(cell)) continue
+        const life = ((idle + (hash >>> 8)) % 18)/18
+        const travel = (life - .5)*TILE*2.8
+        const cx = (x + .5)*TILE + direction*travel
+        const cy = (y + .5)*TILE + travel*.2
+        const image = waveImages[(hash >>> 5) % waveImages.length]
+        const height = WAVE_HEIGHT*(.85 + (hash >>> 16) % 4*.1)
+        const width = height*image.width/image.height
+        ctx.save()
+        ctx.translate(cx,cy)
+        ctx.rotate((direction < 0 ? Math.PI : 0) + ((hash >>> 20) % 5 - 2)*.04)
+        ctx.imageSmoothingEnabled = true
+        ctx.globalAlpha = Math.sin(life*Math.PI)*.7
+        ctx.drawImage(image,-width/2,-height/2,width,height)
+        ctx.restore()
       }
+      ctx.restore()
     }
     if (corner >= 0) {
-      whirlpoolImage ??= makeWhirlpool()
-      // Centro no encontro das 4 casas; gira em passos, no mesmo ritmo das animações do mapa.
-      const cx = (corner % map.width + 1) * TILE, cy = (Math.floor(corner / map.width) + 1) * TILE
+      const radius = WHIRLPOOL_SIZE*TILE/2
+      const cx = (corner % map.width + WHIRLPOOL_SIZE/2)*TILE, cy = (Math.floor(corner/map.width) + WHIRLPOOL_SIZE/2)*TILE
       ctx.save()
+      // O círculo mantém a imagem nas nove casas de mar mesmo quando seu quadrado gira.
+      ctx.beginPath()
+      ctx.arc(cx,cy,radius,0,Math.PI*2)
+      ctx.clip()
       ctx.translate(cx,cy)
-      ctx.rotate(-(idle % 12) * Math.PI*2/12)
-      ctx.drawImage(whirlpoolImage,-whirlpoolImage.width/2,-whirlpoolImage.height/2)
+      // No canvas, ângulos positivos giram no sentido horário.
+      ctx.rotate((idle % 24)*Math.PI*2/24)
+      ctx.imageSmoothingEnabled = true
+      ctx.drawImage(whirlpoolImage,-radius,-radius,radius*2,radius*2)
       ctx.restore()
+    }
+    ctx.restore()
+    if (rain && zoom >= SPLASH_ZOOM) {
+      sprites ??= makeSprites()
+      for (let y = firstY; y <= lastY; y++) for (let x = firstX; x <= lastX; x++) {
+        const cell = y*map.width + x
+        if (!['Sea','Reef'].includes(tiles[cell][0])) ctx.drawImage(sprites.splash[(cellHash(cell) + idle) % VARIANTS],x*TILE,y*TILE)
+      }
     }
     return false
   }
 
   // Céu: chuva por cima de tudo e a massa de nuvens macia e meio transparente (não esconde as unidades).
   function paintSky(ctx,{weather,map,idle,now,left,top,right,bottom}) {
-    const elapsed = lastTime ? Math.min(200,now - lastTime) : 0
-    lastTime = now
-    const goal = target(weather)
-    progress += (goal - progress) * Math.min(1,elapsed/1400)
-    if (Math.abs(goal - progress) < .002) progress = goal
-    if (progress >= 2.19 && goal >= 2.2) progress = 0
     const rain = weather?.phase === 'chuva'
     if (rain) {
       sprites ??= makeSprites()
       ctx.fillStyle = 'rgba(18,28,48,.08)'
       ctx.fillRect(left,top,right-left,bottom-top)
-      const firstX = Math.max(0,Math.floor(left/TILE)), lastX = Math.min(map.width-1,Math.ceil(right/TILE))
-      const firstY = Math.max(0,Math.floor(top/TILE)), lastY = Math.min(map.height-1,Math.ceil(bottom/TILE))
-      for (let y = firstY; y <= lastY; y++) for (let x = firstX; x <= lastX; x++) {
-        const cell = y*map.width + x
-        ctx.drawImage(sprites.rain[(cellHash(cell) + idle*5) % VARIANTS],x*TILE,y*TILE)
-      }
+      rainPatterns ??= sprites.rainTiles.map(canvas => ctx.createPattern(canvas,'repeat'))
+      const width = map.width*TILE, height = map.height*TILE
+      const x0 = Math.max(0,left), y0 = Math.max(0,top)
+      ctx.fillStyle = rainPatterns[idle % rainPatterns.length]
+      ctx.fillRect(x0,y0,Math.min(width,right) - x0,Math.min(height,bottom) - y0)
     }
     const place = cloudPlacement(weather,map,now)
-    if (place) stretch(ctx,place.cloud,place.x,place.y,place.rain ? .3 : place.dark ? .3 : .34)
-    return Math.abs(goal - progress) > .002
+    if (place) stretch(ctx,place.cloud,place.x,place.y,place.rain ? .3 : place.dark ? .3 : .34,place.block)
+    return false
   }
   // Raio: começa agora (ou depois de `delay` ms) na casa `cell`; hit = havia unidade lá (explosão grande).
   function strike(cell,{delay = 0,hit = false,seed = cell} = {}) {
@@ -365,7 +344,38 @@ export function createWeatherPainter() {
     }
     return true
   }
-  return {paintGround,paintSky,strike,paintLightning}
+  // Somente a área visível é armazenada, na resolução da tela. As centenas de sprites e os recortes do mar
+  // são refeitos no ritmo do mapa (500 ms), e não em cada quadro do movimento de uma unidade.
+  function cachedLayer(paint) {
+    const canvas = document.createElement('canvas')
+    const buffer = canvas.getContext('2d')
+    let previous = null
+    return (ctx,options) => {
+      const {map,tiles,weather,idle,left,top,right,bottom} = options
+      if (!weather && progress === 0) return false
+      const matrix = ctx.getTransform()
+      const scale = Math.hypot(matrix.a,matrix.b)
+      const width = Math.round((right-left)*scale), height = Math.round((bottom-top)*scale)
+      if (width <= 0 || height <= 0) return false
+      const key = [idle,width,height,scale,weather?.phase,weather?.left,weather?.cycle,weather?.from,weather?.whirlpool].join('|')
+      if (!previous || previous.key !== key || previous.map !== map || previous.tiles !== tiles ||
+          left < previous.left || top < previous.top || right > previous.right || bottom > previous.bottom) {
+        // Duas casas de margem permitem acompanhar o veículo sem refazer a chuva a cada pixel da câmera.
+        const padding = TILE*2
+        const bounds = {left:left-padding,top:top-padding,right:right+padding,bottom:bottom+padding}
+        const layerWidth = Math.ceil((bounds.right-bounds.left)*scale), layerHeight = Math.ceil((bounds.bottom-bounds.top)*scale)
+        if (canvas.width !== layerWidth || canvas.height !== layerHeight) { canvas.width = layerWidth; canvas.height = layerHeight }
+        buffer.setTransform(1,0,0,1,0,0)
+        buffer.clearRect(0,0,layerWidth,layerHeight)
+        buffer.setTransform(scale,0,0,scale,-bounds.left*scale,-bounds.top*scale)
+        paint(buffer,{...options,...bounds,now:idle*500})
+        previous = {key,map,tiles,...bounds}
+      }
+      ctx.drawImage(canvas,previous.left,previous.top,canvas.width/scale,canvas.height/scale)
+      return false
+    }
+  }
+  return {paintGround:cachedLayer(paintGround),paintSky:cachedLayer(paintSky),strike,paintLightning}
 }
 
 // Texto do clima para a barra da partida.

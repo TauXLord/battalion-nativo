@@ -94,7 +94,6 @@ export function terrainAt(rules, map, state, cell) {
 }
 
 export function moveCost(rules, map, state, spec, cell, side) {
-  if (spec.unitType === 'sea' && whirlpoolAt(state) >= 0 && whirlpoolCells(state,map).includes(cell)) return Infinity
   if (spec.movementType === 'wings' &&
       enemyJammers(rules,state,side).some(unit => distance(map.width,unit.cell,cell) <= jamRadius(map,unit.cell))) return Infinity
   const [,terrain] = terrainAt(rules,map,state,cell)
@@ -178,14 +177,15 @@ function weatherRandom(weather) {
   weather.seed = value || 1
   return weather.seed / 4294967296
 }
-// Raio: durante a chuva, a cada 5 jogadas cai um raio numa casa sorteada (pela semente do clima, então o replay
-// e o multiplayer veem o mesmo). A unidade que estiver lá leva 100 de dano. state.lightning guarda o último raio.
-const LIGHTNING_EVERY = 5, LIGHTNING_DAMAGE = 100
+// Mapas de até 24×24 têm um raio a cada 5 jogadas; a frequência cresce até 2 jogadas em mapas de 40×40 ou maiores.
+// O sorteio continua por casa, com a semente do clima, igual no multiplayer e no replay.
+const LIGHTNING_DAMAGE = 100
+export const lightningInterval = map => Math.max(2,Math.min(5,Math.round(5 - 3*(map.width*map.height - 576)/1024)))
 function lightningStrike(state,map,action) {
   const weather = state.weather
   if (!raining(state) || action.type === 'undo') return
   weather.moves = (weather.moves ?? 0) + 1
-  if (weather.moves % LIGHTNING_EVERY) return
+  if (weather.moves % lightningInterval(map)) return
   const cell = Math.floor(weatherRandom(weather) * map.width * map.height)
   const strike = {cell,version:state.version + 1}
   const target = state.units.find(unit => unit.cell === cell)
@@ -200,37 +200,63 @@ function lightningStrike(state,map,action) {
   state.lightning = strike
   state.undo = null
 }
-// Redemoinho: quando a chuva começa, surge no mar aberto (sorteado pela semente do clima) e some quando ela passa.
-// Ocupa 2×2 casas (weather.whirlpool = a casa de cima à esquerda) com mar em volta, para não ficar sobre a terra.
-// Navios não entram nele e perdem WHIRLPOOL_DAMAGE de vida se começarem o turno ao lado (nunca abaixo de 1).
-const WHIRLPOOL_DAMAGE = 10
+// Há 40% de chance por rodada chuvosa de surgir um redemoinho. Permanece até a chuva passar.
+// Navios podem atravessá-lo, sofrendo 30 de dano por deslocamento e no começo e no fim do seu turno dentro dele.
+export const WHIRLPOOL_SIZE = 3
+const WHIRLPOOL_DAMAGE = 30
 export const whirlpoolAt = state => state?.weather?.phase === 'chuva' && Number.isInteger(state.weather.whirlpool) ? state.weather.whirlpool : -1
 export function whirlpoolCells(state,map) {
   const corner = whirlpoolAt(state)
-  return corner < 0 ? [] : [corner,corner + 1,corner + map.width,corner + map.width + 1]
+  if (corner < 0 || corner % map.width + WHIRLPOOL_SIZE > map.width ||
+      Math.floor(corner/map.width) + WHIRLPOOL_SIZE > map.height) return []
+  return Array.from({length:WHIRLPOOL_SIZE*WHIRLPOOL_SIZE},(_,index)=>
+    corner + Math.floor(index/WHIRLPOOL_SIZE)*map.width + index % WHIRLPOOL_SIZE)
+}
+const whirlpoolDamageAt = (rules,map,state,unit,cell) => rules.units[unit.name].unitType === 'sea' &&
+  whirlpoolCells(state,map).includes(cell) ? WHIRLPOOL_DAMAGE : 0
+
+function damageWhirlpool(rules,map,state,unit,event,cell = unit.cell) {
+  const amount = whirlpoolDamageAt(rules,map,state,unit,cell)
+  if (!amount || unit.hp <= 0) return 0
+  unit.hp = Math.max(0,unit.hp - amount)
+  if (unit.hp === 0) {
+    if (event) (event.eliminated ??= []).push({...combatant(unit),cell,cloaked:unit.cloaked})
+    for (const tile of state.structures) if (tile.capturer === unit.id) { tile.capturer = 0; tile.strength = 8 }
+  }
+  return amount
 }
 function placeWhirlpool(state,map) {
   const weather = state.weather, {width,height} = map
+  const occupied = new Set([...state.units,...state.structures].map(item=>item.cell))
   const sea = (x,y) => x >= 0 && y >= 0 && x < width && y < height && ['Sea','Reef'].includes(map.tiles[y*width + x][0])
-  const free = cell => map.tiles[cell][0] === 'Sea' && !state.units.some(unit => unit.cell === cell) &&
-    !state.structures.some(tile => tile.cell === cell)
+  const free = cell => map.tiles[cell][0] === 'Sea' && !occupied.has(cell)
   const block = (x,y,margin) => {
-    for (let dy = -margin; dy < 2 + margin; dy++) for (let dx = -margin; dx < 2 + margin; dx++) if (!sea(x+dx,y+dy)) return false
-    return [0,1,width,width+1].every(offset => free(y*width + x + offset))
+    for (let dy = -margin; dy < WHIRLPOOL_SIZE + margin; dy++) {
+      for (let dx = -margin; dx < WHIRLPOOL_SIZE + margin; dx++) {
+        if (!sea(x+dx,y+dy)) return false
+        if (dx >= 0 && dy >= 0 && dx < WHIRLPOOL_SIZE && dy < WHIRLPOOL_SIZE && !free((y+dy)*width + x+dx)) return false
+      }
+    }
+    return true
   }
-  const corners = margin => map.tiles.map((_,cell)=>cell).filter(cell => cell % width < width-1 && block(cell % width,Math.floor(cell/width),margin))
-  // De preferência com 1 casa de mar em volta; se o mar for estreito, basta o 2×2 livre.
-  const options = corners(1).length ? corners(1) : corners(0)
+  const corners = margin => map.tiles.flatMap((_,cell)=>block(cell % width,Math.floor(cell/width),margin) ? [cell] : [])
+  const openSea = corners(1)
+  const options = openSea.length ? openSea : corners(0)
   weather.whirlpool = options.length ? options[Math.floor(weatherRandom(weather) * options.length)] : undefined
 }
 function advanceWeather(state,map) {
   const weather = state.weather
-  if (!weather || --weather.left > 0) return
+  if (!weather) return
+  const remaining = --weather.left
+  if (remaining > 0) {
+    if (raining(state) && whirlpoolAt(state) < 0 && weatherRandom(weather) < .4 && map) placeWhirlpool(state,map)
+    return
+  }
   if (weather.phase === 'limpo') Object.assign(weather,{phase:'nuvens',left:2,from:Math.floor(weatherRandom(weather)*4),cycle:weather.cycle+1})
   else if (weather.phase === 'nuvens') Object.assign(weather,{phase:'aviso',left:1})
   else if (weather.phase === 'aviso') {
-    Object.assign(weather,{phase:'chuva',left:2 + Math.floor(weatherRandom(weather)*3)})
-    if (map) placeWhirlpool(state,map)
+    Object.assign(weather,{phase:'chuva',left:2 + Math.floor(weatherRandom(weather)*3),moves:0,whirlpool:undefined})
+    if (weatherRandom(weather) < .4 && map) placeWhirlpool(state,map)
   }
   else if (weather.phase === 'chuva') Object.assign(weather,{phase:'dispersando',left:1,whirlpool:undefined})
   else Object.assign(weather,{phase:'limpo',left:3 + Math.floor(weatherRandom(weather)*4)})
@@ -337,7 +363,7 @@ export function canCounter(rules,map,state,attacker,defender) {
 const radarRange = (rules,spec) => modify(rules.unitEffects,spec.mods,'radar',spec,1)
 const turnDamage = (rules,spec,terrain) => modify(rules.terrainEffects,terrain.mods,'damage',spec,0)
 export const terrainTurnDamage = (rules,map,state,unit,cell) =>
-  turnDamage(rules,rules.units[unit.name],terrainAt(rules,map,state,cell)[1])
+  turnDamage(rules,rules.units[unit.name],terrainAt(rules,map,state,cell)[1]) + whirlpoolDamageAt(rules,map,state,unit,cell)
 const repairAmount = (spec, hp) => Math.min(spec.health-hp,spec.health/4)
 
 function healthAfterTurn(rules,spec,unit,hp) {
@@ -588,7 +614,7 @@ function capture(rules, state, unit, structure) {
   }
 }
 
-function beginTurn(rules, map, state) {
+function beginTurn(rules, map, state, event) {
   const sides = activeSides(state)
   const gains = state.campaign ? payRefineries(rules,state) : sides.flatMap(side=>payScenarioRefineries(rules,state,side))
   for (const unit of state.units) {
@@ -598,11 +624,7 @@ function beginTurn(rules, map, state) {
     unit.moved = unit.fired = false
     unit.transformed = false
     unit.hp -= turnDamage(rules,spec,terrain)
-    const whirlpool = whirlpoolCells(state,map)
-    if (whirlpool.length && spec.unitType === 'sea' && !whirlpool.includes(unit.cell) &&
-        whirlpool.some(cell => distance(map.width,unit.cell,cell) === 1)) {
-      unit.hp = Math.max(1,unit.hp - WHIRLPOOL_DAMAGE)
-    }
+    damageWhirlpool(rules,map,state,unit,event)
     if (unit.hp <= 0) continue
     unit.hp = healthAfterTurn(rules,spec,unit,unit.hp)
     unit.repairing = false
@@ -646,7 +668,7 @@ function eliminateTeams(rules,map,state,event) {
       facing:unit.facing,hp:unit.hp,cloaked:unit.cloaked})))
     state.units = state.units.filter(unit => unit.side !== side)
   }
-  if (eliminated.length) event.eliminated = eliminated
+  if (eliminated.length) event.eliminated = [...event.eliminated ?? [],...eliminated]
 }
 
 export function checkWinner(rules,map,state) {
@@ -683,7 +705,7 @@ export function teamScores(rules,state) {
   })
 }
 
-function advanceTurn(rules,map,state) {
+function advanceTurn(rules,map,state,event) {
   const previous = activeSides(state)
   const sides = state.colors.map((_,index)=>index+1)
   const leaders = state.activeSides ? sides.filter(side=>sides.find(other=>allied(state,side,other)) === side) : sides
@@ -706,14 +728,14 @@ function advanceTurn(rules,map,state) {
       state.sideVersion.fill(state.version+1)
     }
     state.undo = null
-    const gains = beginTurn(rules,map,state)
+    const gains = beginTurn(rules,map,state,event)
     if (group.some(side=>remaining(rules,map,state,side))) return gains
-    return [...gains,...advanceTurn(rules,map,state)]
+    return [...gains,...advanceTurn(rules,map,state,event)]
   }
   return []
 }
 
-function moveUnit(rules,map,state,unit,path) {
+function moveUnit(rules,map,state,unit,path,event) {
   const {cell:origin,left,facing,side,cloaked} = unit
   const positions = []
   let revealed = false
@@ -728,6 +750,9 @@ function moveUnit(rules,map,state,unit,path) {
   }
   // Friendly units may be crossed, but a movement cannot end on one.
   while (positions.length && state.units.some(other => other.cell === positions.at(-1))) positions.pop()
+  const hazard = positions.findIndex(cell=>whirlpoolDamageAt(rules,map,state,unit,cell) > 0)
+  const damaged = hazard >= 0 && damageWhirlpool(rules,map,state,unit,event,positions[hazard]) > 0
+  if (unit.hp <= 0) positions.splice(hazard + 1)
   unit.cell = positions.at(-1) ?? origin
   unit.left = unit.cell % map.width === origin % map.width ? left : unit.cell % map.width < origin % map.width
   if (positions.length) unit.facing = movementDirection(map.width,positions.at(-2) ?? origin,unit.cell)
@@ -738,7 +763,7 @@ function moveUnit(rules,map,state,unit,path) {
   if (stealth && positions.length) unit.cloaked = !jammed && !detectedAt(rules,map,state,unit)
   if (cloaked && !unit.cloaked) revealed = true
   revealed = detect(rules,map,state,unit) || revealed
-  state.undo = revealed || jammed ? null : {id:unit.id,cell:origin,left,facing,cloaked,side}
+  state.undo = damaged || revealed || jammed ? null : {id:unit.id,cell:origin,left,facing,cloaked,side}
   return {type:'move',side,unit:unit.id,from:origin,path:positions,jammed,public:!cloaked && !unit.cloaked}
 }
 
@@ -753,7 +778,7 @@ export function order(rules, map, state, side, action) {
       const view = snapshot(state,side)
       const path = action.path === undefined ? reachable(rules,map,view,unit).get(action.cell) : action.path
       requireOrder(legalMovePath(rules,map,view,unit,path) && path.at(-1) === action.cell)
-      Object.assign(event,moveUnit(rules,map,state,unit,path))
+      Object.assign(event,moveUnit(rules,map,state,unit,path,event))
       break
     }
     case 'attack': {
@@ -763,8 +788,8 @@ export function order(rules, map, state, side, action) {
         const path = action.path
         requireOrder(legalMovePath(rules,map,snapshot(state,side),unit,path) &&
           canAttack(rules,map,state,unit,target,path.at(-1)))
-        const movement = moveUnit(rules,map,state,unit,path)
-        if (unit.cell !== path.at(-1)) {
+        const movement = moveUnit(rules,map,state,unit,path,event)
+        if (unit.hp <= 0 || unit.cell !== path.at(-1)) {
           Object.assign(event,movement)
           break
         }
@@ -886,6 +911,7 @@ export function order(rules, map, state, side, action) {
     case 'end': {
       const resourceGains = state.campaign ? [] : payScenarioRefineries(rules,state,side)
       for (const unit of state.units) {
+        if (unit.side === side) damageWhirlpool(rules,map,state,unit,event)
         if (unit.side === side && !unit.moved && !unit.fired && !unit.disabled && has(rules.units[unit.name],'Cloaking')) {
           unit.cloaked = !detectedAt(rules,map,state,unit)
         }
@@ -897,14 +923,16 @@ export function order(rules, map, state, side, action) {
     }
     default: requireOrder(false)
   }
+  state.units = state.units.filter(unit=>unit.hp > 0)
   lightningStrike(state,map,action)
   eliminateTeams(rules,map,state,event)
   checkWinner(rules,map,state)
   if (!state.winner && (state.activeSides
     ? !state.activeSides.some(team=>canTakeTurn(state,team) && remaining(rules,map,state,team))
-    : action.type === 'end')) {
-    const gains = advanceTurn(rules,map,state)
+    : action.type === 'end' || !remaining(rules,map,state,side))) {
+    const gains = advanceTurn(rules,map,state,event)
     if (gains.length) event.resourceGains = [...event.resourceGains ?? [],...gains]
+    eliminateTeams(rules,map,state,event)
     checkWinner(rules,map,state)
   }
   if (state.sideVersion) {

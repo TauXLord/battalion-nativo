@@ -366,3 +366,23 @@ dialog.report { width:min(600px,calc(100vw - 16px)); }
 .daily-text strong { font-size:1.05rem; color:#f3d994; }
 .daily-text small { color:#cfd8cc; }
 .daily-actions { display:flex; gap:.5rem; flex-wrap:wrap; }
+
+/* Partida compacta (tela cheia, app de Android ou tela baixa): o mapa ocupa a tela inteira e o título, o status,
+   a barra do cronômetro e o zoom ficam numa faixa meio transparente por cima do mapa (à esquerda da barra lateral). */
+#player-view.compact-match { width:100% !important; max-width:none; height:100vh; height:100dvh; margin:0; padding:0;
+  display:flex; align-items:center; justify-content:center; overflow:hidden; }
+#stage .match-top { position:absolute; z-index:25; left:0; top:0; display:flex; flex-wrap:wrap; align-items:center;
+  gap:.15rem .6rem; padding:.25rem .5rem .7rem; font-size:.78rem; pointer-events:none;
+  background:linear-gradient(rgba(8,12,10,.8),rgba(8,12,10,.5) 70%,rgba(8,12,10,0)); }
+#stage .match-top > *, #stage .match-top header, #stage .match-top .player-tools { margin:0; }
+#stage .match-top a, #stage .match-top button, #stage .match-top input, #stage .match-top select, #stage .match-top output { pointer-events:auto; }
+#stage .match-top header { display:flex; align-items:center; gap:.5rem; padding:0; }
+#stage .match-top header h1 { display:none; }
+#stage .match-top .player-tools { display:flex; gap:.3rem; }
+#stage .match-top button, #stage .match-top select { padding:.1rem .5rem; font-size:.78rem; min-height:0; min-width:0; }
+#stage .match-top .match-hud, #stage .match-top #lan-status { margin:0; font-size:.78rem; }
+#stage .match-top .camera-controls { margin:0; gap:.25rem; }
+/* Sem margens nem rolagem da página no modo compacto: a partida cabe inteira na tela. */
+body.match-compact { margin:0; padding:0; overflow:hidden; }
+body.match-compact { display:block; }
+body.match-compact > main:not(#player-view) { display:none; }

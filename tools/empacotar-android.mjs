@@ -103,7 +103,7 @@ try {
   run(tool('aapt2'),['compile','--dir',join(root,'android/res'),'-o',compiled])
   const unsigned = join(work,'base.apk')
   run(tool('aapt2'),['link','-o',unsigned,'-I',androidJar,'--manifest',join(work,'AndroidManifest.xml'),
-    '--min-sdk-version','24','--target-sdk-version','35','-A',join(work,'assets'),'-0','mp3','-0','png',compiled])
+    '--min-sdk-version','24','--target-sdk-version','35',compiled])
 
   // 3. Código Java → classes.dex.
   const classes = join(work,'classes'), dex = join(work,'dex')
@@ -119,6 +119,24 @@ try {
   walk(classes)
   run(tool('d8'),['--release','--min-api','24','--lib',androidJar,'--output',dex,...classFiles])
   run(tool('aapt'),['add',unsigned,'classes.dex'],{cwd:dex})
+  // Arquivos do jogo em assets/www. Não usamos o "-A" do aapt2: no Windows ele grava os nomes com barra invertida
+  // (assets/www\index.html) e o Android não encontra nada. Aqui os nomes vão sempre com "/" (em lotes, por causa
+  // do limite de tamanho da linha de comando).
+  const assetFiles = []
+  const collect = folder => { for (const entry of fs.readdirSync(folder,{withFileTypes:true})) {
+    const full = join(folder,entry.name)
+    if (entry.isDirectory()) collect(full)
+    else assetFiles.push(full.slice(work.length + 1).split(/[\\/]/).join('/'))
+  } }
+  collect(join(work,'assets'))
+  for (let index = 0; index < assetFiles.length; index += 80) {
+    run(tool('aapt'),['add',unsigned,...assetFiles.slice(index,index + 80)],{cwd:work,stdio:'ignore'})
+  }
+  // Confere: nenhum nome com barra invertida e a página inicial presente.
+  const listing = spawnSync(tool('aapt'),['list',unsigned],{encoding:'utf8'}).stdout.split(/\r?\n/)
+  if (listing.some(name => name.includes('\\')) || !listing.includes('assets/www/index.html')) {
+    throw Error('APK com nomes de arquivo inválidos (assets/www/index.html não encontrado).')
+  }
 
   // 4. Alinhar e assinar (chave local guardada junto do SDK; a mesma chave permite atualizar o app instalado).
   const aligned = join(work,'aligned.apk')

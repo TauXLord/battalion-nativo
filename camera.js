@@ -31,7 +31,7 @@ export function bindCameraOptions(container) {
 }
 
 export function bindCamera(surface, bar, {
-  pan, zoom, click, ready, canControl = () => true, canPan = () => true, replayed,
+  pan, zoom, click, ready, canControl = () => true, canPan = () => true, replayed, pinch: onPinch,
   point = event => stagePoint(surface,event), bounds = () => [boardWidth,boardHeight],
 }) {
   const onBoard = ([x,y]) => {
@@ -63,6 +63,37 @@ export function bindCamera(surface, bar, {
     }
   })
   refresh()
+
+  // Pinça com dois dedos (tela de toque): aproxima ou afasta o zoom em volta do ponto entre os dedos.
+  // Registrado antes do arrastar: o segundo dedo cancela o arrasto e nenhum dos dois vira clique ao soltar.
+  const touches = new Map(), pinchFingers = new Set()
+  let pinching = null
+  const middle = () => { const [a,b] = [...touches.values()]; return [(a[0]+b[0])/2,(a[1]+b[1])/2] }
+  const spread = () => { const [a,b] = [...touches.values()]; return Math.hypot(a[0]-b[0],a[1]-b[1]) || 1 }
+  surface.addEventListener('pointerdown', event => {
+    if (event.pointerType !== 'touch' || !onPinch) return
+    touches.set(event.pointerId, point(event))
+    if (touches.size === 2 && canControl() && ready()) {
+      gesture = null
+      pinching = { distance: spread() }
+      for (const id of touches.keys()) pinchFingers.add(id)
+      try { surface.setPointerCapture(event.pointerId) } catch {}
+      onPinch('start', 1, middle())
+      event.stopImmediatePropagation()
+    }
+  }, true)
+  surface.addEventListener('pointermove', event => {
+    if (!touches.has(event.pointerId)) return
+    touches.set(event.pointerId, point(event))
+    if (!pinching || touches.size < 2) return
+    event.stopImmediatePropagation()
+    onPinch('move', spread() / pinching.distance, middle())
+  }, true)
+  for (const type of ['pointerup', 'pointercancel']) surface.addEventListener(type, event => {
+    touches.delete(event.pointerId)
+    if (pinching && touches.size < 2) { pinching = null; onPinch('end', 1, [0,0]) }
+    if (pinchFingers.delete(event.pointerId)) event.stopImmediatePropagation()
+  }, true)
 
   surface.addEventListener('pointerdown', event => {
     if (replayed?.has(event) || !settings.drag || event.button !== 0 || !canControl() || !ready()) return

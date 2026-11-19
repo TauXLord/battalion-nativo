@@ -302,26 +302,28 @@
     <p id="lobby-status" role="status"></p>
   </main>
   <main id="player-view" hidden>
-    <header><a href="/">← Menu</a><h1 id="player-title">Battalion</h1>
-      <div class="player-tools"><button id="match-skip-round" hidden title="Encerra o turno de todas as equipes até a próxima rodada">⏭ Avançar rodada</button><button id="match-report-open" hidden>Relatório</button><button id="match-watch" hidden>Ver replay</button><button id="match-replay" hidden>Salvar replay</button><button id="game-settings" class="settings-button" aria-label="Configurações" title="Configurações">⚙</button>
-        <button id="fullscreen">Tela cheia</button></div></header>
-    <p id="lan-status" role="status">Carregando partida…</p>
-    <p id="match-hud" class="match-hud" hidden></p>
-    <div id="player-camera" class="camera-controls" hidden>
-      <button data-zoom="-1" aria-label="Diminuir zoom">−</button>
-      <output aria-label="Zoom do mapa" class="camera-zoom">100%</output>
-      <button data-zoom="1" aria-label="Aumentar zoom">+</button>
-      <button data-zoom="2">Mapa inteiro</button>
-    </div>
-    <div id="replay-timeline" class="replay-timeline" hidden>
-      <button type="button" data-replay="start" title="Início" aria-label="Voltar ao início">⏮</button>
-      <button type="button" data-replay="back" title="Turno anterior" aria-label="Turno anterior">◀◀</button>
-      <button type="button" data-replay="play" title="Reproduzir ou pausar" aria-label="Reproduzir ou pausar">⏸</button>
-      <button type="button" data-replay="forward" title="Próximo turno" aria-label="Próximo turno">▶▶</button>
-      <button type="button" data-replay="end" title="Fim" aria-label="Ir para o fim">⏭</button>
-      <input type="range" min="0" value="0" step="1" aria-label="Linha do tempo do replay">
-      <select aria-label="Velocidade do replay"><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
-      <output class="replay-where"></output>
+    <div id="match-top" class="match-top">
+      <header><a href="/">← Menu</a><h1 id="player-title">Battalion</h1>
+        <div class="player-tools"><button id="match-skip-round" hidden title="Encerra o turno de todas as equipes até a próxima rodada">⏭ Avançar rodada</button><button id="match-report-open" hidden>Relatório</button><button id="match-watch" hidden>Ver replay</button><button id="match-replay" hidden>Salvar replay</button><button id="game-settings" class="settings-button" aria-label="Configurações" title="Configurações">⚙</button>
+          <button id="fullscreen">Tela cheia</button></div></header>
+      <p id="lan-status" role="status">Carregando partida…</p>
+      <p id="match-hud" class="match-hud" hidden></p>
+      <div id="player-camera" class="camera-controls" hidden>
+        <button data-zoom="-1" aria-label="Diminuir zoom">−</button>
+        <output aria-label="Zoom do mapa" class="camera-zoom">100%</output>
+        <button data-zoom="1" aria-label="Aumentar zoom">+</button>
+        <button data-zoom="2">Mapa inteiro</button>
+      </div>
+      <div id="replay-timeline" class="replay-timeline" hidden>
+        <button type="button" data-replay="start" title="Início" aria-label="Voltar ao início">⏮</button>
+        <button type="button" data-replay="back" title="Turno anterior" aria-label="Turno anterior">◀◀</button>
+        <button type="button" data-replay="play" title="Reproduzir ou pausar" aria-label="Reproduzir ou pausar">⏸</button>
+        <button type="button" data-replay="forward" title="Próximo turno" aria-label="Próximo turno">▶▶</button>
+        <button type="button" data-replay="end" title="Fim" aria-label="Ir para o fim">⏭</button>
+        <input type="range" min="0" value="0" step="1" aria-label="Linha do tempo do replay">
+        <select aria-label="Velocidade do replay"><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+        <output class="replay-where"></output>
+      </div>
     </div>
     <div id="stage">
       <p id="turn-banner" role="status" hidden></p>
