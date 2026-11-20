@@ -14,7 +14,7 @@ Você vai continuar o trabalho num remake em JavaScript do jogo Flash **Battalio
   - Outros: `retomar.js` (retomar de arquivo), `analise.js` e `relatorio.js` (relatório e linha do tempo do replay), `conquistas.js`, `desafio.js`, `cofre.js`, `chat.js`, `procedural.js` (gerador de mapas), `audio.js`.
   - **Arquivo novo de cliente precisa entrar no mapa `files` do `servidor.js`.** O teste "todos os módulos que a página importa são servidos" acusa quando isso é esquecido.
   - `traducao-en.json`: traduções (chave em português → inglês). Todo texto novo passa por `t('...')` e ganha uma entrada aqui.
-  - `versao.json`: versão da edição (hoje **1.2.0**; o clima e as novidades depois dela ainda não foram publicados).
+  - `versao.json`: versão da edição (hoje **1.3.0**, publicada com o clima, o raio, o redemoinho e o botão Avançar rodada).
 - **`android/`** e **`tools/empacotar-android.mjs`**: APK (WebView com os arquivos no próprio APK).
 - **`tools/`**: empacotadores do Windows (`empacotar-nativo.ps1`), Linux/macOS (`empacotar-unix.py`) e Android, e `publicar-versao.mjs` (publica tudo no GitHub).
 - **`testes/`**: testes do Node (`node --test "testes/*.test.mjs"`). Hoje são **54, todos passando**.
@@ -22,8 +22,8 @@ Você vai continuar o trabalho num remake em JavaScript do jogo Flash **Battalio
 ## Como trabalhar
 
 - **Git** está em `C:\Program Files\Git\cmd\git.exe` (não está no PATH). O GitHub CLI está em `C:\Program Files\GitHub CLI\gh.exe`, com login de **TauXLord**.
-  - Repositório **privado**: `TauXLord/battalion-nativo` (código e Releases).
-  - Repositório **público**: `TauXLord/battalion-nativo-versao`, só com `versao.json` (número, data e link). O jogo lê esse arquivo para avisar sobre atualizações. Nada do jogo pode ir para lá.
+  - Repositório **público** (desde 19/11/2026): `TauXLord/battalion-nativo` (código e Releases).
+  - Repositório de versão: `TauXLord/battalion-nativo-versao`, só com `versao.json` (número, data e link). O jogo lê esse arquivo para avisar sobre atualizações. Nada do jogo pode ir para lá.
 - Escreva as mensagens de commit num arquivo e use `git commit -F arquivo`. Faça um commit por funcionalidade e envie com `git push`.
 - **Codificação:** os arquivos são UTF-8 com acentos. Não use `Set-Content` nem `Get-Content -Raw` do PowerShell para reescrever arquivos (já corrompeu acentos uma vez). Edite com Node, com uma ferramenta de edição de texto ou com `-Encoding utf8`.
 - **Testar no navegador:** `node nativo/servidor.js` abre em `http://127.0.0.1:8770`. Use **127.0.0.1**, não `localhost`: as funções locais (sistema, cofre, partidas salvas) só respondem em 127.0.0.1. Para não mexer nos dados reais, rode com `BATTALION_NATIVE_PORT=878x`, `BATTALION_VAULT_DIR=<pasta temp>` e `BATTALION_SAVES_DIR=<pasta temp>`.
