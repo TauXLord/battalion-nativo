@@ -20,7 +20,7 @@ import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { chooseAction as baselineAction } from '../nativo/ia.js'
 import { chooseAction as tacticalAction, defaultParams } from '../nativo/ia-tatica.js'
-import { createGame, order, snapshot } from '../nativo/partida.js'
+import { createGame, order, snapshot, teamScores } from '../nativo/partida.js'
 import { generateMap } from '../nativo/procedural.js'
 import { profileDirectory, profilePath } from '../nativo/perfil-ia.js'
 
@@ -67,8 +67,12 @@ function play({seed,side,params,rival,rounds}) {
   }
   const other = side === 1 ? 2 : 1
   const result = game.winner === side ? 1 : game.winner ? -1 : 0
-  // Vitória vale 1; fora isso, a diferença de Warmachines desempata (cada uma vale 0,15).
-  const score = result + (result ? 0 : .15*(machines(side)-machines(other)))
+  // Vitória vale 1. No empate (rodada limite), a nota vem da diferença de Warmachines (0,15 cada) e da vantagem
+  // de pontos (valor do exército + estruturas, a mesma conta do modo de vitória por pontos), até ±0,35. Antes só as
+  // Warmachines contavam: na neblina quase todo empate terminava 3 x 3, nota zero, e o treino não aprendia nada.
+  const points = teamScores(data.rules,game), mine = points[side-1], theirs = points[other-1]
+  const advantage = mine + theirs > 0 ? (mine - theirs)/(mine + theirs) : 0
+  const score = result || .15*(machines(side)-machines(other)) + .35*advantage
   const label = map.title && map.title !== 'Mapa procedural' ? map.title :
     `${map.islands ? 'ilhas' : 'procedural'} ${map.width}×${map.height}`
   const modeLabel = ['',' · névoa',' · clima',' · névoa+clima'][mode]

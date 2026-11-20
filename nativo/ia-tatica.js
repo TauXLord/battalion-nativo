@@ -85,6 +85,24 @@ function distanceField(rules,map,view,spec,goals,side) {
   return costs
 }
 
+function huntTargets(rules,map,view,side) {
+  const seen = new Set(view.fog)
+  const linchpin = unit => has(rules.units[unit.name] ?? {mods:[]},'Linchpin')
+  const starts = map.units ?? []
+  const theirs = starts.filter(unit=>unit.side && !allied(view,unit.side,side) && linchpin(unit)).map(unit=>unit.cell)
+  const ours = starts.filter(unit=>unit.side && allied(view,unit.side,side) && linchpin(unit)).map(unit=>unit.cell)
+  const hidden = theirs.filter(cell=>!seen.has(cell))
+  if (hidden.length) return hidden.map(cell=>({cell}))
+  if (!theirs.length) return []
+  const nearest = (cell,list) => list.reduce((low,other)=>Math.min(low,distance(map.width,cell,other)),Infinity)
+  const cells = []
+  for (let cell = 0; cell < map.tiles.length; cell++) {
+    if (seen.has(cell) || cell % 2 || Math.floor(cell/map.width) % 2) continue
+    if (!ours.length || nearest(cell,theirs) < nearest(cell,ours)) cells.push({cell})
+  }
+  return cells
+}
+
 function context(rules,map,state,side,params) {
   const view = snapshot(state,side)
   const mine = view.units.filter(unit=>unit.side === side)
@@ -97,13 +115,11 @@ function context(rules,map,state,side,params) {
   // Cada refinaria paga 150 por Warmachine no início e no fim do turno.
   const incomePerMachine = view.campaign ? 0 : 300*owned
   const enemyAir = enemies.filter(unit=>rules.units[unit.name].unitType === 'air')
-  // Neblina sem Warmachine inimiga à vista: o exército vai explorar onde ela deve estar (posição inicial das
-  // Warmachines inimigas no mapa e as estruturas do inimigo), em vez de ficar parado passando a vez.
-  const fogged = Array.isArray(view.fog) || Boolean(state.fog)
-  const scouts = fogged && !enemyMachines.length ? [
-    ...(map.units ?? []).filter(unit=>unit.side && !allied(view,unit.side,side) && has(rules.units[unit.name] ?? {mods:[]},'Linchpin')),
-    ...view.structures.filter(tile=>tile.side && !allied(view,tile.side,side)),
-  ].map(item=>({cell:item.cell})) : []
+  // Neblina sem Warmachine inimiga à vista: o exército de ataque vai caçá-la onde ela deve estar, em vez de ficar
+  // trocando tiros com as tropas da linha de frente até a rodada limite (as partidas com neblina viravam empate).
+  // 1. posição inicial das Warmachines inimigas que ainda não está à vista;
+  // 2. conferida a posição inicial, as casas ainda não vistas do lado inimigo do mapa (grade de 2 em 2 casas).
+  const scouts = Array.isArray(view.fog) && !enemyMachines.length ? huntTargets(rules,map,view,side) : []
   const ctx = {rules,map,view,side,params,mine,enemies,occupied,myMachines,enemyMachines,refineries,owned,scouts,
     incomePerMachine,enemyAir,fields:new Map(),threatCache:new Map(),reach:new Map()}
   // Alcance de cada inimigo no próximo turno (as nossas unidades bloqueiam o caminho).
@@ -202,7 +218,7 @@ function field(ctx,spec,kind,goals) {
   return ctx.fields.get(key)
 }
 
-function attackGoals(ctx,spec,targets = ctx.enemyMachines.length ? ctx.enemyMachines : [...ctx.enemies,...ctx.scouts]) {
+function attackGoals(ctx,spec,targets = ctx.enemyMachines.length ? ctx.enemyMachines : ctx.scouts.length ? ctx.scouts : ctx.enemies) {
   const {map,rules,view} = ctx
   const cells = new Set()
   for (const target of targets) {
@@ -278,9 +294,12 @@ function positionValue(ctx,unit,cell) {
     const anchors = ctx.myMachines.flatMap(machine=>neighbors(map,machine.cell))
     goal = field(ctx,spec,'guard',anchors.length ? anchors : attackGoals(ctx,spec))
   } else goal = field(ctx,spec,'attack:'+spec.weaponRangeMin+'-'+spec.weaponRangeMax,attackGoals(ctx,spec))
+  // Caçada na neblina: a Warmachine estimada costuma estar do outro lado do mapa, a mais de 40 de custo de movimento;
+  // com o teto de 40 avançar não mudava nada e o exército ficava parado. Fora da caçada o teto continua 40.
+  const cap = ctx.scouts.length && role === 'attack' ? 160 : 40
   const remaining = goal[cell]
-  if (Number.isFinite(remaining)) value -= params.progress * Math.min(remaining,40)
-  else value -= params.progress * 40
+  if (Number.isFinite(remaining)) value -= params.progress * Math.min(remaining,cap)
+  else value -= params.progress * cap
   // Coesão: avançar em grupo.
   let friends = 0
   for (const other of ctx.mine) if (other.id !== unit.id && distance(map.width,other.cell,cell) <= 2) friends++
@@ -519,7 +538,7 @@ function scoutMove(ctx) {
   let best = null
   for (const unit of ctx.mine) {
     const spec = rules.units[unit.name]
-    if (unit.moved || unit.fired || unit.disabled || unit.transported || has(spec,'Linchpin')) continue
+    if (unit.moved || unit.fired || unit.disabled || unit.transported || roleOf(ctx,unit) !== 'attack') continue
     const here = positionValue(ctx,unit,unit.cell)
     for (const [cell,path] of reachable(rules,map,view,unit)) {
       const gain = positionValue(ctx,unit,cell) - here
@@ -578,8 +597,10 @@ export function chooseAction(rules,map,state,options = {}) {
     // Igual ao treino (tools/treinar-tatica.mjs): combate guloso de dificuldade 2, sem busca por tempo.
     // Repassar options.seconds faria o jogo pensar ~1 s por movimento e mudaria o comportamento treinado.
     const combat = baselineAction(rules,map,{...state,units},{...options,side,profile:undefined,difficulty:options.combatLevel ?? 2,seconds:0})
-    // Neblina: a IA padrão não anda sem inimigo à vista; aí as tropas paradas avançam explorando.
-    if (combat?.type === 'end' && ctx.scouts.length) return scoutMove(ctx) ?? combat
+    // Neblina sem Warmachine inimiga à vista: em vez de só se posicionar perto das tropas inimigas visíveis
+    // (ou passar a vez), as tropas de ataque avançam caçando a Warmachine. Ataques continuam com a IA padrão.
+    if (ctx.scouts.length && (combat?.type === 'end' || combat?.type === 'move' &&
+        roleOf(ctx,ctx.mine.find(unit=>unit.id === combat.unit) ?? {name:'Warmachine'}) === 'attack')) return scoutMove(ctx) ?? combat
     return combat
   }
   // 2. Abates de alto valor contra outras unidades.
