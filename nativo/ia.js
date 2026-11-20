@@ -71,6 +71,8 @@ function approachCosts(rules,map,state,side) {
 function firingPositions(rules,map,view,unit,enemies) {
   const spec = rules.units[unit.name], cells = new Set()
   const ready = {...unit,moved:false,fired:false}
+  // Jammers inimigos calculados uma vez (antes, a cada casa testada).
+  const jammers = spec.movementType === 'wings' ? enemyJammers(rules,view,unit.side) : undefined
   for (const target of enemies) {
     const x = target.cell % map.width, y = Math.floor(target.cell / map.width)
     const radius = spec.weaponRangeMax + Number(isRanged(spec))
@@ -79,7 +81,7 @@ function firingPositions(rules,map,view,unit,enemies) {
       if (cx<0 || cx>=map.width || cy<0 || cy>=map.height || !dx && !dy) continue
       const cell = cy*map.width+cx
       if (!cells.has(cell) && canAttack(rules,map,view,{...ready,cell},target) &&
-          Number.isFinite(moveCost(rules,map,view,spec,cell,unit.side))) cells.add(cell)
+          Number.isFinite(moveCost(rules,map,view,spec,cell,unit.side,jammers))) cells.add(cell)
     }
   }
   return [...cells]

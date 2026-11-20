@@ -97,39 +97,96 @@ export function terrainAt(rules, map, state, cell) {
   return [name,rules.terrain[name]]
 }
 
-export function moveCost(rules, map, state, spec, cell, side) {
-  if (spec.movementType === 'wings' &&
-      enemyJammers(rules,state,side).some(unit => distance(map.width,unit.cell,cell) <= jamRadius(map,unit.cell))) return Infinity
+// jammers (opcional): lista já calculada de enemyJammers(rules,state,side), para quem testa muitas casas seguidas.
+export function moveCost(rules, map, state, spec, cell, side, jammers) {
+  if (spec.movementType === 'wings' && jammed(map,jammers ?? enemyJammers(rules,state,side),cell)) return Infinity
   const [,terrain] = terrainAt(rules,map,state,cell)
   return terrainMoveCost(rules,spec,terrain)
 }
-
-export function terrainMoveCost(rules,spec,terrain) {
-  const cost = modify(rules.terrainEffects,terrain.mods,'movementCost',spec,terrain.cost)
-  // Infantaria (Sure-Footed) anda só 3 casas, mas floresta e montanha não a atrasam. O que é intransponível continua.
-  return has(spec,'Sure-Footed') && Number.isFinite(cost) ? Math.min(cost,terrain.cost) : cost
+const jammed = (map,jammers,cell) => {
+  for (const unit of jammers) if (distance(map.width,unit.cell,cell) <= jamRadius(map,unit.cell)) return true
+  return false
 }
+
+// O custo de um terreno para um tipo de unidade nunca muda durante a partida: é calculado uma vez e guardado
+// (era recalculado a cada casa testada na busca de caminhos, lendo os modificadores como texto).
+const terrainCosts = new WeakMap()
+export function terrainMoveCost(rules,spec,terrain) {
+  let costs = terrainCosts.get(spec)
+  if (!costs) terrainCosts.set(spec,costs = new Map())
+  let cost = costs.get(terrain)
+  if (cost === undefined) {
+    cost = modify(rules.terrainEffects,terrain.mods,'movementCost',spec,terrain.cost)
+    // Infantaria (Sure-Footed) anda só 3 casas, mas floresta e montanha não a atrasam. O que é intransponível continua.
+    if (has(spec,'Sure-Footed') && Number.isFinite(cost)) cost = Math.min(cost,terrain.cost)
+    costs.set(terrain,cost)
+  }
+  return cost
+}
+
+// Fila de prioridade (heap binário) da busca de caminhos: sai o menor custo; no empate, o que entrou por último.
+// É a mesma ordem da versão antiga (ordenar a fila inteira a cada passo e tirar o último), então os caminhos
+// escolhidos e a ordem das casas não mudam; só deixa de reordenar tudo a cada passo.
+function popFirst(heap) {
+  const top = heap[0], last = heap.pop()
+  if (heap.length) {
+    heap[0] = last
+    for (let index = 0;;) {
+      const left = 2*index + 1, right = left + 1
+      let smallest = index
+      if (left < heap.length && before(heap[left],heap[smallest])) smallest = left
+      if (right < heap.length && before(heap[right],heap[smallest])) smallest = right
+      if (smallest === index) break
+      ;[heap[index],heap[smallest]] = [heap[smallest],heap[index]]
+      index = smallest
+    }
+  }
+  return top
+}
+function pushNode(heap,node) {
+  heap.push(node)
+  for (let index = heap.length - 1; index > 0;) {
+    const parent = (index - 1) >> 1
+    if (!before(heap[index],heap[parent])) break
+    ;[heap[index],heap[parent]] = [heap[parent],heap[index]]
+    index = parent
+  }
+}
+const before = (a,b) => a.cost < b.cost || a.cost === b.cost && a.order > b.order
 
 export function reachable(rules, map, state, unit) {
   const results = new Map()
   if (unit.moved || unit.fired || unit.disabled) return results
   const spec = rules.units[unit.name]
   const cells = new Map(state.units.map(other => [other.cell,other]))
-  const start = {cell:unit.cell,cost:0,path:[]}
-  const queue = [start]
+  // Calculados uma vez por busca (antes, a cada casa): Jammers inimigos, prédios por casa e o custo de cada casa.
+  const jammers = spec.movementType === 'wings' ? enemyJammers(rules,state,unit.side) : []
+  const buildings = new Map()
+  for (const tile of state.structures) if (!buildings.has(tile.cell)) buildings.set(tile.cell,tile)
+  const stepCost = new Map()
+  const costOf = cell => {
+    let cost = stepCost.get(cell)
+    if (cost === undefined) {
+      cost = jammers.length && jammed(map,jammers,cell) ? Infinity :
+        terrainMoveCost(rules,spec,rules.terrain[buildings.get(cell)?.name ?? state.ore[cell] ?? map.tiles[cell][0]])
+      stepCost.set(cell,cost)
+    }
+    return cost
+  }
+  let order = 0
+  const queue = [{cell:unit.cell,cost:0,path:[],order:order++}]
   const best = new Map([[unit.cell,0]])
   while (queue.length) {
-    queue.sort((a,b) => b.cost - a.cost)
-    const current = queue.pop()
+    const current = popFirst(queue)
     if (best.get(current.cell) !== current.cost) continue
     if (!cells.has(current.cell)) results.set(current.cell,current.path)
     for (const cell of neighbors(map,current.cell)) {
       const occupant = cells.get(cell)
       if (occupant && !allied(state,occupant.side,unit.side)) continue
-      const cost = current.cost + moveCost(rules,map,state,spec,cell,unit.side)
+      const cost = current.cost + costOf(cell)
       if (cost > spec.range || cost >= (best.get(cell) ?? Infinity)) continue
       best.set(cell,cost)
-      queue.push({cell,cost,path:[...current.path,cell]})
+      pushNode(queue,{cell,cost,path:[...current.path,cell],order:order++})
     }
   }
   return results
