@@ -1,7 +1,7 @@
 // IA tática: avaliação doutrinária (terreno, economia por vaga, papéis) + solucionador de abate
 // + checagem defensiva das Warmachines. Mesma assinatura de chooseAction de ia.js.
 // Todos os pesos ficam em `defaultParams` para serem ajustados por treino (perfil format 2).
-import { allied, buildCells, buildCost, buildTargetScore, canAttack, canCounter, canRepair, damageAmount,
+import { allied, raining, buildCells, buildCost, buildTargetScore, canAttack, canCounter, canRepair, damageAmount,
   distance, isRanged, moveCost, neighbors, reachable, snapshot, terrainAt, terrainMoveCost,
   terrainTurnDamage } from './partida.js'
 import { chooseAction as baselineAction } from './ia.js'
@@ -37,6 +37,8 @@ export const defaultParams = {
   strandedPenalty: 120,    // unidade terrestre que não alcança o inimigo
   navalBonus: 45,          // navio ou avião que alcança o inimigo
   shoreSeek: 60,           // Warmachine ir para a costa para poder construir navios
+  // Chuva: estrutura é para-raios para unidades terrestres e navais (o raio não causa dano nelas).
+  lightningShelter: 20,
 }
 
 const has = (spec,name) => spec.mods.includes(name)
@@ -257,6 +259,7 @@ function positionValue(ctx,unit,cell) {
   value += params.terrainCover * defenseBonus(ctx,spec,cell) * (role === 'machine' ? 1.5 : .5)
   const hazard = terrainTurnDamage(rules,map,ctx.view,unit,cell)
   if (hazard > 0) value -= hitValue(ctx,unit,hazard)
+  if (raining(ctx.view) && spec.unitType !== 'air' && ctx.view.structures.some(tile=>tile.cell === cell)) value += params.lightningShelter
   if (role === 'machine') return value
   let goal
   if (role === 'capture') {
@@ -487,12 +490,20 @@ function machineOptions(ctx,machine,offer) {
   }
 }
 
-// Ponto de entrada do jogo: dificuldade Fácil (0) mantém a IA antiga; Normal e Difícil usam a IA tática.
-// Perfil format 1 (rede antiga) vale só para a IA antiga; format 2 ajusta os pesos da IA tática.
+// Níveis da IA (todos usam a IA tática treinada):
+//   0 Fácil: erra de propósito (ruído nas escolhas) e luta sem medo de perder unidades;
+//   1 Médio: pouco ruído, combate equilibrado;
+//   2 Difícil: a IA treinada pura, igual ao treino;
+//   3 Skynet: a IA treinada pura com 40% a mais de dano (o bônus de dano fica em levelAttackScale, partida.js).
+// Perfil format 1 (rede antiga) vale só para a IA padrão (engine 'padrao'); format 2 ajusta os pesos da IA tática.
+const LEVEL_NOISE = [36,8,0,0]
 export function chooseGameAction(rules,map,state,options = {}) {
-  if ((options.difficulty ?? 1) === 0 || options.engine === 'padrao') return baselineAction(rules,map,state,options)
+  const level = Math.max(0,Math.min(3,options.difficulty ?? 1))
+  if (options.engine === 'padrao') return baselineAction(rules,map,state,{...options,difficulty:Math.min(2,level)})
   const profile = validTacticalProfile(options.profile) ? options.profile : undefined
-  return chooseAction(rules,map,state,{...options,profile})
+  const noise = LEVEL_NOISE[level]
+  const random = options.random ?? (noise ? Math.random : undefined)
+  return chooseAction(rules,map,state,{...options,profile,difficulty:Math.min(2,level),combatLevel:Math.min(2,level),noise,random})
 }
 
 export function chooseAction(rules,map,state,options = {}) {
@@ -502,7 +513,7 @@ export function chooseAction(rules,map,state,options = {}) {
   const params = paramsFrom(options.profile)
   const ctx = context(rules,map,state,side,params)
   const {view} = ctx
-  if (!ctx.enemies.length) return baselineAction(rules,map,state,{...options,profile:undefined,difficulty:2,seconds:0})
+  if (!ctx.enemies.length) return baselineAction(rules,map,state,{...options,profile:undefined,difficulty:options.combatLevel ?? 2,seconds:0})
   ctx.machineDanger = new Map(ctx.myMachines.map(machine=>[machine.id,focusedDamage(ctx,machine,machine.cell)]))
 
   // 1. Abate de Warmachine inimiga se houver combinação letal neste turno.
@@ -511,7 +522,7 @@ export function chooseAction(rules,map,state,options = {}) {
     const plan = killPlan(ctx,target)
     if (plan && (!bestKill || plan.cost < bestKill.cost)) bestKill = {...plan,target}
   }
-  if (bestKill) {
+  if (bestKill && !(options.noise >= 30 && options.random?.() < .5)) {
     const step = bestKill.steps[0]
     return {type:'attack',unit:step.unit.id,target:bestKill.target.id,...(step.path ? {path:step.path} : {})}
   }
@@ -519,7 +530,7 @@ export function chooseAction(rules,map,state,options = {}) {
   const candidates = []
   const offer = (action,score) => {
     if (!Number.isFinite(score)) return
-    if (options.random) score += (options.random()-.5)*2
+    if (options.random) score += (options.random()-.5)*(options.noise || 2)
     candidates.push({action,score})
   }
   if (options.tactics !== 'own') {
@@ -543,7 +554,7 @@ export function chooseAction(rules,map,state,options = {}) {
       {...unit,moved:true,fired:true} : unit)
     // Igual ao treino (tools/treinar-tatica.mjs): combate guloso de dificuldade 2, sem busca por tempo.
     // Repassar options.seconds faria o jogo pensar ~1 s por movimento e mudaria o comportamento treinado.
-    return baselineAction(rules,map,{...state,units},{...options,side,profile:undefined,difficulty:2,seconds:0})
+    return baselineAction(rules,map,{...state,units},{...options,side,profile:undefined,difficulty:options.combatLevel ?? 2,seconds:0})
   }
   // 2. Abates de alto valor contra outras unidades.
   for (const target of ctx.enemies) {

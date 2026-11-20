@@ -5,7 +5,9 @@
 //    e só se o desafiante não for pior que ele contra a IA padrão (evita andar em círculos);
 //  - adversários em liga: IA padrão fixa + campeão atual + campeões anteriores;
 //  - um mapa procedural novo por par de partidas (um terço deles de ilhas), além dos mapas fixos;
-//  - partidas longas o bastante para terminar (padrão 40 rodadas).
+//  - partidas longas o bastante para terminar (padrão 40 rodadas);
+//  - modos de jogo variados pela semente: névoa de guerra, clima (chuva, raios, redemoinho) e os dois juntos.
+//    Na névoa, cada IA decide só com o que enxerga (snapshot), como no jogo.
 // Sem limite de tempo por padrão: digite p + Enter (ou Ctrl+C) para pausar e abrir o menu
 // (assistir a uma partida IA treinada x IA padrão, ativar no jogo, continuar ou sair).
 import { spawn } from 'node:child_process'
@@ -18,7 +20,7 @@ import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { chooseAction as baselineAction } from '../nativo/ia.js'
 import { chooseAction as tacticalAction, defaultParams } from '../nativo/ia-tatica.js'
-import { createGame, order } from '../nativo/partida.js'
+import { createGame, order, snapshot } from '../nativo/partida.js'
 import { generateMap } from '../nativo/procedural.js'
 import { profileDirectory, profilePath } from '../nativo/perfil-ia.js'
 
@@ -40,9 +42,14 @@ function board(seed) {
 }
 
 // Uma partida: `params` (lado `side`) contra `rival` (params táticos ou 'padrao').
+// Modo pela semente: 0 normal, 1 névoa, 2 clima, 3 névoa + clima (o mesmo nos dois lados do par).
+const matchMode = seed => (seed >>> 9) % 4
 function play({seed,side,params,rival,rounds}) {
   const map = board(seed)
-  const game = createGame(data.rules,map,['ff00ff00','ff0000ff'])
+  const mode = matchMode(seed)
+  const fog = mode === 1 || mode === 3, weather = mode >= 2 ? ((seed ^ 0x5bd1e995) >>> 0) || 1 : false
+  const game = createGame(data.rules,map,['ff00ff00','ff0000ff'],{fog,weather})
+  const view = () => fog ? snapshot(game,game.turn) : game
   const random = rng(seed)
   const profile = {format:2,params}
   const rivalProfile = rival === 'padrao' ? null : {format:2,params:rival}
@@ -50,9 +57,10 @@ function play({seed,side,params,rival,rounds}) {
   const machines = s => game.units.filter(unit=>unit.side === s && unit.name === 'Warmachine').length
   while (!game.winner && game.round <= rounds && decisions < rounds*160) {
     const mine = game.turn === side
-    const action = mine ? tacticalAction(data.rules,map,game,{profile,difficulty:2}) :
-      rivalProfile ? tacticalAction(data.rules,map,game,{profile:rivalProfile,difficulty:2}) :
-      baselineAction(data.rules,map,game,{difficulty:2,random})
+    const seen = view()
+    const action = mine ? tacticalAction(data.rules,map,seen,{profile,difficulty:2,side:game.turn}) :
+      rivalProfile ? tacticalAction(data.rules,map,seen,{profile:rivalProfile,difficulty:2,side:game.turn}) :
+      baselineAction(data.rules,map,seen,{difficulty:2,random,side:game.turn})
     try { order(data.rules,map,game,game.turn,{...action,version:game.version}) }
     catch { order(data.rules,map,game,game.turn,{type:'end',version:game.version}) }
     decisions++
@@ -63,7 +71,8 @@ function play({seed,side,params,rival,rounds}) {
   const score = result + (result ? 0 : .15*(machines(side)-machines(other)))
   const label = map.title && map.title !== 'Mapa procedural' ? map.title :
     `${map.islands ? 'ilhas' : 'procedural'} ${map.width}×${map.height}`
-  return {result,score,round:game.round,label,machines:[machines(side),machines(other)]}
+  const modeLabel = ['',' · névoa',' · clima',' · névoa+clima'][mode]
+  return {result,score,round:game.round,label:label + modeLabel,machines:[machines(side),machines(other)]}
 }
 
 if (!isMainThread) {

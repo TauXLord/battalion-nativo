@@ -1,7 +1,17 @@
 import { bindCamera, stagePoint, stageRect } from './camera.js'
 
+// Convite aberto pelo launcher: a sala fica em outro computador (o do anfitrião) e o servidor local deste
+// computador repassa os pedidos (/remoto/<endereço>/lan/...). Assim a página continua em 127.0.0.1, com o perfil,
+// a foto, as estatísticas e os emblemas deste jogador.
+let lanBase = '/lan/'
+export const validRemote = origin => typeof origin === 'string' && /^https?:\/\/[A-Za-z0-9.-]+(:\d{1,5})?$/.test(origin)
+export function useRemote(origin) {
+  if (!validRemote(origin)) throw Error('Convite inválido.')
+  lanBase = '/remoto/' + encodeURIComponent(origin) + '/lan/'
+}
+export const lanUrl = path => lanBase + path
 export async function request(path, options) {
-  const response = await fetch('/lan/' + path, { cache:'no-store', ...options })
+  const response = await fetch(lanBase + path, { cache:'no-store', ...options })
   if (!response.ok) throw Error(response.status === 404 ? 'Sala indisponível. Use Battalion.exe e gere um novo convite.' : await response.text())
   return response
 }
@@ -274,7 +284,7 @@ export function lobby({room,slot,invites=[],maps,palette,t = (text,values) => va
       if (state) change('prefs',[color.value,vote.value,Number(!self(state).ready)].join(','))
     }
     start.onclick = () => change('start','')
-    if (!slot) $('lobby-back').onclick = () => navigator.sendBeacon('/lan/close/' + room,'')
+    if (!slot) $('lobby-back').onclick = () => navigator.sendBeacon(lanBase + 'close/' + room,'')
     async function poll() {
       while (!done) {
         if (!busy) {
@@ -430,7 +440,7 @@ function paintedVideo(canvas) {
 }
 
 export async function host(player, room, camera) {
-  window.addEventListener('pagehide', () => navigator.sendBeacon('/lan/close/' + room, ''), {once:true})
+  window.addEventListener('pagehide', () => navigator.sendBeacon(lanBase + 'close/' + room, ''), {once:true})
   let canvas
   for (let i = 0; i < 100 && !canvas; i++) {
     canvas = player.shadowRoot.querySelector('canvas')

@@ -259,15 +259,17 @@ export function createWeatherPainter(images) {
       const radius = WHIRLPOOL_SIZE*TILE/2
       const cx = (corner % map.width + WHIRLPOOL_SIZE/2)*TILE, cy = (Math.floor(corner/map.width) + WHIRLPOOL_SIZE/2)*TILE
       ctx.save()
-      // O círculo mantém a imagem nas nove casas de mar mesmo quando seu quadrado gira.
+      // A espiral preenche as nove casas (3×3): a imagem é desenhada maior que o quadrado, porque a borda dela é
+      // transparente, e o recorte de cantos arredondados a mantém dentro das nove casas de mar enquanto gira.
       ctx.beginPath()
-      ctx.arc(cx,cy,radius,0,Math.PI*2)
+      ctx.roundRect(cx-radius,cy-radius,radius*2,radius*2,TILE*.6)
       ctx.clip()
       ctx.translate(cx,cy)
       // No canvas, ângulos positivos giram no sentido horário.
       ctx.rotate((idle % 24)*Math.PI*2/24)
       ctx.imageSmoothingEnabled = true
-      ctx.drawImage(whirlpoolImage,-radius,-radius,radius*2,radius*2)
+      const size = radius*1.45
+      ctx.drawImage(whirlpoolImage,-size,-size,size*2,size*2)
       ctx.restore()
     }
     ctx.restore()

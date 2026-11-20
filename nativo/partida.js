@@ -6,8 +6,12 @@ export const scenarioSlots = map => map.slots ?? 2
 export const activeSides = state => state.activeSides ?? [state.turn]
 export const canTakeTurn = (state,side) => activeSides(state).includes(side) &&
   !state.turnEnded?.includes(side) && !state.defeated?.includes(side) && !state.winner
+// Níveis da IA: 0 Fácil, 1 Médio, 2 Difícil, 3 Skynet (IA treinada ao máximo com 40% a mais de dano).
+export const AI_LEVELS = [0,1,2,3]
+export const levelAttackScale = level => [.85,1,1,1.4][level] ?? 1
+export const levelIncomeScale = level => [.8,1,1.15,1.3][level] ?? 1
 export const teamAttackScale = (count,humans,difficulty) =>
-  Array.from({length:count},(_,index)=>index < humans ? 1 : [.7,1,1.4][difficulty] ?? 1)
+  Array.from({length:count},(_,index)=>index < humans ? 1 : levelAttackScale(difficulty))
 
 export function scenarioMatch(board,colors,humans,enabled) {
   const groups = board.coalitions
@@ -180,8 +184,12 @@ function weatherRandom(weather) {
 // Mapas de até 24×24 têm um raio a cada 5 jogadas; a frequência cresce até 2 jogadas em mapas de 40×40 ou maiores.
 // O sorteio continua por casa, com a semente do clima, igual no multiplayer e no replay.
 const LIGHTNING_DAMAGE = 100
+// Para-raios: toda estrutura protege a unidade terrestre ou naval que está nela (aviões não); a Torre (Turret) nunca
+// leva dano de raio. O raio cai na casa do mesmo jeito (o sorteio não muda), só não causa dano.
+export const lightningProtected = (rules,state,unit) => unit.name === 'Turret' ||
+  rules.units[unit.name].unitType !== 'air' && state.structures.some(tile => tile.cell === unit.cell)
 export const lightningInterval = map => Math.max(2,Math.min(5,Math.round(5 - 3*(map.width*map.height - 576)/1024)))
-function lightningStrike(state,map,action) {
+function lightningStrike(rules,state,map,action) {
   const weather = state.weather
   if (!raining(state) || action.type === 'undo') return
   weather.moves = (weather.moves ?? 0) + 1
@@ -189,7 +197,8 @@ function lightningStrike(state,map,action) {
   const cell = Math.floor(weatherRandom(weather) * map.width * map.height)
   const strike = {cell,version:state.version + 1}
   const target = state.units.find(unit => unit.cell === cell)
-  if (target) {
+  if (target && lightningProtected(rules,state,target)) Object.assign(strike,{unit:target.id,side:target.side,hp:target.hp,protected:true})
+  else if (target) {
     target.hp = Math.max(0,target.hp - LIGHTNING_DAMAGE)
     Object.assign(strike,{unit:target.id,side:target.side,hp:target.hp})
     if (target.hp <= 0) {
@@ -738,8 +747,15 @@ function advanceTurn(rules,map,state,event) {
 function moveUnit(rules,map,state,unit,path,event) {
   const {cell:origin,left,facing,side,cloaked} = unit
   const positions = []
-  let revealed = false
+  let revealed = false, blocked = false
+  // Neblina: o caminho foi aceito com a visão do jogador, que pode não ver o Jammer inimigo. Avião para antes de entrar
+  // na zona de exclusão aérea de verdade (e a jogada não pode ser desfeita, para não servir de sonda).
+  const jammers = rules.units[unit.name].movementType === 'wings' ? enemyJammers(rules,state,side) : []
   for (const destination of path) {
+    if (jammers.some(jammer => distance(map.width,jammer.cell,destination) <= jamRadius(map,jammer.cell))) {
+      blocked = true
+      break
+    }
     const ambush = state.units.find(other => other.cell === destination && !allied(state,other.side,side))
     if (ambush) {
       ambush.cloaked = false
@@ -763,8 +779,8 @@ function moveUnit(rules,map,state,unit,path,event) {
   if (stealth && positions.length) unit.cloaked = !jammed && !detectedAt(rules,map,state,unit)
   if (cloaked && !unit.cloaked) revealed = true
   revealed = detect(rules,map,state,unit) || revealed
-  state.undo = damaged || revealed || jammed ? null : {id:unit.id,cell:origin,left,facing,cloaked,side}
-  return {type:'move',side,unit:unit.id,from:origin,path:positions,jammed,public:!cloaked && !unit.cloaked}
+  state.undo = damaged || revealed || jammed || blocked ? null : {id:unit.id,cell:origin,left,facing,cloaked,side}
+  return {type:'move',side,unit:unit.id,from:origin,path:positions,jammed,...(blocked ? {blocked} : {}),public:!cloaked && !unit.cloaked}
 }
 
 export function order(rules, map, state, side, action) {
@@ -924,7 +940,7 @@ export function order(rules, map, state, side, action) {
     default: requireOrder(false)
   }
   state.units = state.units.filter(unit=>unit.hp > 0)
-  lightningStrike(state,map,action)
+  lightningStrike(rules,state,map,action)
   eliminateTeams(rules,map,state,event)
   checkWinner(rules,map,state)
   if (!state.winner && (state.activeSides

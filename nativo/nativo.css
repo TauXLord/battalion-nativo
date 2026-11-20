@@ -292,7 +292,6 @@ button.danger:hover:not(:disabled) { background:#5a231b; }
   button, .button-like, select, input[type=text], input[type=number] { min-height:44px; }
   .mode-tabs button { min-height:48px; }
   .map-choice { min-height:56px; }
-  .toggle input[type=checkbox] { width:1.4rem; height:1.4rem; }
   .player-tools button { min-width:44px; }
   .chat-log { font-size:1rem; }
 }
@@ -386,3 +385,46 @@ dialog.report { width:min(600px,calc(100vw - 16px)); }
 body.match-compact { margin:0; padding:0; overflow:hidden; }
 body.match-compact { display:block; }
 body.match-compact > main:not(#player-view) { display:none; }
+
+/* Convite: abrir no launcher ou continuar no navegador. */
+dialog.launcher-choice { padding:18px; text-align:center; }
+dialog.launcher-choice h2 { margin:0 0 8px; }
+.launcher-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:14px 0 6px; }
+.launcher-open { display:inline-block; padding:8px 16px; border-radius:6px; background:#3f9a3a; color:#fff; font-weight:bold;
+  text-decoration:none; border:2px solid #1f5d1c; }
+.launcher-open:hover, .launcher-open:focus-visible { background:#52b84b; }
+.launcher-hint { font-size:13px; opacity:.85; }
+#match-save { white-space:nowrap; }
+
+/* Skynet: nível máximo da IA (brincadeira com o Exterminador do Futuro): vermelho vibrante, contorno preto, tremendo. */
+.skynet { display:inline-block; color:#ff1a1a; font-weight:900; letter-spacing:.06em; text-transform:uppercase;
+  -webkit-text-stroke:1px #000; paint-order:stroke fill;
+  text-shadow:0 0 1px #000, 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 8px #ff0000aa;
+  animation:skynet-shake .32s steps(2,end) infinite; }
+.skynet-badge { margin-left:8px; font-size:1.05em; vertical-align:middle; }
+@keyframes skynet-shake {
+  0% { transform:translate(0,0) rotate(0); } 25% { transform:translate(-1px,1px) rotate(-1.2deg); }
+  50% { transform:translate(1px,-1px) rotate(1deg); } 75% { transform:translate(-1px,-1px) rotate(.6deg); }
+  100% { transform:translate(1px,1px) rotate(-.6deg); }
+}
+@media (prefers-reduced-motion:reduce) { .skynet { animation:none; } }
+.achievements li.special { border-color:#ff1a1a; background:#2a1212; }
+.achievements li.special strong.skynet { text-transform:none; }
+
+/* Interruptores (névoa de guerra, clima…): vale também dentro dos painéis, cujas regras gerais de label/input
+   transformavam o interruptor numa bolinha embaixo do texto. */
+label.toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 0; }
+label.toggle > span { flex:1; line-height:1.3; }
+label.toggle input[type=checkbox] { appearance:none; -webkit-appearance:none; flex:none; order:2; width:46px; height:26px;
+  min-height:0; padding:0; margin:0; border-radius:999px; background:#3a4a40; border:1px solid #5d7062; position:relative;
+  cursor:pointer; transition:background .15s, border-color .15s; box-shadow:inset 0 1px 3px #0007; }
+label.toggle input[type=checkbox]::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px;
+  border-radius:50%; background:#d9dfd5; box-shadow:0 1px 2px #0008; transition:left .15s; }
+label.toggle input[type=checkbox]:checked { background:#7fa65f; border-color:#a7c98a; }
+label.toggle input[type=checkbox]:checked::after { left:22px; background:#fff; }
+label.toggle input[type=checkbox]:focus-visible { outline:2px solid var(--gold-soft); outline-offset:2px; }
+@media (pointer: coarse) {
+  label.toggle input[type=checkbox] { width:54px; height:30px; }
+  label.toggle input[type=checkbox]::after { width:24px; height:24px; }
+  label.toggle input[type=checkbox]:checked::after { left:26px; }
+}

@@ -9,7 +9,10 @@ export const achievements = [
   ['fortaleza','Fortaleza','Vença sem perder nenhuma Warmachine.',(mode,r) => r.victory && r.machinesLost === 0],
   ['blitz','Blitz','Vença em até 10 rodadas.',(mode,r) => r.victory && r.rounds > 0 && r.rounds <= 10],
   ['maratona','Maratona','Jogue uma partida de pelo menos 1 hora.',(mode,r) => r.elapsed >= 3600000],
-  ['elite','Comandante de elite','Vença a IA no Difícil.',(mode,r) => r.victory && r.difficulty === 2 && ['ia','campanha','desafio'].includes(mode)],
+  ['elite','Comandante de elite','Vença a IA no Difícil.',(mode,r) => r.victory && r.difficulty >= 2 && ['ia','campanha','desafio'].includes(mode)],
+  // Emblema especial (brincadeira com o Exterminador do Futuro): aparece em vermelho tremendo no perfil.
+  ['skynet','Skynet desligada','Vença a IA no nível Skynet (IA treinada ao máximo, com 40% a mais de dano).',
+    (mode,r) => r.victory && r.difficulty === 3 && ['ia','campanha','desafio','rede'].includes(mode),true],
   ['sombras','Nas sombras','Vença uma partida com neblina de guerra.',(mode,r) => r.victory && r.fog],
   ['caos','Caos total','Vença uma partida com 5 equipes ou mais.',(mode,r) => r.victory && r.teams >= 5],
   ['conectado','Conectado','Vença uma partida em rede.',(mode,r) => r.victory && mode === 'rede'],
@@ -19,7 +22,7 @@ export const achievements = [
   ['veterano','Veterano','Jogue 25 partidas.',(mode,r,s) => s.partidas >= 25],
   ['desafio','Desafio do dia','Vença um desafio diário.',(mode,r) => r.victory && mode === 'desafio'],
   ['semana','Semana perfeita','Vença 7 desafios diários.',(mode,r,s,p) => p.desafios >= 7],
-].map(([id,title,description,test]) => ({id,title,description,test}))
+].map(([id,title,description,test,special]) => ({id,title,description,test,special}))
 
 export function unlockedAchievements() {
   try {

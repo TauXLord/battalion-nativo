@@ -1,6 +1,6 @@
 import { bindCamera } from './camera.js'
 import { activeSides, allied, attackPath, attackRating, attackThreats, buildCells, buildCost, canCounter, canRepair, canTakeTurn, damageAmount, distance, enemyJammers, factoryAt, firingRange,
-  isRanged, jammingZone, legalMovePath, neighbors, reachable, repairPrice, terrainAt, transportOptions, unitFor } from './partida.js'
+  isRanged, jammingZone, legalMovePath, lightningProtected, raining, whirlpoolCells, neighbors, reachable, repairPrice, terrainAt, transportOptions, unitFor } from './partida.js'
 import { movementDirection, movementDuration, movementPose } from './movimento.js'
 import { WIPEOUT_STEP, combatTimeline, destructionFade, wipeoutDuration } from './combate.js'
 import { showWarmachineMenu, unitStatDetails } from './construcao.js'
@@ -15,6 +15,7 @@ import { TILE, canvasBuffer, colorize, drawTooltip, frame, loadImages, terrainAr
 export { colorize, frame, loadImages, terrainArt, terrainVariant }
 import { createMatchChat } from './chat.js'
 import { bindShortcuts } from './atalhos.js'
+import { captureButton, weatherIcons } from './icones.js'
 
 const angles = {right:0,down:90,left:180,up:270}
 const deployment = {
@@ -30,7 +31,7 @@ const buttons = {
 // Ícones do menu da unidade (quadros: 0 desabilitado, 1 normal, 2 mouse em cima, 3 pressionado).
 const actions = {
   extract:['unitExtract',36,29], repair:['unitRepair',36,29], build:['unitBuild',36,29], unload:['unitUnload',36,29],
-  capture:['marker',56,56], cancel:['unitCancel',18,15],
+  capture:['unitCapture',36,29], cancel:['unitCancel',18,15],
   'Leviathan Barge':['unitLeviathan',36,29], 'Albatross Transport':['unitAlbatross',36,29],
 }
 const $ = id => document.getElementById(id)
@@ -42,6 +43,8 @@ export async function play(data, base, side, transport) {
   const stage = $('stage'), player = $('player-view')
   ctx.imageSmoothingEnabled = false
   const images = await loadImages(data.assets)
+  images.unitCapture = captureButton()
+  const extraIcons = weatherIcons()
   const teamImages = new Map(), spentImages = new WeakMap()
   // Terreno pronto da área visível. As casas animadas (mar, arquipélago…) têm 4 quadros, então guardamos as 4
   // versões: o terreno só é redesenhado quando a câmera ou o minério mudam, e não a cada troca de quadro (meio segundo).
@@ -74,7 +77,7 @@ export async function play(data, base, side, transport) {
   let pinchStart = null
   // Clima (chuva, respingos, cristas no mar e nuvens), desenhado em pixel art no ritmo do mapa.
   const weatherPainter = createWeatherPainter(images)
-  let weatherMoving = false, lightningVersion = -1
+  let weatherMoving = false, lightningVersion = -1, glide = null
   let replayOffered = false
   // Barra da partida (cronômetro e tropas): declarada no começo porque updateStatus pode rodar cedo.
   const hud = $('match-hud')
@@ -657,7 +660,26 @@ export async function play(data, base, side, transport) {
     traceBorder(cells)
   }
 
-  function paintReconIcons(ground,unit) {
+  // Ícones extras da barra de modificadores (desenhados em icones.js): chuva na unidade, para-raios nas estruturas
+  // e o redemoinho.
+  function weatherEntries(unit,structure,whirl) {
+    const list = []
+    if (whirl) list.push({image:extraIcons.whirlpool,name:'Redemoinho',
+      description:t('Navios perdem 30 de vida ao atravessar e ao começar ou terminar o turno nele. Aviões e unidades terrestres não são afetados.')})
+    if (structure) list.push({image:extraIcons.lightningRod,name:'Para-raios',
+      description:t('Unidades terrestres e navais nesta estrutura não levam dano de raio. Não protege aviões.')})
+    if (unit && raining(state)) {
+      const spec = rules.units[unit.name]
+      const parts = [t('-1 de visão na névoa de guerra.')]
+      if (isRanged(spec)) parts.push(t('-1 de alcance de ataque.'))
+      parts.push(lightningProtected(rules,state,unit) ? t('Protegida de raios.') : t('Pode ser atingida por raio (100 de dano).'))
+      if (spec.unitType === 'sea') parts.push(t('Redemoinho: 30 de dano.'))
+      list.push({image:extraIcons.rain,name:'Chuva',description:parts.join(' ')})
+    }
+    return list
+  }
+
+  function paintReconIcons(ground,unit,structure,whirl) {
     const atlas = data.terrainInfo
     const spec = unit && rules.units[unit.name]
     if (state.dialog || state.result) {modifierBar.hidden = tooltip.hidden = true; return}
@@ -670,12 +692,16 @@ export async function play(data, base, side, transport) {
       }
     }
     const modifiers = spec ? atlas.unitModifiers : atlas.modifiers
-    const names = (spec?.mods ?? ground?.[1].mods ?? []).filter(name=>Object.hasOwn(modifiers,name))
-    const spacing = Math.min(21,(view.width-(476+dx)) / Math.max(1,names.length))
+    const names = (whirl ? ['Hazard'] : spec?.mods ?? ground?.[1].mods ?? []).filter(name=>Object.hasOwn(modifiers,name))
+    const extra = weatherEntries(unit,structure,whirl)
+    const spacing = Math.min(21,(view.width-(476+dx)) / Math.max(1,names.length + extra.length))
     for (const [index,name] of names.entries()) {
       entries.push({x:476+dx+index*spacing,name,width:spacing-1,...modifiers[name]})
     }
-    const key = JSON.stringify(entries)
+    for (const [index,item] of extra.entries()) {
+      entries.push({x:476+dx+(names.length+index)*spacing,width:spacing-1,...item})
+    }
+    const key = JSON.stringify(entries.map(({image,...entry})=>entry))
     if (key !== lastModifiers) {
       lastModifiers = key
       tooltip.hidden = true
@@ -699,8 +725,9 @@ export async function play(data, base, side, transport) {
     }
     modifierBar.hidden = !entries.length
     if (ground || unit) text(t('Modifiers:'),476+dx,570,'10px Tahoma','#1c1a13')
-    for (const {index,x,width=atlas.width} of entries) {
-      frame(ctx,images[atlas.image],index,x,578,atlas.width,atlas.height,width,width)
+    for (const {index,image,x,width=atlas.width} of entries) {
+      if (image) ctx.drawImage(image,x,578,width,width)
+      else frame(ctx,images[atlas.image],index,x,578,atlas.width,atlas.height,width,width)
     }
   }
 
@@ -922,10 +949,7 @@ export async function play(data, base, side, transport) {
       const [asset,width,height] = actions[type]
       ctx.globalAlpha = enabled ? 1 : .7
       const index = !enabled ? 0 : over ? (pointer?.buttons ? 3 : 2) : 1
-      if (type === 'capture') {
-        frame(ctx,images[asset],0,x+4,y+1,width,height,28,27)
-        if (over) {ctx.strokeStyle = '#4fd34a'; ctx.strokeRect(x+3,y+1,30,27)}
-      } else frame(ctx,images[asset],index,x,y,width,height,w,h)
+      frame(ctx,images[asset],index,x,y,width,height,w,h)
     }
     ctx.globalAlpha = 1
     if (hovered) tooltipBox(hovered.title,hovered.text,hovered.x+hovered.w/2,hovered.y+hovered.h+6)
@@ -1093,9 +1117,43 @@ export async function play(data, base, side, transport) {
     directionBar.hidden = false
   }
 
+  // Som do clima: chuva enquanto chove; o redemoinho só soa se estiver na tela, mais alto perto do centro da câmera
+  // e com zoom próximo, mais baixo ao afastar.
+  let lastWeatherSound = ''
+  function weatherSound() {
+    const playing = state && !state.result && !state.winner
+    const cells = playing ? whirlpoolCells(state,map) : []
+    let level = 0
+    if (cells.length) {
+      const size = Math.sqrt(cells.length)*TILE
+      const x = cellX(cells[0]), y = cellY(cells[0])
+      const width = view.width/zoom, height = view.height/zoom
+      const onScreen = x + size > panX && y + size > panY && x < panX + width && y < panY + height
+      if (onScreen) {
+        const dx = x + size/2 - (panX + width/2), dy = y + size/2 - (panY + height/2)
+        const near = 1 - Math.min(1,Math.hypot(dx,dy) / (Math.hypot(width,height)/2 + size/2))
+        level = Math.round(near * Math.max(.25,Math.min(1,zoom)) * 20) / 20
+      }
+    }
+    const rain = Boolean(playing && raining(state))
+    const key = rain + '|' + level
+    if (key === lastWeatherSound) return
+    lastWeatherSound = key
+    music.weather?.({rain,whirlpool:level})
+  }
+
   function paint(now) {
     const idle = Math.floor(now / 500)
     let pose, position
+    // Câmera deslizando até uma casa (unidade atingida por raio).
+    if (glide && now >= glide.start) {
+      const ease = 1-(1-Math.min(1,(now-glide.start)/glide.duration))**3
+      center(glide.x,glide.y)
+      panX = glide.fromX+(panX-glide.fromX)*ease
+      panY = glide.fromY+(panY-glide.fromY)*ease
+      normalize()
+      if (ease >= 1) glide = null
+    }
     if (motion) {
       const elapsed = Math.max(0,now-motion.start)
       const steps = motion.path.length-1
@@ -1318,9 +1376,11 @@ export async function play(data, base, side, transport) {
     const info = inspected ? rules.units[inspected.name] : ground?.[1]
     const label = inspected?.name ?? ground?.[0]
     const structure = !inspected && state.structures.find(tile=>tile.cell === inspectedCell)
+    // Redemoinho: clicar numa das nove casas mostra o que ele faz (no lugar da descrição do mar).
+    const whirl = !inspected && inspectedCell !== undefined && whirlpoolCells(state,map).includes(inspectedCell)
     drawRecon(images[inspected ? 'recon_unit' : info ? 'recon_terrain' : 'recon_none'],extraWidth)
     if (info) {
-      const name = t(label === 'Factory' ? 'Warfactory' : label)
+      const name = whirl ? t('Redemoinho') : t(label === 'Factory' ? 'Warfactory' : label)
       const details = structure?.capturer ? ' · '+t('Captura')+' '+(8-structure.strength)+'/8' : ''
       const reserve = structure?.oilReserve != null ? ' · '+t('Reserva')+' $'+structure.oilReserve : ''
       text(name+reserve+details,40,570)
@@ -1334,13 +1394,15 @@ export async function play(data, base, side, transport) {
           shape.width,shape.height,shape.width/2,shape.height/2)
       } else {
         if (structure) ctx.drawImage(teamImage(info.sprite,structure.side,true),4,565,31,30)
+        else if (whirl) ctx.drawImage(extraIcons.whirlpool,4,565,31,30)
         else {
           const ore = state.ore[inspectedCell]
           terrainArt(ctx,images,ore ? ['single',[oreImages[ore]]] : tiles[inspectedCell][1],idle,4,565,31,30)
         }
       }
       ctx.restore()
-      const words = t(info.description).split(' ')
+      const words = (whirl ? t('Navios que atravessam o redemoinho, ou começam ou terminam o turno nele, perdem 30 de vida. Some quando a chuva passa.') :
+        t(info.description)).split(' ')
       let line = '', row = 0
       ctx.font = '10px Tahoma'
       const limit = (inspected ? 205 : 382) + extraWidth
@@ -1368,7 +1430,7 @@ export async function play(data, base, side, transport) {
         ctx.restore()
       }
     }
-    paintReconIcons(ground,inspected)
+    paintReconIcons(ground,inspected,structure,whirl)
     ctx.restore()
     paintActions(unit,cursorPosition)
     paintTurnAnimation(now)
@@ -1379,7 +1441,8 @@ export async function play(data, base, side, transport) {
       const [x,y] = cursorPosition
       frame(ctx,images[image],index,Math.round(x),Math.round(y),width,height)
     }
-    if (motion || strike || wipeout || showResources || weatherMoving) schedule()
+    weatherSound()
+    if (motion || strike || wipeout || showResources || weatherMoving || glide) schedule()
     // GIF de perfil: redesenha em ritmo leve para a animação aparecer.
     if (animatedPhoto) { animatedPhoto = false; clearTimeout(photoTimer); photoTimer = setTimeout(schedule,90) }
   }
@@ -1793,6 +1856,21 @@ export async function play(data, base, side, transport) {
     finally { pending = false; skipButton.disabled = false; updateStatus(); schedule() }
   }
 
+  // Salvamento manual: grava a partida na hora (local) ou baixa o arquivo dela (multiplayer).
+  const saveButton = $('match-save')
+  saveButton.hidden = !transport.saveNow
+  saveButton.textContent = '💾 ' + t('Salvar')
+  saveButton.title = t('Salva a partida agora')
+  if (transport.saveNow) saveButton.onclick = async () => {
+    if (saveButton.disabled) return
+    saveButton.disabled = true
+    try {
+      await transport.saveNow()
+      saveButton.textContent = '✔ ' + t('Salvo')
+    } catch (failure) { error = failure.message; updateStatus() }
+    finally { setTimeout(() => { saveButton.textContent = '💾 ' + t('Salvar'); saveButton.disabled = false },1500) }
+  }
+
   // Replay: linha do tempo para voltar/avançar turnos, pular para qualquer jogada e mudar a velocidade.
   const timeline = transport.timeline
   const timelineBar = $('replay-timeline')
@@ -1907,6 +1985,15 @@ export async function play(data, base, side, transport) {
           action?.type === 'move' ? movementDuration(action.path.length) : 0
         const hit = state.units.some(unit => unit.cell === next.lightning.cell)
         const start = weatherPainter.strike(next.lightning.cell,{delay,hit,seed:next.lightning.version})
+        // Unidade visível atingida (ou destruída): a câmera vai até ela, um pouco antes do raio cair.
+        if (hit) {
+          const cell = next.lightning.cell
+          setTimeout(() => {
+            glide = {start:performance.now(),duration:450,fromX:panX,fromY:panY,
+              x:(cell % map.width + .5)*TILE,y:(Math.floor(cell/map.width) + .5)*TILE}
+            schedule()
+          },Math.max(0,start - performance.now() - 450))
+        }
         setTimeout(() => music.thunder?.(),Math.max(0,start - performance.now()) + 120)
         schedule()
       }

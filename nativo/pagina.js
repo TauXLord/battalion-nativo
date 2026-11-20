@@ -1,4 +1,4 @@
-import { lobby, request } from './lan.js'
+import { lanUrl, lobby, request, useRemote, validRemote } from './lan.js'
 import { bindCameraOptions } from './camera.js'
 import { colorize, frame, loadImages, play, terrainArt, terrainVariant } from './tabuleiro.js'
 import { campaignProgress, campaignTransport, saveVictory } from './campanha.js'
@@ -33,7 +33,7 @@ function showDaily(data) {
   $('daily-rules').textContent = [t('Mapa {w} × {h}',{w:daily.size,h:daily.size}),
     daily.teams === 2 ? t('você contra 1 IA') : daily.together ? t('você contra {n} IAs aliadas',{n:daily.teams-1}) :
       t('todos contra todos com {n} IAs',{n:daily.teams-1}),
-    t(['IA Fácil','IA Normal','IA Difícil'][daily.level]),daily.islands && t('ilhas'),daily.fog && t('neblina de guerra'),daily.weather && t('chuva')]
+    t(['IA Fácil','IA Médio','IA Difícil','Skynet'][daily.level]),daily.islands && t('ilhas'),daily.fog && t('neblina de guerra'),daily.weather && t('chuva')]
     .filter(Boolean).join(' · ')
   $('daily-best').textContent = result?.victory ? t('Seu melhor hoje: vitória em {time} ({n} rodadas)',{time:formatClock(result.elapsed),n:result.rounds}) :
     result ? t('Hoje: derrota. Tente de novo!') : t('Mesmo mapa para todo mundo hoje. Vença no menor tempo.')
@@ -50,7 +50,7 @@ import { compareVersions, loadEdition } from './versao.js'
 // Versão desta edição (nativo/versao.json), carregada ao abrir a página.
 let edition = {versao:'?'}
 import { matchAudio } from './audio.js'
-import { scenarioMatch, scenarioSlots } from './partida.js'
+import { AI_LEVELS, scenarioMatch, scenarioSlots } from './partida.js'
 import { defaultAiTime, validAiTime } from './ia.js'
 import { generateMap, generatedTitle, mapRecipe, maxSide, minSide, minimumSize, reorderSides, teamPlan, terrainWeights } from './procedural.js'
 import { language, loadLanguage, setLanguage, t, translatePage } from './idioma.js'
@@ -80,7 +80,7 @@ const aiTime = value => validAiTime(Number(value)) ? Number(value) : defaultAiTi
 const storedAiTime = () => aiTime(stored(aiTimeKey) ?? defaultAiTime)
 const storedDifficulty = () => {
   const value = Number(stored(difficultyKey) ?? 1)
-  return [0,1,2].includes(value) ? value : 1
+  return AI_LEVELS.includes(value) ? value : 1
 }
 function configureAiTime(field) {
   field.value = storedAiTime()
@@ -88,6 +88,26 @@ function configureAiTime(field) {
     field.value = aiTime(field.value || defaultAiTime)
     store(aiTimeKey,field.value)
   }
+}
+
+// Skynet (nível 3): selo vermelho tremendo ao lado de qualquer lista de dificuldade em que ele estiver escolhido.
+function skynetBadge(select) {
+  if (!select || select.dataset.skynet) return
+  select.dataset.skynet = '1'
+  const badge = document.createElement('span')
+  badge.className = 'skynet skynet-badge'
+  badge.textContent = 'Skynet'
+  badge.setAttribute('aria-hidden','true')
+  // Lista criada agora e ainda fora da página: o selo entra logo depois que ela for colocada.
+  if (select.parentNode) select.after(badge)
+  else queueMicrotask(() => select.after(badge))
+  const update = () => { badge.hidden = select.value !== '3' }
+  select.addEventListener('change',update)
+  update()
+  // Valor trocado pelo código (ex.: ao abrir as configurações) também atualiza o selo.
+  const descriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value')
+  Object.defineProperty(select,'value',{configurable:true,get(){ return descriptor.get.call(this) },
+    set(value){ descriptor.set.call(this,value); update() }})
 }
 
 // Tela de configurações (diálogo único, usado no menu, na campanha e dentro da partida).
@@ -104,15 +124,17 @@ function setupSettings(data,{inGame = false} = {}) {
     else location.reload()
   }
   const difficulty = $('settings-difficulty')
+  skynetBadge(difficulty)
   difficulty.value = storedDifficulty()
   difficulty.onchange = () => store(difficultyKey,difficulty.value)
   configureAiTime($('settings-ai-time'))
   $('settings-fullscreen').onclick = () => (document.fullscreenElement ? document.exitFullscreen() :
     fullscreenTarget().requestFullscreen()).catch(showError)
   const generation = data.aiProfile?.generation
-  $('settings-ai-info').textContent = t('Fácil usa a IA clássica do jogo, com dano e renda reduzidos na campanha.') + ' ' +
-    (data.aiProfile?.params ? generation != null ? t('Normal e Difícil usam a IA treinada (geração {n}).',{n:generation}) :
-      t('Normal e Difícil usam a IA treinada.') : t('Normal e Difícil usam a IA tática com os pesos padrão.'))
+  $('settings-ai-info').textContent = (data.aiProfile?.params ? generation != null ?
+      t('Todos os níveis usam a IA treinada (geração {n}).',{n:generation}) : t('Todos os níveis usam a IA treinada.') :
+      t('Todos os níveis usam a IA tática com os pesos padrão.')) + ' ' +
+    t('Fácil erra de propósito; Médio erra pouco; Difícil é a IA treinada pura; Skynet é a IA treinada ao máximo com 40% a mais de dano.')
   const developer = $('settings-dev')
   developer.checked = developerMode()
   developer.onchange = () => store(developerKey,developer.checked ? '1' : '0')
@@ -241,8 +263,11 @@ async function setupProfile(dialog) {
   $('profile-achievements').replaceChildren(...achievements.map(item => {
     const entry = document.createElement('li')
     entry.className = unlocked[item.id] ? 'achieved' : 'locked'
-    entry.append(Object.assign(document.createElement('strong'),{textContent:(unlocked[item.id] ? '🏆 ' : '🔒 ') + t(item.title)}),
-      Object.assign(document.createElement('span'),{textContent:t(item.description)}))
+    const title = document.createElement('strong')
+    title.textContent = (unlocked[item.id] ? (item.special ? '🤖 ' : '🏆 ') : '🔒 ') + t(item.title)
+    // Emblema da Skynet: título em vermelho vibrante com contorno preto, tremendo.
+    if (item.special && unlocked[item.id]) { entry.classList.add('special'); title.classList.add('skynet') }
+    entry.append(title,Object.assign(document.createElement('span'),{textContent:t(item.description)}))
     if (unlocked[item.id]) entry.title = new Date(unlocked[item.id]).toLocaleDateString(language() === 'en' ? 'en-US' : 'pt-BR')
     return entry
   }))
@@ -383,8 +408,8 @@ async function openHome(data) {
   })
   const generation = data.aiProfile?.generation
   $('home-ai').textContent = data.aiProfile?.params ?
-    t('IA treinada ativa: geração {n} (Normal e Difícil). Fácil usa a IA clássica do jogo.',{n:generation ?? '?'}) :
-    t('Nenhuma IA treinada ativa: Normal e Difícil usam a IA tática com os pesos padrão.')
+    t('IA treinada ativa: geração {n} (Fácil, Médio, Difícil e Skynet).',{n:generation ?? '?'}) :
+    t('Nenhuma IA treinada ativa: os níveis usam a IA tática com os pesos padrão.')
   const names = ['annihilator','scorpion','raptor','battlecruiser']
   const images = await loadImages(Object.fromEntries(names.map(name=>[name,data.assets[name]])))
   drawSprites($('home-tank'),[unitSprite(data,images.annihilator,'ff00ff00')])
@@ -433,10 +458,43 @@ function internetUpdates(room,slot,receive,disconnect) {
 
 function matchUpdates(room,slot,receive,disconnect) {
   if (location.protocol === 'https:') return internetUpdates(room,slot,receive,disconnect)
-  const stream = new EventSource('/lan/state/' + room + '/' + slot)
+  const stream = new EventSource(lanUrl('state/' + room + '/' + slot))
   stream.onmessage = event => receive(JSON.parse(event.data))
   stream.onerror = disconnect
   return () => stream.close()
+}
+
+// Escolha do convite: abrir no launcher do Battalion (precisa ter aberto o Battalion-Nativo.exe ao menos uma vez neste
+// computador, que registra o endereço battalion-nativo://) ou continuar no navegador.
+function offerLauncher(code) {
+  return new Promise(resolve => {
+    const dialog = document.createElement('dialog')
+    dialog.className = 'settings launcher-choice'
+    const title = document.createElement('h2')
+    title.textContent = t('Convite para o Battalion')
+    const text = document.createElement('p')
+    text.textContent = t('Abra no launcher para jogar com a sua conta (foto, nome, estatísticas e emblemas).')
+    const hint = document.createElement('p')
+    hint.className = 'launcher-hint'
+    hint.textContent = t('Se nada abrir, abra o Battalion-Nativo.exe uma vez e clique de novo no convite.')
+    hint.hidden = true
+    const open = document.createElement('a')
+    open.className = 'launcher-open'
+    open.href = 'battalion-nativo://entrar?origem=' + encodeURIComponent(location.origin) + '&sala=' + encodeURIComponent(code.toUpperCase())
+    open.textContent = '▶ ' + t('Abrir no launcher')
+    open.onclick = () => { hint.hidden = false }
+    const browser = document.createElement('button')
+    browser.type = 'button'
+    browser.textContent = t('Continuar no navegador')
+    browser.onclick = () => { dialog.close(); dialog.remove(); resolve() }
+    const actions = document.createElement('div')
+    actions.className = 'launcher-actions'
+    actions.append(open,browser)
+    dialog.append(title,text,actions,hint)
+    dialog.oncancel = event => event.preventDefault()
+    document.body.append(dialog)
+    dialog.showModal()
+  })
 }
 
 async function start(data,room,slot,side,invites = []) {
@@ -481,8 +539,9 @@ async function start(data,room,slot,side,invites = []) {
     generated ? (sideOrder ? reorderSides(generateMap(data,generated),sideOrder) : generateMap(data,generated)) : data.maps[maps[map][0]]
   const mine = you ?? side
   // Salvamento automático deste lado: a última visão recebida fica no navegador (retomável se o anfitrião cair).
-  let savedVersion = -1
+  let savedVersion = -1, lastView = null
   const keepNetworkMatch = state => {
+    lastView = state
     if (state.winner) { if (savedVersion !== -2) { savedVersion = -2; void clearNetworkMatch() } return }
     if (state.version === savedVersion) return
     savedVersion = state.version
@@ -495,6 +554,18 @@ async function start(data,room,slot,side,invites = []) {
       keepNetworkMatch(state)
       receive(state)
     },disconnect),
+    // Salvamento manual: baixa a visão atual da partida, no formato que "Continuar partida de arquivo" abre.
+    saveNow:async () => {
+      if (!lastView || lastView.winner) throw Error('Nada para salvar agora.')
+      const {notices,chat,...estado} = lastView
+      const blob = new Blob([JSON.stringify({estado,mapa:board,sala:room,equipe:mine})],{type:'application/json'})
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = 'partida-battalion-' + new Date().toISOString().slice(0,16).replace(/[:T]/g,'-') + '.json'
+      document.body.append(link)
+      link.click()
+      setTimeout(()=>{ URL.revokeObjectURL(link.href); link.remove() },1000)
+    },
     fastAI,
     chat:text => request('chat/' + room + '/' + slot,{method:'POST',body:text}),
     // Replay da partida (o anfitrião libera no fim): relatório, linha do tempo e download.
@@ -581,7 +652,7 @@ async function openCampaign(data) {
   const unlocked = chapter => Boolean(chapter?.board) &&
     (list !== 'campanha' || chapter.number === 1 || Boolean(progress[chapter.number - 1]))
   const difficulty = Number(query.get('difficulty') ?? storedDifficulty())
-  const selected = [0,1,2].includes(difficulty) ? difficulty : 1
+  const selected = AI_LEVELS.includes(difficulty) ? difficulty : 1
   if (query.has('chapter')) {
     const mission = chapters.find(chapter => String(chapter.number) === query.get('chapter'))
     if (!mission?.board) throw Error('Este capítulo ainda não está disponível na edição nativa.')
@@ -746,7 +817,7 @@ function setupGenerator(data,choose) {
   // Quem comanda cada equipe: Jogador (humano) ou IA Fácil/Normal/Difícil, e o time (0 = sozinha, 1… = Time A…).
   let stale = true
   const sides = Array.from({length:9},(_,index)=>({control:index ? '1' : 'human',group:0}))
-  const controls = [['human','Jogador'],['0','IA Fácil'],['1','IA Normal'],['2','IA Difícil']]
+  const controls = [['human','Jogador'],['0','IA Fácil'],['1','IA Médio'],['2','IA Difícil'],['3','Skynet']]
   const groupName = group => group ? t('Time {x}',{x:'ABCDEFGHI'[group-1]}) : t('Sozinha')
   function summary() {
     const count = Number(teamCount.value), list = sides.slice(0,count)
@@ -772,6 +843,7 @@ function setupGenerator(data,choose) {
       const control = document.createElement('select')
       control.setAttribute('aria-label',t('Quem comanda a equipe {n}',{n:index+1}))
       control.replaceChildren(...controls.map(([value,label])=>new Option(t(label),value)))
+      skynetBadge(control)
       control.value = team.control
       control.onchange = () => { team.control = control.value; summary() }
       const group = document.createElement('select')
@@ -928,6 +1000,12 @@ async function open() {
   // Convite curto (?sala=CÓDIGO): o servidor devolve a sala; o endereço fica só com o código.
   const code = query.get('sala')
   let guestRoom = query.get('guest')
+  // Convite aberto pelo launcher (battalion-nativo://): a sala está no computador do anfitrião.
+  const remote = query.get('remoto')
+  if (remote && location.hostname === '127.0.0.1' && validRemote(remote)) useRemote(remote)
+  // Convite aberto no navegador do Windows (página servida pelo anfitrião): oferece abrir no launcher, que mantém
+  // a conta deste computador (foto, nome, estatísticas e emblemas).
+  else if (code && location.hostname !== '127.0.0.1' && !androidApp && /Windows/.test(navigator.userAgent)) await offerLauncher(code)
   if (code) {
     if (!/^[A-Z0-9]{6}$/i.test(code)) throw Error('Código de sala inválido.')
     guestRoom = (await (await request('code/' + code.toUpperCase())).json()).room
@@ -972,6 +1050,7 @@ async function open() {
   if (query.has('editor')) {
     const {openEditor} = await import('./editor.js')
     const back = ghosts ? '/?editor=ghosts' : '/?editor'
+    skynetBadge($('edit-difficulty'))
     $('edit-difficulty').value = storedDifficulty()
     return openEditor(data,ghosts,(board,mode,difficulty)=>playLocal(data,board,mode,difficulty,
       ['ff00ff00','ff0000ff','ffff0000','ff008080'].slice(0,Math.max(...board.units.map(unit=>unit.side))),back))
@@ -1026,6 +1105,7 @@ async function openSkirmish(data) {
   const humans = $('scenario-humans'), coalitions = $('scenario-coalitions')
   const selectedColors = teamColors.slice()
   mode.value = modeSlugs[query.get('partida')] ?? 'ai'
+  skynetBadge(difficulty)
   difficulty.value = storedDifficulty()
   difficulty.onchange = () => store(difficultyKey,difficulty.value)
   let localMaps = {}
@@ -1058,7 +1138,7 @@ async function openSkirmish(data) {
   const reason = entry => t(entry.kind === 'arena' ? 'A arena é só para assistir às IAs.' :
     locked(entry) ? 'Vença este mapa contra a IA (em qualquer dificuldade) para liberar.' :
     'Mapas personalizados não entram no multiplayer.')
-  const levelNames = ['Fácil','Normal','Difícil']
+  const levelNames = ['Fácil','Médio','Difícil','Skynet']
   const teamLevels = teamColors.map(()=>storedDifficulty())
 
   const humanCount = () => mode.value === 'ai' ? 1 : mode.value === 'spectator' ? 0 : Number(humans.value)
@@ -1185,6 +1265,7 @@ async function openSkirmish(data) {
         const level = document.createElement('select')
         level.setAttribute('aria-label',t('Dificuldade da IA da equipe {n}',{n:index+1}))
         level.replaceChildren(...levelNames.map((name,value)=>new Option(t(name),value)))
+        skynetBadge(level)
         level.value = teamLevels[index]
         level.onchange = () => { teamLevels[index] = Number(level.value) }
         label.append(level)
@@ -1195,7 +1276,7 @@ async function openSkirmish(data) {
     const setup = picked.setup
     $('generator-setup-summary').hidden = !setup
     if (setup) {
-      const names = {human:'Jogador',0:'IA Fácil',1:'IA Normal',2:'IA Difícil'}
+      const names = {human:'Jogador',0:'IA Fácil',1:'IA Médio',2:'IA Difícil',3:'Skynet'}
       $('generator-setup-summary').textContent = t('Equipes do gerador:') + ' ' + setup.map((team,index)=>
         t('Equipe {n}',{n:index+1}) + ' ' + t(names[team.control]) +
         (team.group ? ' (' + t('Time {x}',{x:'ABCDEFGHI'[team.group-1]}) + ')' : '')).join(' · ')

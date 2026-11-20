@@ -1,4 +1,4 @@
-import { activeSides, allied, canTakeTurn, checkWinner, createGame, order, snapshot, teamAttackScale, unitFor } from './partida.js'
+import { activeSides, allied, canTakeTurn, checkWinner, createGame, order, levelAttackScale, levelIncomeScale, snapshot, teamAttackScale, unitFor } from './partida.js'
 import { defaultAiTime } from './ia.js'
 import { aiPlanner } from './planejador.js'
 import { movementDuration } from './movimento.js'
@@ -41,9 +41,9 @@ export function campaignTransport(data, mission, difficulty, {
   const hotseat = mode === 'hotseat'
   const state = resume ? structuredClone(resume.state) : createGame(rules,map,mission.teams.map(team=>team.color),{
     campaign, attackScale:sideDifficulty ?
-      mission.teams.map((_,index)=>index < humans ? 1 : [.7,1,1.4][levelOf(index+1)] ?? 1) :
+      mission.teams.map((_,index)=>index < humans ? 1 : levelAttackScale(levelOf(index+1))) :
       teamAttackScale(mission.teams.length,humans,spectator ? 1 : difficulty),
-    incomeScale:campaign ? mission.teams.map((_,i)=>i === 0 ? 1 : [.7,1,1.4][difficulty]) : undefined,
+    incomeScale:campaign ? mission.teams.map((_,i)=>i === 0 ? 1 : levelIncomeScale(difficulty)) : undefined,
     alliances:mission.teams.map(team=>team.allies ? team.allies.split(',').map(index=>Number(index)+1) : []),
     simultaneous:mode === 'ai',fog,weather,victory:map.victory,
   })
@@ -81,10 +81,11 @@ export function campaignTransport(data, mission, difficulty, {
     if (!onSave || spectator || !playing || dialog || result || computerRunning || cancelled || state.winner) return
     if (!activeSides(state).some(side=>side <= humans && canTakeTurn(state,side))) return
     clearTimeout(saveTimer)
-    saveTimer = setTimeout(() => onSave({state:structuredClone(state),killed,lost,disabled,morale,viewing,elapsed:elapsed(),
-      highlights:[...highlights],completed:[...completed].map(event=>mission.events.indexOf(event)),
-      replay:replayStart ? {initial:replayStart,actions:replayLog.slice()} : undefined}),250)
+    saveTimer = setTimeout(() => onSave(saveData()),250)
   }
+  const saveData = () => ({state:structuredClone(state),killed,lost,disabled,morale,viewing,elapsed:elapsed(),
+    highlights:[...highlights],completed:[...completed].map(event=>mission.events.indexOf(event)),
+    replay:replayStart ? {initial:replayStart,actions:replayLog.slice()} : undefined})
   const publish = () => {
     if (!cancelled && receive) receive({...snapshot(state,viewer()),teams:mission.teams,dialog,result,focus,
       blocked:disabled,morale,objective:mission.objective,highlights:[...highlights],viewer:viewer(),elapsed:elapsed()})
@@ -330,6 +331,12 @@ export function campaignTransport(data, mission, difficulty, {
       viewing = state.turn
       publish()
       if (state.winner) await finish()
+    } : undefined,
+    // Salvamento manual (botão 💾): grava agora o mesmo ponto que "Continuar partida" abre no menu.
+    saveNow:onSave && !spectator ? async () => {
+      if (!playing || dialog || result || state.winner || computerRunning) throw Error('Espere a sua vez para salvar.')
+      clearTimeout(saveTimer)
+      await onSave(saveData())
     } : undefined,
     advance() {
       const resume = nextLine

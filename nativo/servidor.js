@@ -1,4 +1,5 @@
 import { createServer } from 'node:http'
+import { Readable } from 'node:stream'
 import { randomBytes } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
@@ -8,7 +9,7 @@ import { join, resolve, sep } from 'node:path'
 import { createInterface } from 'node:readline'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
-import { activeSides, canTakeTurn, createGame, order, scenarioMatch, scenarioSlots, snapshot, teamAttackScale } from './partida.js'
+import { AI_LEVELS, activeSides, canTakeTurn, createGame, levelAttackScale, order, scenarioMatch, scenarioSlots, snapshot, teamAttackScale } from './partida.js'
 import { defaultAiTime, validAiTime } from './ia.js'
 import { aiPlanner } from './planejador.js'
 import { profileDirectory, readAiProfile } from './perfil-ia.js'
@@ -56,7 +57,7 @@ const files = new Map([
   ['/ia-worker.js','./ia-worker.js'], ['/planejador.js','./planejador.js'], ['/procedural.js','./procedural.js'],
   ['/rede-ia.js','./rede-ia.js'], ['/ia-tatica.js','./ia-tatica.js'],
   ['/idioma.js','./idioma.js'], ['/traducao-en.json','./traducao-en.json'], ['/traducao-pt.json','./traducao-pt.json'],
-  ['/combate.js','./combate.js'], ['/construcao.js','./construcao.js'],
+  ['/combate.js','./combate.js'], ['/construcao.js','./construcao.js'], ['/icones.js','./icones.js'],
   ['/camera.js','../camera.js'], ['/lan.js','../lan.js'], ['/launcher.css','../launcher.css'],
   ...[...Object.values(data.assets),...Object.values(ghosts.assets)].map(file => ['/recursos/' + file,'./recursos/' + file]),
 ])
@@ -342,7 +343,7 @@ async function api(req,res,parts,local,throughInternet) {
       // Campanha em dupla: a missão (com falas e eventos) roda aqui no servidor.
       const {list,ghosts:isGhosts,chapter} = settings.coop
       const {difficulty,aiTime = defaultAiTime} = settings
-      if (!campaignLists.has(list) || !Number.isInteger(chapter) || ![0,1,2].includes(difficulty) || !validAiTime(aiTime)) {
+      if (!campaignLists.has(list) || !Number.isInteger(chapter) || !AI_LEVELS.includes(difficulty) || !validAiTime(aiTime)) {
         return fail(res,400,'Missão inválida.')
       }
       const chapters = JSON.parse(await read('./'+list+(isGhosts ? '-ghosts' : '')+'.json'))
@@ -368,7 +369,7 @@ async function api(req,res,parts,local,throughInternet) {
       try { board = reorderSides(board,settings.sideOrder) } catch (error) { return fail(res,400,error.message) }
       sideOrder = settings.sideOrder
       sideLevels = Array.isArray(settings.sideLevels) && settings.sideLevels.length === board.slots &&
-        settings.sideLevels.every(level=>[0,1,2].includes(level)) ? settings.sideLevels : undefined
+        settings.sideLevels.every(level=>AI_LEVELS.includes(level)) ? settings.sideLevels : undefined
       if (Array.isArray(settings.groups) && settings.groups.length === board.slots && settings.groups.every(Number.isInteger)) {
         // Renumera os times como 1, 2, 3… na ordem em que aparecem.
         const seen = [...new Set(settings.groups)]
@@ -376,7 +377,7 @@ async function api(req,res,parts,local,throughInternet) {
       }
     }
     const slots = scenarioSlots(board)
-    if (!Number.isInteger(humans) || humans < 2 || humans > slots || ![0,1,2].includes(difficulty) || !validAiTime(aiTime)) {
+    if (!Number.isInteger(humans) || humans < 2 || humans > slots || !AI_LEVELS.includes(difficulty) || !validAiTime(aiTime)) {
       return fail(res,400,'Escolha a quantidade de jogadores e a dificuldade.')
     }
     const id = token(12)
@@ -565,7 +566,7 @@ async function api(req,res,parts,local,throughInternet) {
       room.profile = profile
       room.game = createGame(data.rules,room.map,setup.colors,{
         alliances,simultaneous:room.coalitions,fog:Boolean(room.fog),weather:Boolean(room.weather),victory:room.map.victory,
-        attackScale:room.sideLevels ? room.sideLevels.map((level,index)=>index < room.seats.length ? 1 : [.7,1,1.4][level]) :
+        attackScale:room.sideLevels ? room.sideLevels.map((level,index)=>index < room.seats.length ? 1 : levelAttackScale(level)) :
           teamAttackScale(setup.colors.length,room.seats.length,room.difficulty),
       })
     }
@@ -818,6 +819,32 @@ function remoteAllowed(remote, bound) {
   return /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(remote)
 }
 
+// Convite aberto pelo launcher: a página deste computador (127.0.0.1, com o perfil do jogador) fala com a sala
+// do anfitrião por aqui. Só repassa /lan/ (salas e partidas) para um endereço http(s) simples, sem cookies nem cabeçalhos
+// do navegador; o servidor do anfitrião faz as mesmas conferências de sempre.
+async function proxyRemote(req,res,path) {
+  const [,,encoded = '',...rest] = path.split('/')
+  let origin = ''
+  try { origin = decodeURIComponent(encoded) } catch {}
+  const target = '/' + rest.join('/')
+  if (!/^https?:\/\/[A-Za-z0-9.-]+(:\d{1,5})?$/.test(origin) || !target.startsWith('/lan/') || target.includes('..') ||
+      !['GET','POST'].includes(req.method)) return fail(res,400,'Convite inválido.')
+  const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''
+  const controller = new AbortController()
+  res.on('close',() => controller.abort())
+  const payload = req.method === 'POST' ? Buffer.from(await body(req,12*1024*1024),'utf8') : undefined
+  let upstream
+  try {
+    upstream = await fetch(origin + target + query,{method:req.method,body:payload,signal:controller.signal,redirect:'error',
+      headers:{...(req.headers['content-type'] ? {'Content-Type':req.headers['content-type']} : {}),Accept:req.headers.accept ?? '*/*'}})
+  } catch {
+    return fail(res,502,'Não foi possível falar com o anfitrião. Confira o convite e a conexão.')
+  }
+  res.writeHead(upstream.status,{'Content-Type':upstream.headers.get('content-type') ?? 'text/plain; charset=utf-8','Cache-Control':'no-store'})
+  if (!upstream.body) return res.end()
+  Readable.fromWeb(upstream.body).on('error',() => res.end()).pipe(res)
+}
+
 function handler(address,throughInternet = false) {
   return async (req,res) => {
     const local = !throughInternet && address === hostAddress
@@ -841,6 +868,10 @@ function handler(address,throughInternet = false) {
         // Só o próprio jogo, neste computador (o cabeçalho impede outro site de ler ou gravar).
         if (!local || req.headers['x-battalion-acao'] !== '1') return fail(res,403,'Acesso indisponível.')
         return await vaultAction(req,res,req.method,path.slice(7))
+      }
+      if (path.startsWith('/remoto/')) {
+        if (!local) return fail(res,403,'Acesso indisponível.')
+        return await proxyRemote(req,res,path)
       }
       if (path.startsWith('/lan/') && ['POST','GET'].includes(req.method)) {
         return await api(req,res,path.slice(5).split('/'),local,throughInternet)

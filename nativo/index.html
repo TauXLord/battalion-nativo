@@ -162,8 +162,8 @@
         <label class="toggle" id="scenario-weather-row"><input type="checkbox" id="scenario-weather"><span>Clima: nuvens e chuva de vez em quando (na chuva, -1 de visão e de alcance da artilharia)</span></label>
         <p id="generator-setup-summary" class="generator-setup-summary" hidden></p>
         <label id="local-difficulty" hidden>Dificuldade da IA <select id="scenario-difficulty">
-          <option value="0">Fácil · IA clássica</option><option value="1" selected>Normal · IA treinada</option>
-          <option value="2">Difícil · IA treinada com dano extra</option>
+          <option value="0">Fácil · IA treinada</option><option value="1" selected>Médio · IA treinada</option>
+          <option value="2">Difícil · IA treinada</option><option value="3">Skynet · IA máxima, +40% de dano</option>
         </select></label>
         <div id="scenario-colors" class="team-colors" hidden></div>
         <button id="scenario-play" class="primary big">Jogar</button>
@@ -247,7 +247,7 @@
         <label>Importar mapa JSON <input type="file" id="edit-import" accept=".json,application/json"></label>
         <button id="edit-export">Exportar mapa JSON</button>
         <label>Dificuldade <select id="edit-difficulty">
-          <option value="0">Fácil · IA clássica</option><option value="1" selected>Normal · IA treinada</option><option value="2">Difícil</option>
+          <option value="0">Fácil · IA treinada</option><option value="1" selected>Médio · IA treinada</option><option value="2">Difícil · IA treinada</option><option value="3">Skynet · IA máxima, +40% de dano</option>
         </select></label>
         <button id="edit-play" class="primary">Testar contra a IA</button>
         <button id="edit-hotseat">Testar com jogadores locais</button>
@@ -270,9 +270,10 @@
       <section class="mission-preview"><h3>Mission Preview</h3><canvas id="mission-preview" width="140" height="174"></canvas></section>
       <section class="mission-brief"><h3>Mission Brief</h3><p id="mission-brief"></p></section>
       <section class="mission-difficulty"><h3>AI Difficulty</h3>
-        <label title="IA clássica"><input type="radio" name="difficulty" value="0"> Easy</label>
-        <label title="IA treinada"><input type="radio" name="difficulty" value="1" checked> Normal</label>
-        <label title="IA treinada com dano extra"><input type="radio" name="difficulty" value="2"> Hard</label>
+        <label title="IA treinada"><input type="radio" name="difficulty" value="0"> Easy</label>
+        <label title="IA treinada"><input type="radio" name="difficulty" value="1" checked> Medium</label>
+        <label title="IA treinada"><input type="radio" name="difficulty" value="2"> Hard</label>
+        <label title="IA treinada ao máximo, com 40% a mais de dano"><input type="radio" name="difficulty" value="3"> <span class="skynet">Skynet</span></label>
       </section>
       <a class="campaign-back" href="/">Main Menu</a>
       <button id="mission-start">Start Game</button>
@@ -304,7 +305,7 @@
   <main id="player-view" hidden>
     <div id="match-top" class="match-top">
       <header><a href="/">← Menu</a><h1 id="player-title">Battalion</h1>
-        <div class="player-tools"><button id="match-skip-round" hidden title="Encerra o turno de todas as equipes até a próxima rodada">⏭ Avançar rodada</button><button id="match-report-open" hidden>Relatório</button><button id="match-watch" hidden>Ver replay</button><button id="match-replay" hidden>Salvar replay</button><button id="game-settings" class="settings-button" aria-label="Configurações" title="Configurações">⚙</button>
+        <div class="player-tools"><button id="match-save" hidden title="Salva a partida agora">💾 Salvar</button><button id="match-skip-round" hidden title="Encerra o turno de todas as equipes até a próxima rodada">⏭ Avançar rodada</button><button id="match-report-open" hidden>Relatório</button><button id="match-watch" hidden>Ver replay</button><button id="match-replay" hidden>Salvar replay</button><button id="game-settings" class="settings-button" aria-label="Configurações" title="Configurações">⚙</button>
           <button id="fullscreen">Tela cheia</button></div></header>
       <p id="lan-status" role="status">Carregando partida…</p>
       <p id="match-hud" class="match-hud" hidden></p>
@@ -411,8 +412,8 @@
       <fieldset>
         <legend>Inteligência artificial</legend>
         <label class="field"><span>Dificuldade padrão</span><select id="settings-difficulty">
-          <option value="0">Fácil · IA clássica</option><option value="1">Normal · IA treinada</option>
-          <option value="2">Difícil · IA treinada com dano extra</option>
+          <option value="0">Fácil · IA treinada</option><option value="1">Médio · IA treinada</option>
+          <option value="2">Difícil · IA treinada</option><option value="3">Skynet · IA máxima, +40% de dano</option>
         </select></label>
         <p class="muted" id="settings-ai-info">Fácil usa a IA clássica do jogo, com dano e renda reduzidos na campanha.</p>
         <label class="field"><span>Tempo de raciocínio da IA clássica (segundos por ação)</span>

@@ -280,3 +280,55 @@ test('redemoinho: destruir a última Warmachine transportada passa a vez numa pa
   assert.ok(!game.winner)
   assert.equal(game.last.eliminated.filter(unit=>unit.id===barge.id).length,1)
 })
+
+test('neblina: avião não atravessa a zona de um Jammer inimigo que ele não enxerga',async () => {
+  const {snapshot,reachable} = await import('../nativo/partida.js')
+  const map = board([{name:'Warmachine',side:1,cell:at(0,0)},{name:'Warmachine',side:2,cell:at(0,11)},
+    {name:'Raptor Fighter',side:1,cell:at(3,5)},{name:'Jammer Truck',side:2,cell:at(9,5)}])
+  const game = createGame(rules,map,['ff00ff00','ff0000ff'],{fog:true})
+  const fighter = game.units.find(unit=>unit.name === 'Raptor Fighter')
+  const view = snapshot(game,1)
+  assert.ok(!view.units.some(unit=>unit.name === 'Jammer Truck'),'o Jammer está fora da visão')
+  // Na visão do jogador o caminho até (8,5) é livre, mas a zona real (raio 2) começa em (7,5).
+  const path = reachable(rules,map,view,fighter).get(at(8,5))
+  assert.ok(path,'o jogador consegue pedir o movimento')
+  order(rules,map,game,1,{type:'move',unit:fighter.id,cell:at(8,5),path,version:game.version})
+  assert.equal(fighter.cell,at(6,5),'parou na última casa antes da zona de exclusão aérea')
+  assert.equal(game.undo,null,'a jogada não pode ser desfeita (não serve de sonda)')
+  assert.equal(game.last.blocked,true)
+})
+
+test('para-raios: unidade em estrutura e a Torre não levam dano de raio; aviões sim',async () => {
+  const {lightningProtected} = await import('../nativo/partida.js')
+  const game = {structures:[{name:'Oil Refinery',cell:5,side:0}]}
+  assert.equal(lightningProtected(rules,game,{name:'Lancer Tank',cell:5}),true)
+  assert.equal(lightningProtected(rules,game,{name:'Lancer Tank',cell:6}),false)
+  assert.equal(lightningProtected(rules,game,{name:'Raptor Fighter',cell:5}),false,'avião não fica protegido')
+  assert.equal(lightningProtected(rules,game,{name:'Turret',cell:6}),true,'a Torre nunca leva dano de raio')
+  // Partida: descobre onde o raio cai e coloca ali um tanque numa refinaria.
+  const make = () => {
+    const map = {...board([{name:'Warmachine',side:1,cell:0},{name:'Warmachine',side:2,cell:1599}]),width:40,height:40,
+      tiles:Array.from({length:1600},()=>['Plains',['single',['plains_1']]])}
+    const match = createGame(rules,map,['ff00ff00','ff0000ff'],{weather:777})
+    Object.assign(match.weather,{phase:'chuva',left:99})
+    return [map,match]
+  }
+  const [probeMap,probe] = make()
+  for (const side of [1,2]) order(rules,probeMap,probe,side,{type:'end',version:probe.version})
+  const cell = probe.lightning.cell
+  const [map,match] = make()
+  match.structures.push({name:'Oil Refinery',cell,side:0,strength:8,capturer:0})
+  match.units.push({id:500,name:'Lancer Tank',side:1,cell,hp:50})
+  for (const side of [1,2]) order(rules,map,match,side,{type:'end',version:match.version})
+  assert.equal(match.lightning.cell,cell)
+  assert.equal(match.lightning.protected,true)
+  assert.equal(match.units.find(unit=>unit.id === 500).hp,50,'o tanque na refinaria não perdeu vida')
+})
+
+test('níveis da IA: Fácil, Médio, Difícil e Skynet (+40% de dano)',async () => {
+  const {AI_LEVELS,levelAttackScale,teamAttackScale} = await import('../nativo/partida.js')
+  assert.deepEqual(AI_LEVELS,[0,1,2,3])
+  assert.equal(levelAttackScale(2),1,'Difícil é a IA treinada pura, sem bônus de dano')
+  assert.equal(levelAttackScale(3),1.4,'Skynet tem 40% a mais de dano')
+  assert.deepEqual(teamAttackScale(3,1,3),[1,1.4,1.4],'o jogador humano não ganha o bônus')
+})

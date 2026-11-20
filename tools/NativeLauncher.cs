@@ -13,6 +13,37 @@ using System.Threading;
 internal static class NativeLauncher
 {
     private const string PayloadName = "BattalionNative";
+    private static string invitePath;
+
+    // Registra, só para este usuário (sem pedir administrador), o endereço battalion-nativo:// apontando para este
+    // executável. Assim o botão "Abrir no launcher" do convite abre o jogo aqui.
+    private static void RegisterInviteProtocol()
+    {
+        try
+        {
+            string exe = Assembly.GetExecutingAssembly().Location;
+            using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Classes\battalion-nativo"))
+            {
+                key.SetValue("", "URL:Battalion Nativo");
+                key.SetValue("URL Protocol", "");
+                using (var icon = key.CreateSubKey("DefaultIcon")) icon.SetValue("", "\"" + exe + "\",0");
+                using (var command = key.CreateSubKey(@"shell\open\command"))
+                    command.SetValue("", "\"" + exe + "\" \"%1\"");
+            }
+        }
+        catch { }
+    }
+
+    // battalion-nativo://entrar?origem=http%3A%2F%2F192.168.0.5%3A8770&sala=K7M2QP → /?remoto=...&sala=K7M2QP
+    private static string InvitePath(string link)
+    {
+        Match origin = Regex.Match(link, @"[?&]origem=([^&]+)");
+        Match room = Regex.Match(link, @"[?&]sala=([A-Za-z0-9]{6})(?:&|/|$)");
+        if (!origin.Success || !room.Success) return null;
+        string address = Uri.UnescapeDataString(origin.Groups[1].Value);
+        if (!Regex.IsMatch(address, @"\Ahttps?://[A-Za-z0-9.-]+(?::\d{1,5})?\z")) return null;
+        return "/?remoto=" + Uri.EscapeDataString(address) + "&sala=" + room.Groups[1].Value.ToUpperInvariant();
+    }
 
     private static int Main(string[] args)
     {
@@ -20,6 +51,11 @@ internal static class NativeLauncher
         Console.Title = "Battalion Nativo";
         bool noBrowser = Array.IndexOf(args, "--no-browser") >= 0;
         bool internet = Array.IndexOf(args, "--internet") >= 0;
+        // Convite aberto pelo navegador (battalion-nativo://entrar?origem=...&sala=...): abre a sala do anfitrião
+        // dentro do jogo deste computador, com o perfil do jogador.
+        foreach (string arg in args)
+            if (arg.StartsWith("battalion-nativo:", StringComparison.OrdinalIgnoreCase)) invitePath = InvitePath(arg);
+        RegisterInviteProtocol();
         try
         {
             string portText = Environment.GetEnvironmentVariable("BATTALION_NATIVE_PORT");
@@ -85,6 +121,7 @@ internal static class NativeLauncher
         settings.EnvironmentVariables.Remove("NODE_OPTIONS");
         settings.EnvironmentVariables["BATTALION_NATIVE_PORT"] = port.ToString();
         settings.EnvironmentVariables["BATTALION_NATIVE_BUILD"] = checksum;
+        if (invitePath != null) settings.EnvironmentVariables["BATTALION_OPEN_PATH"] = invitePath;
         // Caminho deste executável, usado só pelo botão "Desinstalar" do jogo.
         settings.EnvironmentVariables["BATTALION_NATIVE_EXE"] = Assembly.GetExecutingAssembly().Location;
         Console.WriteLine("Mantenha esta janela aberta enquanto estiver jogando ou hospedando.");
@@ -139,6 +176,7 @@ internal static class NativeLauncher
         if (info.Length != 4 || info[0] != "Battalion-Nativo/2" || info[3] != checksum ||
             (internet && info[1] != "internet")) return false;
         if (Regex.IsMatch(info[2], @"\A/(?:\?host=[a-f0-9]{24})?\z")) path = info[2];
+        if (invitePath != null) path = invitePath;
         string url = address + path;
         Console.WriteLine("O Battalion já está rodando. Abra " + url);
         if (!noBrowser) OpenAppWindow(url);
