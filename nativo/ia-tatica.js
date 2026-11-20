@@ -97,7 +97,14 @@ function context(rules,map,state,side,params) {
   // Cada refinaria paga 150 por Warmachine no início e no fim do turno.
   const incomePerMachine = view.campaign ? 0 : 300*owned
   const enemyAir = enemies.filter(unit=>rules.units[unit.name].unitType === 'air')
-  const ctx = {rules,map,view,side,params,mine,enemies,occupied,myMachines,enemyMachines,refineries,owned,
+  // Neblina sem Warmachine inimiga à vista: o exército vai explorar onde ela deve estar (posição inicial das
+  // Warmachines inimigas no mapa e as estruturas do inimigo), em vez de ficar parado passando a vez.
+  const fogged = Array.isArray(view.fog) || Boolean(state.fog)
+  const scouts = fogged && !enemyMachines.length ? [
+    ...(map.units ?? []).filter(unit=>unit.side && !allied(view,unit.side,side) && has(rules.units[unit.name] ?? {mods:[]},'Linchpin')),
+    ...view.structures.filter(tile=>tile.side && !allied(view,tile.side,side)),
+  ].map(item=>({cell:item.cell})) : []
+  const ctx = {rules,map,view,side,params,mine,enemies,occupied,myMachines,enemyMachines,refineries,owned,scouts,
     incomePerMachine,enemyAir,fields:new Map(),threatCache:new Map(),reach:new Map()}
   // Alcance de cada inimigo no próximo turno (as nossas unidades bloqueiam o caminho).
   for (const enemy of enemies) {
@@ -195,7 +202,7 @@ function field(ctx,spec,kind,goals) {
   return ctx.fields.get(key)
 }
 
-function attackGoals(ctx,spec,targets = ctx.enemyMachines.length ? ctx.enemyMachines : ctx.enemies) {
+function attackGoals(ctx,spec,targets = ctx.enemyMachines.length ? ctx.enemyMachines : [...ctx.enemies,...ctx.scouts]) {
   const {map,rules,view} = ctx
   const cells = new Set()
   for (const target of targets) {
@@ -506,6 +513,22 @@ export function chooseGameAction(rules,map,state,options = {}) {
   return chooseAction(rules,map,state,{...options,profile,difficulty:Math.min(2,level),combatLevel:Math.min(2,level),noise,random})
 }
 
+// Melhor avanço de exploração (neblina): a tropa parada que mais se aproxima dos alvos prováveis sem se expor.
+function scoutMove(ctx) {
+  const {rules,map,view} = ctx
+  let best = null
+  for (const unit of ctx.mine) {
+    const spec = rules.units[unit.name]
+    if (unit.moved || unit.fired || unit.disabled || unit.transported || has(spec,'Linchpin')) continue
+    const here = positionValue(ctx,unit,unit.cell)
+    for (const [cell,path] of reachable(rules,map,view,unit)) {
+      const gain = positionValue(ctx,unit,cell) - here
+      if (gain > 1 && (!best || gain > best.gain)) best = {gain,action:{type:'move',unit:unit.id,cell,path}}
+    }
+  }
+  return best?.action ?? null
+}
+
 export function chooseAction(rules,map,state,options = {}) {
   const side = options.side ?? state.turn
   // Campanha e fábricas fixas ainda usam a IA padrão (produção por fábrica).
@@ -513,7 +536,7 @@ export function chooseAction(rules,map,state,options = {}) {
   const params = paramsFrom(options.profile)
   const ctx = context(rules,map,state,side,params)
   const {view} = ctx
-  if (!ctx.enemies.length) return baselineAction(rules,map,state,{...options,profile:undefined,difficulty:options.combatLevel ?? 2,seconds:0})
+  if (!ctx.enemies.length && !ctx.scouts.length) return baselineAction(rules,map,state,{...options,profile:undefined,difficulty:options.combatLevel ?? 2,seconds:0})
   ctx.machineDanger = new Map(ctx.myMachines.map(machine=>[machine.id,focusedDamage(ctx,machine,machine.cell)]))
 
   // 1. Abate de Warmachine inimiga se houver combinação letal neste turno.
@@ -554,7 +577,10 @@ export function chooseAction(rules,map,state,options = {}) {
       {...unit,moved:true,fired:true} : unit)
     // Igual ao treino (tools/treinar-tatica.mjs): combate guloso de dificuldade 2, sem busca por tempo.
     // Repassar options.seconds faria o jogo pensar ~1 s por movimento e mudaria o comportamento treinado.
-    return baselineAction(rules,map,{...state,units},{...options,side,profile:undefined,difficulty:options.combatLevel ?? 2,seconds:0})
+    const combat = baselineAction(rules,map,{...state,units},{...options,side,profile:undefined,difficulty:options.combatLevel ?? 2,seconds:0})
+    // Neblina: a IA padrão não anda sem inimigo à vista; aí as tropas paradas avançam explorando.
+    if (combat?.type === 'end' && ctx.scouts.length) return scoutMove(ctx) ?? combat
+    return combat
   }
   // 2. Abates de alto valor contra outras unidades.
   for (const target of ctx.enemies) {

@@ -512,6 +512,9 @@ export function spotted(state,vision,unit) {
 }
 
 export function snapshot(state, side) {
+  // Visão já filtrada (na neblina, fog vira a lista de casas vistas): a IA recebe a visão da equipe e a filtra de
+  // novo por dentro. Filtrar uma visão quebrava (fog sem as regras de alcance) e a IA travava na neblina.
+  if (Array.isArray(state.fog)) return {...state,units:state.units.map(unit=>({...unit}))}
   const vision = fogVision(state,side)
   const units = state.units.filter(unit => allied(state,unit.side,side) ||
     visibleTo(unit,side) && spotted(state,vision,unit)).map(unit => {

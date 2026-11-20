@@ -165,33 +165,62 @@ async function main() {
   process.on('SIGINT',requestStop)
   const ask = question => new Promise(ok=>input.question(question,answer=>ok(answer.trim().toLowerCase())))
 
+  // Escalonador: os workers nunca ficam esperando. Antes, cada etapa (candidatos, duelo, âncora) era um lote
+  // fechado: as partidas rápidas acabavam e os núcleos ficavam parados até a mais longa terminar (os vales de CPU
+  // no Gerenciador de Tarefas). Agora:
+  //  - a fila da etapa atual roda primeiro, das partidas mais longas para as mais curtas (não sobra uma partida
+  //    grande sozinha no fim);
+  //  - quando a fila esvazia, os workers livres adiantam as partidas da próxima geração (especulação). Elas valem
+  //    se o campeão não mudar (o caso comum); se ele mudar, os resultados são descartados.
+  // Os resultados são guardados por índice, então a ordem de execução não muda o treino.
   let pool = []
-  const startPool = () => { pool = Array.from({length:workers},()=>new Worker(new URL(import.meta.url))) }
-  const stopPool = async () => { await Promise.all(pool.map(worker=>worker.terminate())); pool = [] }
+  const queue = [], idle = new Set()
+  let filler = null
   class Aborted extends Error {}
-  async function run(jobs,report) {
-    const results = Array(jobs.length)
-    let next = 0
-    await Promise.all(pool.map(async worker=>{
-      while (next < jobs.length) {
-        if (stopRequested) throw new Aborted()
-        const index = next++
-        results[index] = await new Promise((ok,fail)=>{
-          const cleanup = () => { worker.off('message',receive); worker.off('exit',exit) }
-          const receive = message => {
-            cleanup()
-            if (message.error) return fail(Error(message.error))
-            report?.(message,jobs[index])
-            ok(message)
-          }
-          const exit = () => { cleanup(); fail(new Aborted()) }
-          worker.on('message',receive)
-          worker.on('exit',exit)
-          worker.postMessage(jobs[index])
-        })
-      }
-    }))
-    return results
+  function dispatch(worker) {
+    const task = stopRequested ? null : queue.shift() ?? filler?.()
+    if (!task) { idle.add(worker); return }
+    idle.delete(worker)
+    worker.task = task
+    worker.postMessage(task.job)
+  }
+  const wake = () => { for (const worker of [...idle]) dispatch(worker) }
+  const startPool = () => {
+    pool = Array.from({length:workers},()=>{
+      const worker = new Worker(new URL(import.meta.url))
+      worker.on('message',message => {
+        const task = worker.task
+        worker.task = null
+        if (message.error) task?.fail(Error(message.error))
+        else task?.ok(message)
+        dispatch(worker)
+      })
+      worker.on('exit',() => { worker.task?.fail(new Aborted()); worker.task = null; idle.delete(worker) })
+      idle.add(worker)
+      return worker
+    })
+  }
+  const stopPool = async () => {
+    filler = null
+    for (const task of queue.splice(0)) task.fail(new Aborted())
+    const closing = pool
+    pool = []
+    idle.clear()
+    await Promise.all(closing.map(worker=>worker.terminate()))
+  }
+  // Custo estimado de uma partida (só para a ordem da fila): área do mapa, um pouco mais com névoa ou clima.
+  const cost = job => {
+    const side = job.seed % 3 === 0 ? 34 : [24,32,40][(job.seed>>>4)%3]
+    return side*side*(matchMode(job.seed) ? 1.2 : 1)
+  }
+  const enqueue = job => new Promise((ok,fail)=>queue.push({job,ok,fail}))
+  // ready[i]: partida já adiantada pela especulação (promessa), reaproveitada em vez de jogar de novo.
+  async function run(jobs,report,ready = []) {
+    if (stopRequested) throw new Aborted()
+    const games = jobs.map((job,index)=>(ready[index] ?? enqueue(job)).then(game=>{ report?.(game,job); return game }))
+    queue.sort((a,b)=>cost(b.job)-cost(a.job))
+    wake()
+    return Promise.all(games)
   }
   const summary = games => {
     const wins = games.filter(game=>game.result === 1).length, losses = games.filter(game=>game.result === -1).length
@@ -213,18 +242,35 @@ async function main() {
       'Sem limite de tempo. Digite p + Enter (ou Ctrl+C) para pausar e abrir o menu.')
     const typed = line => { if (['p','parar','pausar'].includes(line.trim().toLowerCase())) requestStop() }
     input?.on('line',typed)
+    // Plano de uma geração: só depende do número da geração, do campeão e da liga (por isso dá para adiantar).
+    const plan = (generation,champion,hall) => {
+      const random = rng((state.seed+generation*7919)>>>0)
+      const rivals = ['padrao',champion,...hall.slice(-3)]
+      const candidates = Array.from({length:population},()=>mutate(champion,random,sigma))
+      // Mesmas partidas para todos (comparação justa): metade contra a IA padrão, metade contra a liga.
+      const half = Math.ceil(pairs/2)
+      const rivalFor = index => rivals[1+index%(rivals.length-1)]
+      const shared = [...fixtures(random,half,'padrao'),
+        ...Array.from({length:pairs-half},(_,i)=>fixtures(random,1,rivalFor(i))).flat()]
+      return {champion,hall,random,candidates,shared,jobs:candidates.flatMap(params=>shared.map(job=>({...job,params}))),started:[]}
+    }
+    // Especulação: entrega aos workers livres a próxima partida ainda não iniciada da próxima geração.
+    const speculate = upcoming => () => {
+      const index = upcoming.started.length
+      if (index >= upcoming.jobs.length) return null
+      let task
+      const game = new Promise((ok,fail)=>{ task = {job:upcoming.jobs[index],ok,fail} })
+      game.catch(()=>{})
+      upcoming.started.push(game)
+      return task
+    }
+    let current = plan(state.generation,state.champion,state.hall)
     try {
       while (Date.now() < deadline && !stopRequested) {
         const start = performance.now()
-        const random = rng((state.seed+state.generation*7919)>>>0)
-        const rivals = ['padrao',state.champion,...state.hall.slice(-3)]
-        const candidates = Array.from({length:population},()=>mutate(state.champion,random,sigma))
-        // Mesmas partidas para todos (comparação justa): metade contra a IA padrão, metade contra a liga.
-        const half = Math.ceil(pairs/2)
-        const rivalFor = index => rivals[1+index%(rivals.length-1)]
-        const shared = [...fixtures(random,half,'padrao'),
-          ...Array.from({length:pairs-half},(_,i)=>fixtures(random,1,rivalFor(i))).flat()]
-        const jobs = candidates.flatMap(params=>shared.map(job=>({...job,params})))
+        const upcoming = plan(state.generation+1,state.champion,state.hall)
+        filler = speculate(upcoming)
+        const {random,candidates,shared,jobs} = current
         let total = jobs.length + pairs*2
         let finished = 0
         const words = {1:'vitória',0:'empate ',[-1]:'derrota'}
@@ -233,7 +279,7 @@ async function main() {
           console.log(`  [${String(++finished).padStart(String(total).length)}/${total}] ${words[game.result]} na rodada ${game.round}`+
             ` · contra ${rival} · ${game.label} · Warmachines ${game.machines[0]}x${game.machines[1]}`)
         }
-        const games = await run(jobs,report)
+        const games = await run(jobs,report,current.started)
         const ranked = candidates.map((params,i)=>({params,...summary(games.slice(i*shared.length,(i+1)*shared.length))}))
           .sort((a,b)=>b.nota-a.nota)
         const best = ranked[0]
@@ -261,6 +307,9 @@ async function main() {
         }
         state.history = [...(state.history ?? []),{generation:state.generation,best:best.nota,confirmation:confirmation.nota,
           ...(anchor && {padrao:[anchor.desafiante.nota,anchor.campeao.nota]}),promoted}].slice(-200)
+        // Sem troca de campeão, as partidas já adiantadas da próxima geração continuam valendo.
+        current = upcoming.champion === state.champion && upcoming.hall === state.hall ? upcoming :
+          plan(state.generation,state.champion,state.hall)
         await save(checkpoint,state)
         console.log('Geração',state.generation,'·',state.matches,'partidas · melhor',best.nota.toFixed(3),
           `V/E/D ${best.vitorias}/${best.empates}/${best.derrotas}`,'· duelo com o campeão',confirmation.nota.toFixed(3),
@@ -269,6 +318,7 @@ async function main() {
       }
     } catch (error) { if (!(error instanceof Aborted)) throw error }
     finally {
+      filler = null
       input?.off('line',typed)
       onStop = null
       await stopPool()
