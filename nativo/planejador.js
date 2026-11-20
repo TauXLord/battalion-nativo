@@ -1,8 +1,10 @@
-import { chooseGameAction as chooseAction } from './ia-tatica.js'
+import { chooseGameAction as chooseAction, updateMemory } from './ia-tatica.js'
 import { snapshot } from './partida.js'
 
 export function aiPlanner(rules,map,WorkerType = globalThis.Worker,profile) {
   let worker, finish, progress
+  // Memória de cada equipe da IA na neblina (onde viu cada inimigo pela última vez), durante a partida.
+  const memories = new Map()
   function close() {
     const pending = finish
     finish = null
@@ -13,6 +15,9 @@ export function aiPlanner(rules,map,WorkerType = globalThis.Worker,profile) {
   return {
     async choose(state,options) {
       const view = snapshot(state,options.side)
+      if (!memories.has(options.side)) memories.set(options.side,{})
+      const memory = updateMemory(memories.get(options.side),view,options.side)
+      options = {...options,memory}
       // Um perfil por chamada (ex.: partida de avaliação, um perfil por equipe) tem prioridade sobre o perfil da sala.
       const chosen = 'profile' in options ? options.profile : profile
       const fallback = () => chooseAction(rules,map,view,{...options,profile:chosen,seconds:0})

@@ -19,7 +19,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { chooseAction as baselineAction } from '../nativo/ia.js'
-import { chooseAction as tacticalAction, defaultParams } from '../nativo/ia-tatica.js'
+import { chooseAction as tacticalAction, defaultParams, updateMemory } from '../nativo/ia-tatica.js'
 import { createGame, order, snapshot, teamScores } from '../nativo/partida.js'
 import { generateMap } from '../nativo/procedural.js'
 import { profileDirectory, profilePath } from '../nativo/perfil-ia.js'
@@ -50,6 +50,8 @@ function play({seed,side,params,rival,rounds}) {
   const fog = mode === 1 || mode === 3, weather = mode >= 2 ? ((seed ^ 0x5bd1e995) >>> 0) || 1 : false
   const game = createGame(data.rules,map,['ff00ff00','ff0000ff'],{fog,weather})
   const view = () => fog ? snapshot(game,game.turn) : game
+  // Memória de cada lado na neblina (igual ao jogo, que guarda uma por equipe da IA).
+  const memories = {1:{},2:{}}
   const random = rng(seed)
   const profile = {format:2,params}
   const rivalProfile = rival === 'padrao' ? null : {format:2,params:rival}
@@ -58,8 +60,9 @@ function play({seed,side,params,rival,rounds}) {
   while (!game.winner && game.round <= rounds && decisions < rounds*160) {
     const mine = game.turn === side
     const seen = view()
-    const action = mine ? tacticalAction(data.rules,map,seen,{profile,difficulty:2,side:game.turn}) :
-      rivalProfile ? tacticalAction(data.rules,map,seen,{profile:rivalProfile,difficulty:2,side:game.turn}) :
+    const memory = fog ? updateMemory(memories[game.turn],seen,game.turn) : undefined
+    const action = mine ? tacticalAction(data.rules,map,seen,{profile,difficulty:2,side:game.turn,memory}) :
+      rivalProfile ? tacticalAction(data.rules,map,seen,{profile:rivalProfile,difficulty:2,side:game.turn,memory}) :
       baselineAction(data.rules,map,seen,{difficulty:2,random,side:game.turn})
     try { order(data.rules,map,game,game.turn,{...action,version:game.version}) }
     catch { order(data.rules,map,game,game.turn,{type:'end',version:game.version}) }
