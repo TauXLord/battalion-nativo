@@ -115,7 +115,7 @@ async function main() {
     console.log('node tools/treinar-tatica.mjs [--horas N] [--workers 3] [--populacao 6] [--pares 6] [--rodadas 40] [--sigma 0.25]')
     console.log('Sem --horas o treino não tem limite: digite p + Enter (ou Ctrl+C) para pausar e abrir o menu.')
     console.log('--horas 0 --validar compara o campeão com a IA padrão em 40 partidas novas.')
-    console.log('--horas 0 --ativar valida e instala o campeão para as dificuldades Normal e Difícil.')
+    console.log('--horas 0 --ativar valida e instala o campeão para todos os níveis (Fácil, Médio, Difícil e Skynet).')
     console.log('--exportar arquivo.json salva o campeão para levar a outro computador.')
     console.log('--importar caminho/treino.json substitui o checkpoint local pelo de outra máquina (guarda um backup).')
     console.log('--silencioso mostra só uma linha por geração (sem o resultado de cada partida).')
@@ -345,7 +345,7 @@ async function main() {
   async function activate() {
     const result = await validate()
     await save(profilePath,{format:2,params:state.champion,generation:state.generation,validacao:result})
-    console.log('IA tática treinada ativada para Normal e Difícil:',profilePath)
+    console.log('IA tática treinada ativada para todos os níveis (Fácil, Médio, Difícil e Skynet):',profilePath)
     console.log('Recarregue a página do jogo para aplicar.')
   }
 
